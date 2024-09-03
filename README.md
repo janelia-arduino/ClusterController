@@ -1,11 +1,11 @@
-- [Library Information](#org1010725)
-- [Host Computer Setup](#orgbdf9958)
+- [Library Information](#orgd3c2a13)
+- [Host Computer Setup](#orgfe20be4)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org1010725"></a>
+<a id="orgd3c2a13"></a>
 
 # Library Information
 
@@ -15,12 +15,15 @@
 -   **URL:** <https://github.com/janelia-arduino/ClusterController>
 -   **Author:** Peter Polidoro
 -   **Email:** peter@polidoro.io
+-   **PCB:** <https://github.com/janelia-kicad/cluster-pcb>
 
 
 ## Description
 
+Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 
-<a id="orgbdf9958"></a>
+
+<a id="orgfe20be4"></a>
 
 # Host Computer Setup
 

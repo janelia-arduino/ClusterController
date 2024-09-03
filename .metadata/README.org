@@ -17,8 +17,11 @@
 - URL :: https://github.com/janelia-arduino/ClusterController
 - Author :: Peter Polidoro
 - Email :: peter@polidoro.io
+- PCB :: https://github.com/janelia-kicad/cluster-pcb
 
 ** Description
+
+Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 
 * Host Computer Setup
 
