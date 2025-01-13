@@ -22,22 +22,14 @@
 #include "qpcpp.hpp"   // QP-C++ framework
 #include "bsp.hpp"
 
-namespace AC {
+namespace CC {
 
 enum ClusterControllerSignals {
 
     // commands from serial or ethernet interface
     RESET_SIG = QP::Q_USER_SIG,
-    ALL_ON_SIG,
-    ALL_OFF_SIG,
-
-    DEACTIVATE_DISPLAY_SIG,
-    DISPLAY_UNIFORM_GRAYSCALE_FRAMES_SIG,
-    TRANSFER_UNIFORM_GRAYSCALE_FRAME_SIG,
-    PANEL_SET_TRANSFERRED_SIG,
-    FRAME_TRANSFERRED_SIG,
-    DISPLAY_FRAME_TIMEOUT_SIG,
-
+    LED_ON_SIG,
+    LED_OFF_SIG,
     MAX_PUB_SIG,    // the last published signal
 
     // bsp POST to SerialCommandInterface
@@ -59,7 +51,7 @@ enum ClusterControllerSignals {
     MAX_SIG         // the last signal
 };
 
-} // namespace AC
+} // namespace CC
 
 namespace ArduinoInterface {
 
@@ -69,26 +61,15 @@ void loop();
 } // namespace ArduinoInterface
 
 //.$declare${Shared} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${Shared::CommandEvt} .....................................................
 class CommandEvt : public QP::QEvt {};
-//.${Shared::DisplayUniformGrayscaleFramesEvt} ...............................
-class DisplayUniformGrayscaleFramesEvt : public QP::QEvt {
-public:
-    std::uint8_t const (*panel_buffer)[];
-    std::uint32_t display_frequency_hz;
-};
-//.${Shared::TransferUniformGrayscaleFrameEvt} ...............................
-class TransferUniformGrayscaleFrameEvt : public QP::QEvt {
-public:
-    std::uint8_t const (*panel_buffer)[];
-};
 extern QP::QActive * const AO_Cluster;
 extern QP::QActive * const AO_SerialCommandInterface;
 extern QP::QActive * const AO_EthernetCommandInterface;
 
-} // namespace AC
+} // namespace CC
 //.$enddecl${Shared} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #endif // CLUSTER_CONTROLLER_HPP

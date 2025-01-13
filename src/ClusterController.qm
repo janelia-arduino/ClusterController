@@ -18,7 +18,7 @@ This example demonstrates the concept of the Board Support Package (BSP), which 
 
 This structure of the code is recommended for applications with only one active object. (See also the dpp_bsp example).</documentation>
  <framework name="qpcpp"/>
- <package name="AOs" stereotype="0x02" namespace="AC::">
+ <package name="AOs" stereotype="0x02" namespace="CC::">
   <class name="Cluster" superclass="qpcpp::QActive">
    <attribute name="instance" type="Cluster" visibility="0x00" properties="0x01">
     <documentation>static class instance (Singleton)</documentation>
@@ -30,8 +30,8 @@ This structure of the code is recommended for applications with only one active 
     <initial target="../1">
      <action>BSP::initializeCluster();
 subscribe(RESET_SIG);
-subscribe(ALL_ON_SIG);
-subscribe(ALL_OFF_SIG);</action>
+subscribe(LED_ON_SIG);
+subscribe(LED_OFF_SIG);</action>
      <initial_glyph conn="49,10,4,0,4">
       <action box="-1,-1,10,2"/>
      </initial_glyph>
@@ -49,24 +49,20 @@ subscribe(ALL_OFF_SIG);</action>
        <action box="0,-2,7,3"/>
       </tran_glyph>
      </tran>
-     <tran trig="ALL_OFF" target="../4">
+     <tran trig="LED_OFF" target="../4">
       <tran_glyph conn="31,26,3,3,11">
        <action box="0,-2,10,2"/>
       </tran_glyph>
      </tran>
-     <state name="AllOn">
-      <entry brief="displayAllOnFrames()">static AC::DisplayUniformGrayscaleFramesEvt displayUniformGrayscaleFramesEvt = { AC::DISPLAY_UNIFORM_GRAYSCALE_FRAMES_SIG, 0U, 0U};
-displayUniformGrayscaleFramesEvt.panel_buffer = &amp;AC::constants::all_on_grayscale_pattern;
-displayUniformGrayscaleFramesEvt.display_frequency_hz = 200;
-QF::PUBLISH(&amp;displayUniformGrayscaleFramesEvt, this);</entry>
+     <state name="LedOn">
+      <entry brief="ledOn()">BSP::ledOn();</entry>
       <state_glyph node="42,32,25,6">
        <entry box="1,2,20,2"/>
       </state_glyph>
      </state>
-     <state name="AllOff">
-      <entry brief="deactivateDisplay()">static QEvt const deactivateDisplayEvt = { AC::DEACTIVATE_DISPLAY_SIG, 0U, 0U};
-QF::PUBLISH(&amp;deactivateDisplayEvt, this);</entry>
-      <tran trig="ALL_ON" target="../../3">
+     <state name="LedOff">
+      <entry brief="ledOff()">BSP::ledOff();</entry>
+      <tran trig="LED_ON" target="../../3">
        <tran_glyph conn="54,28,2,0,4">
         <action box="2,1,10,2"/>
        </tran_glyph>
@@ -261,15 +257,8 @@ QF::PUBLISH(&amp;deactivateDisplayEvt, this);</entry>
    </statechart>
   </class>
  </package>
- <package name="Shared" stereotype="0x00" namespace="AC::">
+ <package name="Shared" stereotype="0x00" namespace="CC::">
   <class name="CommandEvt" superclass="qpcpp::QEvt"/>
-  <class name="DisplayUniformGrayscaleFramesEvt" superclass="qpcpp::QEvt">
-   <attribute name="(*panel_buffer)[]" type="std::uint8_t const" visibility="0x00" properties="0x00"/>
-   <attribute name="display_frequency_hz" type="std::uint32_t" visibility="0x00" properties="0x00"/>
-  </class>
-  <class name="TransferUniformGrayscaleFrameEvt" superclass="qpcpp::QEvt">
-   <attribute name="(*panel_buffer)[]" type="std::uint8_t const" visibility="0x00" properties="0x00"/>
-  </class>
   <attribute name="AO_Cluster" type="QP::QActive * const" visibility="0x00" properties="0x00">
    <code>= &amp;Cluster::instance;</code>
   </attribute>
@@ -288,22 +277,14 @@ QF::PUBLISH(&amp;deactivateDisplayEvt, this);</entry>
 #include &quot;qpcpp.hpp&quot;   // QP-C++ framework
 #include &quot;bsp.hpp&quot;
 
-namespace AC {
+namespace CC {
 
 enum ClusterControllerSignals {
 
     // commands from serial or ethernet interface
     RESET_SIG = QP::Q_USER_SIG,
-    ALL_ON_SIG,
-    ALL_OFF_SIG,
-
-    DEACTIVATE_DISPLAY_SIG,
-    DISPLAY_UNIFORM_GRAYSCALE_FRAMES_SIG,
-    TRANSFER_UNIFORM_GRAYSCALE_FRAME_SIG,
-    PANEL_SET_TRANSFERRED_SIG,
-    FRAME_TRANSFERRED_SIG,
-    DISPLAY_FRAME_TIMEOUT_SIG,
-
+    LED_ON_SIG,
+    LED_OFF_SIG,
     MAX_PUB_SIG,    // the last published signal
 
     // bsp POST to SerialCommandInterface
@@ -325,7 +306,7 @@ enum ClusterControllerSignals {
     MAX_SIG         // the last signal
 };
 
-} // namespace AC
+} // namespace CC
 
 namespace ArduinoInterface {
 
@@ -351,8 +332,6 @@ public:
     static void init();
 
     static void initializeCluster();
-    static void initializeDisplay();
-    static void initializeFrame();
 
     static void activateCommandInterfaces();
     static void deactivateCommandInterfaces();
@@ -368,18 +347,6 @@ public:
 
     static void ledOff();
     static void ledOn();
-
-    static void armDisplayFrameTimer(uint32_t frequency_hz);
-    static void disarmDisplayFrameTimer();
-    static void displayFrame();
-
-    static uint8_t getPanelSetMaxRow();
-    static uint8_t getPanelSetMaxCol();
-
-    static void enablePanelSetSelectPin(uint8_t index_row, uint8_t index_col);
-    static void disablePanelSetSelectPin(uint8_t index_row, uint8_t index_col);
-    static void transferPanelSet(const uint8_t (*panel_buffer)[], uint8_t panel_buffer_byte_count);
-
 };
 
 #endif // BSP_HPP</text>
@@ -391,7 +358,7 @@ public:
 #include &lt;SPI.h&gt;
 
 
-namespace AC
+namespace CC
 {
 namespace constants
 {
@@ -403,132 +370,9 @@ constexpr uint8_t spi_data_mode = SPI_MODE0;
 constexpr uint8_t mac_address_size = 6;
 
 // Conversions
+constexpr uint32_t MILLISECONDS_PER_SECOND = 1000;
 constexpr uint32_t MICROSECONDS_PER_SECOND = 1000000;
 
-// message byte
-constexpr uint8_t bit_count_per_byte = 8;
-
-// quarter panel pixels
-constexpr uint8_t pixel_count_per_quarter_panel_row = 8;
-constexpr uint8_t pixel_count_per_quarter_panel_col = 8;
-constexpr uint8_t pixel_count_per_quarter_panel = \
-  pixel_count_per_quarter_panel_row * pixel_count_per_quarter_panel_col; // 64
-
-// quarter panel grayscale
-constexpr uint8_t bit_count_per_pixel_grayscale = 4;
-constexpr uint8_t pixel_count_per_byte_grayscale = \
-  bit_count_per_byte / bit_count_per_pixel_grayscale; // 2
-constexpr uint8_t byte_count_per_quarter_panel_row_grayscale = \
-  pixel_count_per_quarter_panel_row / pixel_count_per_byte_grayscale; // 4
-
-// quarter panel binary
-constexpr uint8_t bit_count_per_pixel_binary = 1;
-constexpr uint8_t pixel_count_per_byte_binary = \
-  bit_count_per_byte / bit_count_per_pixel_binary; // 8
-
-// quarter panel message bytes
-constexpr uint8_t byte_count_per_quarter_panel_control = 1;
-constexpr uint8_t byte_count_per_quarter_panel_grayscale = \
-  byte_count_per_quarter_panel_control + \
-  pixel_count_per_quarter_panel / pixel_count_per_byte_grayscale; // 33
-constexpr uint8_t byte_count_per_quarter_panel_binary = \
-  byte_count_per_quarter_panel_control + \
-  pixel_count_per_quarter_panel / pixel_count_per_byte_binary; // 9
-
-// panel
-constexpr uint8_t quarter_panel_count_per_panel_row = 2;
-constexpr uint8_t quarter_panel_count_per_panel_col = 2;
-constexpr uint8_t quarter_panel_count_per_panel = \
-  quarter_panel_count_per_panel_row * quarter_panel_count_per_panel_col; // 4
-
-// panel message bytes
-constexpr uint8_t byte_count_per_panel_grayscale = \
-  byte_count_per_quarter_panel_grayscale * \
-  quarter_panel_count_per_panel; // 132
-constexpr uint8_t byte_count_per_panel_binary = \
-  byte_count_per_quarter_panel_binary * \
-  quarter_panel_count_per_panel; // 36
-
-// panel pattern
-constexpr uint8_t all_on_grayscale_pattern[byte_count_per_panel_grayscale] =
-{
-  1,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  1,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  1,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  1,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-  255, 255, 255, 255,
-};
-
-constexpr uint8_t identify_quarter_panels_grayscale_pattern[byte_count_per_panel_grayscale] =
-{
-  1,
-  15, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  1,
-  15, 0, 15, 0,
-  15, 0, 15, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  1,
-  255, 0, 15, 0,
-  15, 0, 255, 0,
-  255, 0, 15, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  1,
-  255, 0, 255, 0,
-  255, 0, 255, 0,
-  255, 0, 255, 0,
-  255, 0, 255, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-};
 }
 }
 #endif
@@ -568,22 +412,22 @@ void setup() {
     BSP::init(); // initialize the BSP
 
     // init publish-subscribe
-    static QSubscrList subscrSto[AC::MAX_PUB_SIG];
+    static QSubscrList subscrSto[CC::MAX_PUB_SIG];
     QF::psInit(subscrSto, Q_DIM(subscrSto));
 
-   // statically allocate event queues for the AOs and start them...
+    // statically allocate event queues for the AOs and start them...
     static QEvt const *serial_command_interface_queueSto[10];
-    AC::AO_SerialCommandInterface-&gt;start(1U, // priority
+    CC::AO_SerialCommandInterface-&gt;start(1U, // priority
         serial_command_interface_queueSto, Q_DIM(serial_command_interface_queueSto),
         (void *)0, 0U); // no stack
 
     static QEvt const *ethernet_command_interface_queueSto[10];
-    AC::AO_EthernetCommandInterface-&gt;start(2U, // priority
+    CC::AO_EthernetCommandInterface-&gt;start(2U, // priority
         ethernet_command_interface_queueSto, Q_DIM(ethernet_command_interface_queueSto),
         (void *)0, 0U); // no stack
 
     static QEvt const *cluster_queueSto[10];
-    AC::AO_Cluster-&gt;start(3U, // priority
+    CC::AO_Cluster-&gt;start(3U, // priority
         cluster_queueSto, Q_DIM(cluster_queueSto),
         (void *)0, 0U); // no stack
 

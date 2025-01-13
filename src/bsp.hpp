@@ -27,8 +27,6 @@ public:
     static void init();
 
     static void initializeCluster();
-    static void initializeDisplay();
-    static void initializeFrame();
 
     static void activateCommandInterfaces();
     static void deactivateCommandInterfaces();
@@ -44,18 +42,6 @@ public:
 
     static void ledOff();
     static void ledOn();
-
-    static void armDisplayFrameTimer(uint32_t frequency_hz);
-    static void disarmDisplayFrameTimer();
-    static void displayFrame();
-
-    static uint8_t getPanelSetMaxRow();
-    static uint8_t getPanelSetMaxCol();
-
-    static void enablePanelSetSelectPin(uint8_t index_row, uint8_t index_col);
-    static void disablePanelSetSelectPin(uint8_t index_row, uint8_t index_col);
-    static void transferPanelSet(const uint8_t (*panel_buffer)[], uint8_t panel_buffer_byte_count);
-
 };
 
 #endif // BSP_HPP

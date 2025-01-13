@@ -24,7 +24,7 @@ using namespace QP;
 //============================================================================
 // generate declaration of the active object
 //.$declare${AOs::Cluster} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${AOs::Cluster} ...........................................................
 class Cluster : public QP::QActive {
@@ -37,11 +37,11 @@ public:
 protected:
     Q_STATE_DECL(initial);
     Q_STATE_DECL(ClusterOn);
-    Q_STATE_DECL(AllOn);
-    Q_STATE_DECL(AllOff);
+    Q_STATE_DECL(LedOn);
+    Q_STATE_DECL(LedOff);
 };
 
-} // namespace AC
+} // namespace CC
 //.$enddecl${AOs::Cluster} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //============================================================================
@@ -53,18 +53,18 @@ protected:
 #endif
 //.$endskip${QP_VERSION} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //.$define${Shared::AO_Cluster} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${Shared::AO_Cluster} .....................................................
 QP::QActive * const AO_Cluster = &Cluster::instance;
 
-} // namespace AC
+} // namespace CC
 //.$enddef${Shared::AO_Cluster} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //============================================================================
 // generate definition of the AO
 //.$define${AOs::Cluster} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${AOs::Cluster} ...........................................................
 Cluster Cluster::instance;
@@ -78,8 +78,8 @@ Q_STATE_DEF(Cluster, initial) {
     //.${AOs::Cluster::SM::initial}
     BSP::initializeCluster();
     subscribe(RESET_SIG);
-    subscribe(ALL_ON_SIG);
-    subscribe(ALL_OFF_SIG);
+    subscribe(LED_ON_SIG);
+    subscribe(LED_OFF_SIG);
     return tran(&ClusterOn);
 }
 //.${AOs::Cluster::SM::ClusterOn} ............................................
@@ -100,7 +100,7 @@ Q_STATE_DEF(Cluster, ClusterOn) {
         }
         //.${AOs::Cluster::SM::ClusterOn::initial}
         case Q_INIT_SIG: {
-            status_ = tran(&AllOff);
+            status_ = tran(&LedOff);
             break;
         }
         //.${AOs::Cluster::SM::ClusterOn::RESET}
@@ -108,9 +108,9 @@ Q_STATE_DEF(Cluster, ClusterOn) {
             status_ = tran(&ClusterOn);
             break;
         }
-        //.${AOs::Cluster::SM::ClusterOn::ALL_OFF}
-        case ALL_OFF_SIG: {
-            status_ = tran(&AllOff);
+        //.${AOs::Cluster::SM::ClusterOn::LED_OFF}
+        case LED_OFF_SIG: {
+            status_ = tran(&LedOff);
             break;
         }
         default: {
@@ -120,16 +120,13 @@ Q_STATE_DEF(Cluster, ClusterOn) {
     }
     return status_;
 }
-//.${AOs::Cluster::SM::ClusterOn::AllOn} .....................................
-Q_STATE_DEF(Cluster, AllOn) {
+//.${AOs::Cluster::SM::ClusterOn::LedOn} .....................................
+Q_STATE_DEF(Cluster, LedOn) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Cluster::SM::ClusterOn::AllOn}
+        //.${AOs::Cluster::SM::ClusterOn::LedOn}
         case Q_ENTRY_SIG: {
-            static AC::DisplayUniformGrayscaleFramesEvt displayUniformGrayscaleFramesEvt = { AC::DISPLAY_UNIFORM_GRAYSCALE_FRAMES_SIG, 0U, 0U};
-            displayUniformGrayscaleFramesEvt.panel_buffer = &AC::constants::all_on_grayscale_pattern;
-            displayUniformGrayscaleFramesEvt.display_frequency_hz = 200;
-            QF::PUBLISH(&displayUniformGrayscaleFramesEvt, this);
+            BSP::ledOn();
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -140,20 +137,19 @@ Q_STATE_DEF(Cluster, AllOn) {
     }
     return status_;
 }
-//.${AOs::Cluster::SM::ClusterOn::AllOff} ....................................
-Q_STATE_DEF(Cluster, AllOff) {
+//.${AOs::Cluster::SM::ClusterOn::LedOff} ....................................
+Q_STATE_DEF(Cluster, LedOff) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Cluster::SM::ClusterOn::AllOff}
+        //.${AOs::Cluster::SM::ClusterOn::LedOff}
         case Q_ENTRY_SIG: {
-            static QEvt const deactivateDisplayEvt = { AC::DEACTIVATE_DISPLAY_SIG, 0U, 0U};
-            QF::PUBLISH(&deactivateDisplayEvt, this);
+            BSP::ledOff();
             status_ = Q_RET_HANDLED;
             break;
         }
-        //.${AOs::Cluster::SM::ClusterOn::AllOff::ALL_ON}
-        case ALL_ON_SIG: {
-            status_ = tran(&AllOn);
+        //.${AOs::Cluster::SM::ClusterOn::LedOff::LED_ON}
+        case LED_ON_SIG: {
+            status_ = tran(&LedOn);
             break;
         }
         default: {
@@ -164,5 +160,5 @@ Q_STATE_DEF(Cluster, AllOff) {
     return status_;
 }
 
-} // namespace AC
+} // namespace CC
 //.$enddef${AOs::Cluster} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

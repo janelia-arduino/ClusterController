@@ -24,7 +24,7 @@ using namespace QP;
 //============================================================================
 // generate declaration of the active object
 //.$declare${AOs::EthernetCommandInterface} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${AOs::EthernetCommandInterface} ..........................................
 class EthernetCommandInterface : public QP::QActive {
@@ -47,7 +47,7 @@ protected:
     Q_STATE_DECL(WaitingForIPAddress);
 };
 
-} // namespace AC
+} // namespace CC
 //.$enddecl${AOs::EthernetCommandInterface} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //============================================================================
@@ -59,18 +59,18 @@ protected:
 #endif
 //.$endskip${QP_VERSION} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //.$define${Shared::AO_EthernetCommandInterface} vvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${Shared::AO_EthernetCommandInterface} ....................................
 QP::QActive * const AO_EthernetCommandInterface = &EthernetCommandInterface::instance;
 
-} // namespace AC
+} // namespace CC
 //.$enddef${Shared::AO_EthernetCommandInterface} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //============================================================================
 // generate definition of the AO
 //.$define${AOs::EthernetCommandInterface} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${AOs::EthernetCommandInterface} ..........................................
 EthernetCommandInterface EthernetCommandInterface::instance;
@@ -256,5 +256,5 @@ Q_STATE_DEF(EthernetCommandInterface, WaitingForIPAddress) {
     return status_;
 }
 
-} // namespace AC
+} // namespace CC
 //.$enddef${AOs::EthernetCommandInterface} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

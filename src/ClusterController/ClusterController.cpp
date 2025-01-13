@@ -29,22 +29,22 @@ void setup() {
     BSP::init(); // initialize the BSP
 
     // init publish-subscribe
-    static QSubscrList subscrSto[AC::MAX_PUB_SIG];
+    static QSubscrList subscrSto[CC::MAX_PUB_SIG];
     QF::psInit(subscrSto, Q_DIM(subscrSto));
 
-   // statically allocate event queues for the AOs and start them...
+    // statically allocate event queues for the AOs and start them...
     static QEvt const *serial_command_interface_queueSto[10];
-    AC::AO_SerialCommandInterface->start(1U, // priority
+    CC::AO_SerialCommandInterface->start(1U, // priority
         serial_command_interface_queueSto, Q_DIM(serial_command_interface_queueSto),
         (void *)0, 0U); // no stack
 
     static QEvt const *ethernet_command_interface_queueSto[10];
-    AC::AO_EthernetCommandInterface->start(2U, // priority
+    CC::AO_EthernetCommandInterface->start(2U, // priority
         ethernet_command_interface_queueSto, Q_DIM(ethernet_command_interface_queueSto),
         (void *)0, 0U); // no stack
 
     static QEvt const *cluster_queueSto[10];
-    AC::AO_Cluster->start(3U, // priority
+    CC::AO_Cluster->start(3U, // priority
         cluster_queueSto, Q_DIM(cluster_queueSto),
         (void *)0, 0U); // no stack
 

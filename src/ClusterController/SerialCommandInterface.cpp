@@ -24,7 +24,7 @@ using namespace QP;
 //============================================================================
 // generate declaration of the active object
 //.$declare${AOs::SerialCommandInterface} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${AOs::SerialCommandInterface} ............................................
 class SerialCommandInterface : public QP::QActive {
@@ -43,7 +43,7 @@ protected:
     Q_STATE_DECL(Inactive);
 };
 
-} // namespace AC
+} // namespace CC
 //.$enddecl${AOs::SerialCommandInterface} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //============================================================================
@@ -55,18 +55,18 @@ protected:
 #endif
 //.$endskip${QP_VERSION} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //.$define${Shared::AO_SerialCommandInterface} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${Shared::AO_SerialCommandInterface} ......................................
 QP::QActive * const AO_SerialCommandInterface = &SerialCommandInterface::instance;
 
-} // namespace AC
+} // namespace CC
 //.$enddef${Shared::AO_SerialCommandInterface} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //============================================================================
 // generate definition of the AO
 //.$define${AOs::SerialCommandInterface} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace AC {
+namespace CC {
 
 //.${AOs::SerialCommandInterface} ............................................
 SerialCommandInterface SerialCommandInterface::instance;
@@ -170,5 +170,5 @@ Q_STATE_DEF(SerialCommandInterface, Inactive) {
     return status_;
 }
 
-} // namespace AC
+} // namespace CC
 //.$enddef${AOs::SerialCommandInterface} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
