@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Ticker.h>
+#include <EthernetCompat.h>
 #include "bsp.hpp"
 #include "ClusterController.hpp"
 
