@@ -88,6 +88,7 @@ Q_STATE_DEF(Cluster, ClusterOn) {
     switch (e->sig) {
         //.${AOs::Cluster::SM::ClusterOn}
         case Q_ENTRY_SIG: {
+            BSP::ledOff();
             BSP::activateCommandInterfaces();
             status_ = Q_RET_HANDLED;
             break;

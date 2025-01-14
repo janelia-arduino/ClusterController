@@ -40,6 +40,7 @@ public:
     static void beginSerial();
     static void pollSerialCommand();
 
+    static void initializeEthernet();
     static void beginEthernet();
     static void checkForEthernetIPAddress();
     static void beginEthernetServer();

@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Ticker.h>
-#include <EthernetCompat.h>
+#include <W5500lwIP.h>
 #include "bsp.hpp"
 #include "ClusterController.hpp"
 
@@ -45,6 +45,7 @@ static QP::QSpyId const l_TIMER_ID = { 0U }; // QSpy source ID
 // Static global variables
 static Ticker system_clock;
 static Ticker test_timer;
+
 static QEvt const activateSerialCommandInterfaceEvt = { CC::ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const activateEthernetCommandInterfaceEvt = { CC::ACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const deactivateSerialCommandInterfaceEvt = { CC::DEACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, 0U, 0U};
@@ -54,9 +55,11 @@ static QEvt const ethernetInitializedEvt = { CC::ETHERNET_INITIALIZED_SIG, 0U, 0
 static QEvt const ethernetIPAddressFoundEvt = { CC::ETHERNET_IP_ADDRESS_FOUND_SIG, 0U, 0U};
 static QEvt const ethernetServerInitializedEvt = { CC::ETHERNET_SERVER_INITIALIZED_SIG, 0U, 0U};
 static QEvt const ethernetClientConnectedEvt = { CC::ETHERNET_CLIENT_CONNECTED_SIG, 0U, 0U};
+static CC::CommandEvt const resetEvt = { CC::RESET_SIG, 0U, 0U};
 static CC::CommandEvt const powerOnEvt = { CC::POWER_ON_SIG, 0U, 0U};
 static CC::CommandEvt const powerOffEvt = { CC::POWER_OFF_SIG, 0U, 0U};
 
+static Wiznet5500lwIP eth(17, SPI, 21);
 
 //----------------------------------------------------------------------------
 // Local functions
@@ -119,7 +122,7 @@ void BSP::activateCommandInterfaces()
   CC::AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_TIMER_ID);
 #endif
 
-  // CC::AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_TIMER_ID);
+  CC::AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_TIMER_ID);
 }
 
 void BSP::deactivateCommandInterfaces()
@@ -128,7 +131,7 @@ void BSP::deactivateCommandInterfaces()
   CC::AO_SerialCommandInterface->POST(&deactivateSerialCommandInterfaceEvt, &l_TIMER_ID);
 #endif
 
-  // CC::AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_TIMER_ID);
+  CC::AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_TIMER_ID);
 }
 
 void BSP::beginSerial()
@@ -143,6 +146,10 @@ void BSP::pollSerialCommand()
   if (CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.available() > 0)
   {
     String command = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readStringUntil('\n');
+    if (command.equalsIgnoreCase("RESET"))
+    {
+      QF::PUBLISH(&resetEvt, &l_TIMER_ID);
+    }
     if (command.equalsIgnoreCase("LED_ON"))
     {
       ledOn();
@@ -162,16 +169,38 @@ void BSP::pollSerialCommand()
   }
 }
 
+void BSP::initializeEthernet()
+{
+  SPI.setRX(16);
+  SPI.setCS(17);
+  SPI.setSCK(18);
+  SPI.setTX(19);
+}
+
 void BSP::beginEthernet()
 {
-  // if (Ethernet.begin())
-  // {
-  //   CC::AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_TIMER_ID);
-  // }
+  if (eth.begin())
+  {
+    CC::AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_TIMER_ID);
+  }
+  else
+  {
+    Serial.println("No wired Ethernet hardware detected. Check pinouts, wiring.");
+  }
 }
 
 void BSP::checkForEthernetIPAddress()
 {
+  if (eth.connected())
+  {
+    Serial.println("Ethernet connected!");
+    Serial.println("IP address: ");
+    Serial.println(eth.localIP());
+  }
+  else
+  {
+    Serial.println("Ethernet not connected!");
+  }
   // IPAddress ip_address = Ethernet.localIP();
   // if (ip_address)
   // {

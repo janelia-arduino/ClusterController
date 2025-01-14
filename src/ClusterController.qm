@@ -37,7 +37,8 @@ subscribe(POWER_OFF_SIG);</action>
      </initial_glyph>
     </initial>
     <state name="ClusterOn">
-     <entry brief="activateCommandInterfaces()">BSP::activateCommandInterfaces();</entry>
+     <entry brief="activateCommandInterfaces()">BSP::ledOff();
+BSP::activateCommandInterfaces();</entry>
      <exit brief="deactivateCommandInterfaces()">BSP::deactivateCommandInterfaces();</exit>
      <initial target="../4">
       <initial_glyph conn="60,20,4,0,3">
@@ -150,6 +151,7 @@ subscribe(POWER_OFF_SIG);</action>
    </operation>
    <statechart properties="0x00">
     <initial target="../1">
+     <action>BSP::initializeEthernet();</action>
      <initial_glyph conn="55,2,4,0,3">
       <action box="0,-2,10,2"/>
      </initial_glyph>
@@ -345,6 +347,7 @@ public:
     static void beginSerial();
     static void pollSerialCommand();
 
+    static void initializeEthernet();
     static void beginEthernet();
     static void checkForEthernetIPAddress();
     static void beginEthernetServer();
