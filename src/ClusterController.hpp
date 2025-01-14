@@ -27,10 +27,12 @@ namespace CC {
 enum ClusterControllerSignals {
 
     // commands from serial or ethernet interface
-    RESET_SIG = QP::Q_USER_SIG,
-    POWER_ON_SIG,
+    POWER_ON_SIG = QP::Q_USER_SIG,
     POWER_OFF_SIG,
     MAX_PUB_SIG,    // the last published signal
+
+    // bsp POST to Watchdog
+    RESET_SIG,
 
     // bsp POST to SerialCommandInterface
     ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
@@ -45,6 +47,7 @@ enum ClusterControllerSignals {
     ETHERNET_SERVER_INITIALIZED_SIG,
     ETHERNET_CLIENT_CONNECTED_SIG,
 
+    WATCHDOG_TIMEOUT_SIG, // signal for Watchdog timeout event
     SERIAL_TIMEOUT_SIG, // signal for SerialCommandInterface timeout event
     ETHERNET_TIMEOUT_SIG, // signal for EthernetCommandInterface timeout event
 

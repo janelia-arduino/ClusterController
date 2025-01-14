@@ -29,7 +29,6 @@ This structure of the code is recommended for applications with only one active 
    <statechart properties="0x00">
     <initial target="../1">
      <action>BSP::initializeCluster();
-subscribe(RESET_SIG);
 subscribe(POWER_ON_SIG);
 subscribe(POWER_OFF_SIG);</action>
      <initial_glyph conn="49,10,4,0,4">
@@ -37,8 +36,7 @@ subscribe(POWER_OFF_SIG);</action>
      </initial_glyph>
     </initial>
     <state name="ClusterOn">
-     <entry brief="activateCommandInterfaces()">BSP::ledOff();
-BSP::activateCommandInterfaces();</entry>
+     <entry brief="activateCommandInterfaces()">BSP::activateCommandInterfaces();</entry>
      <exit brief="deactivateCommandInterfaces()">BSP::deactivateCommandInterfaces();</exit>
      <initial target="../4">
       <initial_glyph conn="60,20,4,0,3">
@@ -258,6 +256,14 @@ BSP::activateCommandInterfaces();</entry>
     <state_diagram size="124,91"/>
    </statechart>
   </class>
+  <class name="Watchdog" superclass="qpcpp::QActive">
+   <attribute name="instance" type="Watchdog" visibility="0x00" properties="0x01"/>
+   <attribute name="watchdog_time_evt_" type="QP::QTimeEvt" visibility="0x00" properties="0x00"/>
+   <operation name="Watchdog" type="" visibility="0x00" properties="0x00">
+    <code>: QActive(Q_STATE_CAST(&amp;Watchdog::initial)),
+    watchdog_time_evt_(this, WATCHDOG_TIMEOUT_SIG, 0U)</code>
+   </operation>
+  </class>
  </package>
  <package name="Shared" stereotype="0x00" namespace="CC::">
   <class name="CommandEvt" superclass="qpcpp::QEvt"/>
@@ -284,10 +290,12 @@ namespace CC {
 enum ClusterControllerSignals {
 
     // commands from serial or ethernet interface
-    RESET_SIG = QP::Q_USER_SIG,
-    POWER_ON_SIG,
+    POWER_ON_SIG = QP::Q_USER_SIG,
     POWER_OFF_SIG,
     MAX_PUB_SIG,    // the last published signal
+
+    // bsp POST to Watchdog
+    RESET_SIG,
 
     // bsp POST to SerialCommandInterface
     ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
@@ -302,6 +310,7 @@ enum ClusterControllerSignals {
     ETHERNET_SERVER_INITIALIZED_SIG,
     ETHERNET_CLIENT_CONNECTED_SIG,
 
+    WATCHDOG_TIMEOUT_SIG, // signal for Watchdog timeout event
     SERIAL_TIMEOUT_SIG, // signal for SerialCommandInterface timeout event
     ETHERNET_TIMEOUT_SIG, // signal for EthernetCommandInterface timeout event
 

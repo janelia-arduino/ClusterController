@@ -77,7 +77,6 @@ Cluster::Cluster()
 Q_STATE_DEF(Cluster, initial) {
     //.${AOs::Cluster::SM::initial}
     BSP::initializeCluster();
-    subscribe(RESET_SIG);
     subscribe(POWER_ON_SIG);
     subscribe(POWER_OFF_SIG);
     return tran(&ClusterOn);
@@ -88,7 +87,6 @@ Q_STATE_DEF(Cluster, ClusterOn) {
     switch (e->sig) {
         //.${AOs::Cluster::SM::ClusterOn}
         case Q_ENTRY_SIG: {
-            BSP::ledOff();
             BSP::activateCommandInterfaces();
             status_ = Q_RET_HANDLED;
             break;
