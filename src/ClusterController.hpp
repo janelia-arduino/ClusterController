@@ -28,8 +28,8 @@ enum ClusterControllerSignals {
 
     // commands from serial or ethernet interface
     RESET_SIG = QP::Q_USER_SIG,
-    LED_ON_SIG,
-    LED_OFF_SIG,
+    POWER_ON_SIG,
+    POWER_OFF_SIG,
     MAX_PUB_SIG,    // the last published signal
 
     // bsp POST to SerialCommandInterface

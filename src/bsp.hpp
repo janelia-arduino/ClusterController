@@ -26,7 +26,13 @@ public:
 
     static void init();
 
+    static void ledOff();
+    static void ledOn();
+
     static void initializeCluster();
+
+    static void powerOff();
+    static void powerOn();
 
     static void activateCommandInterfaces();
     static void deactivateCommandInterfaces();
@@ -39,9 +45,6 @@ public:
     static void beginEthernetServer();
     static void checkForEthernetClient();
     static void pollEthernetCommand();
-
-    static void ledOff();
-    static void ledOn();
 };
 
 #endif // BSP_HPP

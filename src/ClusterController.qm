@@ -30,8 +30,8 @@ This structure of the code is recommended for applications with only one active 
     <initial target="../1">
      <action>BSP::initializeCluster();
 subscribe(RESET_SIG);
-subscribe(LED_ON_SIG);
-subscribe(LED_OFF_SIG);</action>
+subscribe(POWER_ON_SIG);
+subscribe(POWER_OFF_SIG);</action>
      <initial_glyph conn="49,10,4,0,4">
       <action box="-1,-1,10,2"/>
      </initial_glyph>
@@ -49,20 +49,20 @@ subscribe(LED_OFF_SIG);</action>
        <action box="0,-2,7,3"/>
       </tran_glyph>
      </tran>
-     <tran trig="LED_OFF" target="../4">
+     <tran trig="POWER_OFF" target="../4">
       <tran_glyph conn="31,26,3,3,11">
        <action box="0,-2,10,2"/>
       </tran_glyph>
      </tran>
-     <state name="LedOn">
-      <entry brief="ledOn()">BSP::ledOn();</entry>
+     <state name="PowerOn">
+      <entry brief="powerOn()">BSP::powerOn();</entry>
       <state_glyph node="42,32,25,6">
        <entry box="1,2,20,2"/>
       </state_glyph>
      </state>
-     <state name="LedOff">
-      <entry brief="ledOff()">BSP::ledOff();</entry>
-      <tran trig="LED_ON" target="../../3">
+     <state name="PowerOff">
+      <entry brief="PowerOff()">BSP::powerOff();</entry>
+      <tran trig="POWER_ON" target="../../3">
        <tran_glyph conn="54,28,2,0,4">
         <action box="2,1,10,2"/>
        </tran_glyph>
@@ -283,8 +283,8 @@ enum ClusterControllerSignals {
 
     // commands from serial or ethernet interface
     RESET_SIG = QP::Q_USER_SIG,
-    LED_ON_SIG,
-    LED_OFF_SIG,
+    POWER_ON_SIG,
+    POWER_OFF_SIG,
     MAX_PUB_SIG,    // the last published signal
 
     // bsp POST to SerialCommandInterface
@@ -331,7 +331,13 @@ public:
 
     static void init();
 
+    static void ledOff();
+    static void ledOn();
+
     static void initializeCluster();
+
+    static void powerOff();
+    static void powerOn();
 
     static void activateCommandInterfaces();
     static void deactivateCommandInterfaces();
@@ -344,9 +350,6 @@ public:
     static void beginEthernetServer();
     static void checkForEthernetClient();
     static void pollEthernetCommand();
-
-    static void ledOff();
-    static void ledOn();
 };
 
 #endif // BSP_HPP</text>

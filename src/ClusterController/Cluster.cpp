@@ -37,8 +37,8 @@ public:
 protected:
     Q_STATE_DECL(initial);
     Q_STATE_DECL(ClusterOn);
-    Q_STATE_DECL(LedOn);
-    Q_STATE_DECL(LedOff);
+    Q_STATE_DECL(PowerOn);
+    Q_STATE_DECL(PowerOff);
 };
 
 } // namespace CC
@@ -78,8 +78,8 @@ Q_STATE_DEF(Cluster, initial) {
     //.${AOs::Cluster::SM::initial}
     BSP::initializeCluster();
     subscribe(RESET_SIG);
-    subscribe(LED_ON_SIG);
-    subscribe(LED_OFF_SIG);
+    subscribe(POWER_ON_SIG);
+    subscribe(POWER_OFF_SIG);
     return tran(&ClusterOn);
 }
 //.${AOs::Cluster::SM::ClusterOn} ............................................
@@ -100,7 +100,7 @@ Q_STATE_DEF(Cluster, ClusterOn) {
         }
         //.${AOs::Cluster::SM::ClusterOn::initial}
         case Q_INIT_SIG: {
-            status_ = tran(&LedOff);
+            status_ = tran(&PowerOff);
             break;
         }
         //.${AOs::Cluster::SM::ClusterOn::RESET}
@@ -108,9 +108,9 @@ Q_STATE_DEF(Cluster, ClusterOn) {
             status_ = tran(&ClusterOn);
             break;
         }
-        //.${AOs::Cluster::SM::ClusterOn::LED_OFF}
-        case LED_OFF_SIG: {
-            status_ = tran(&LedOff);
+        //.${AOs::Cluster::SM::ClusterOn::POWER_OFF}
+        case POWER_OFF_SIG: {
+            status_ = tran(&PowerOff);
             break;
         }
         default: {
@@ -120,13 +120,13 @@ Q_STATE_DEF(Cluster, ClusterOn) {
     }
     return status_;
 }
-//.${AOs::Cluster::SM::ClusterOn::LedOn} .....................................
-Q_STATE_DEF(Cluster, LedOn) {
+//.${AOs::Cluster::SM::ClusterOn::PowerOn} ...................................
+Q_STATE_DEF(Cluster, PowerOn) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Cluster::SM::ClusterOn::LedOn}
+        //.${AOs::Cluster::SM::ClusterOn::PowerOn}
         case Q_ENTRY_SIG: {
-            BSP::ledOn();
+            BSP::powerOn();
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -137,19 +137,19 @@ Q_STATE_DEF(Cluster, LedOn) {
     }
     return status_;
 }
-//.${AOs::Cluster::SM::ClusterOn::LedOff} ....................................
-Q_STATE_DEF(Cluster, LedOff) {
+//.${AOs::Cluster::SM::ClusterOn::PowerOff} ..................................
+Q_STATE_DEF(Cluster, PowerOff) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Cluster::SM::ClusterOn::LedOff}
+        //.${AOs::Cluster::SM::ClusterOn::PowerOff}
         case Q_ENTRY_SIG: {
-            BSP::ledOff();
+            BSP::powerOff();
             status_ = Q_RET_HANDLED;
             break;
         }
-        //.${AOs::Cluster::SM::ClusterOn::LedOff::LED_ON}
-        case LED_ON_SIG: {
-            status_ = tran(&LedOn);
+        //.${AOs::Cluster::SM::ClusterOn::PowerOff::POWER_ON}
+        case POWER_ON_SIG: {
+            status_ = tran(&PowerOn);
             break;
         }
         default: {

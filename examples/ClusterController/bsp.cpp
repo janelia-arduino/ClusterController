@@ -13,6 +13,7 @@ namespace CC
 namespace constants
 {
 constexpr uint8_t led_pin = 25;
+constexpr uint8_t power_pin = 15;
 
 // Ethernet Communication Interface
 // constexpr IPAddress ip(192, 168, 10, 196);
@@ -53,8 +54,8 @@ static QEvt const ethernetInitializedEvt = { CC::ETHERNET_INITIALIZED_SIG, 0U, 0
 static QEvt const ethernetIPAddressFoundEvt = { CC::ETHERNET_IP_ADDRESS_FOUND_SIG, 0U, 0U};
 static QEvt const ethernetServerInitializedEvt = { CC::ETHERNET_SERVER_INITIALIZED_SIG, 0U, 0U};
 static QEvt const ethernetClientConnectedEvt = { CC::ETHERNET_CLIENT_CONNECTED_SIG, 0U, 0U};
-static CC::CommandEvt const ledOnEvt = { CC::LED_ON_SIG, 0U, 0U};
-static CC::CommandEvt const ledOffEvt = { CC::LED_OFF_SIG, 0U, 0U};
+static CC::CommandEvt const powerOnEvt = { CC::POWER_ON_SIG, 0U, 0U};
+static CC::CommandEvt const powerOffEvt = { CC::POWER_OFF_SIG, 0U, 0U};
 
 
 //----------------------------------------------------------------------------
@@ -70,8 +71,8 @@ void BSP::init()
 
   Serial.begin(CC::constants::SERIAL_COMMUNICATION_INTERFACE_BAUD_RATE);
 
-  // setup pins
   pinMode(CC::constants::led_pin, OUTPUT);
+  ledOff();
 
 #ifdef QS_ON
   QS_INIT(nullptr);
@@ -86,8 +87,30 @@ void BSP::init()
 #endif
 }
 
+void BSP::ledOff()
+{
+  digitalWriteFast(CC::constants::led_pin, LOW);
+}
+
+void BSP::ledOn()
+{
+  digitalWriteFast(CC::constants::led_pin, HIGH);
+}
+
 void BSP::initializeCluster()
 {
+  pinMode(CC::constants::power_pin, OUTPUT);
+  powerOff();
+}
+
+void BSP::powerOff()
+{
+  digitalWriteFast(CC::constants::power_pin, LOW);
+}
+
+void BSP::powerOn()
+{
+  digitalWriteFast(CC::constants::power_pin, HIGH);
 }
 
 void BSP::activateCommandInterfaces()
@@ -122,11 +145,19 @@ void BSP::pollSerialCommand()
     String command = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readStringUntil('\n');
     if (command.equalsIgnoreCase("LED_ON"))
     {
-      QF::PUBLISH(&ledOnEvt, &l_TIMER_ID);
+      ledOn();
     }
     else if (command.equalsIgnoreCase("LED_OFF"))
     {
-      QF::PUBLISH(&ledOffEvt, &l_TIMER_ID);
+      ledOff();
+    }
+    else if (command.equalsIgnoreCase("POWER_ON"))
+    {
+      QF::PUBLISH(&powerOnEvt, &l_TIMER_ID);
+    }
+    else if (command.equalsIgnoreCase("POWER_OFF"))
+    {
+      QF::PUBLISH(&powerOffEvt, &l_TIMER_ID);
     }
   }
 }
@@ -178,16 +209,6 @@ void BSP::pollEthernetCommand()
   // print your local IP address:
   // Serial.print("My IP address: ");
   // Serial.println(Ethernet.localIP());
-}
-
-void BSP::ledOff()
-{
-  digitalWriteFast(CC::constants::led_pin, LOW);
-}
-
-void BSP::ledOn()
-{
-  digitalWriteFast(CC::constants::led_pin, HIGH);
 }
 
 //----------------------------------------------------------------------------
