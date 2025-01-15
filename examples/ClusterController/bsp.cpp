@@ -63,6 +63,29 @@ static Wiznet5500lwIP eth(17, SPI, 21);
 
 //----------------------------------------------------------------------------
 // Local functions
+void processCommandString(String command)
+{
+  if (command.equalsIgnoreCase("RESET"))
+  {
+    QF::PUBLISH(&resetEvt, &l_TIMER_ID);
+  }
+  if (command.equalsIgnoreCase("LED_ON"))
+  {
+    BSP::ledOn();
+  }
+  else if (command.equalsIgnoreCase("LED_OFF"))
+  {
+    BSP::ledOff();
+  }
+  else if (command.equalsIgnoreCase("POWER_ON"))
+  {
+    QF::PUBLISH(&powerOnEvt, &l_TIMER_ID);
+  }
+  else if (command.equalsIgnoreCase("POWER_OFF"))
+  {
+    QF::PUBLISH(&powerOffEvt, &l_TIMER_ID);
+  }
+}
 
 //----------------------------------------------------------------------------
 // BSP functions
@@ -156,26 +179,7 @@ void BSP::pollSerialCommand()
   if (CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.available() > 0)
   {
     String command = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readStringUntil('\n');
-    if (command.equalsIgnoreCase("RESET"))
-    {
-      QF::PUBLISH(&resetEvt, &l_TIMER_ID);
-    }
-    if (command.equalsIgnoreCase("LED_ON"))
-    {
-      ledOn();
-    }
-    else if (command.equalsIgnoreCase("LED_OFF"))
-    {
-      ledOff();
-    }
-    else if (command.equalsIgnoreCase("POWER_ON"))
-    {
-      QF::PUBLISH(&powerOnEvt, &l_TIMER_ID);
-    }
-    else if (command.equalsIgnoreCase("POWER_OFF"))
-    {
-      QF::PUBLISH(&powerOffEvt, &l_TIMER_ID);
-    }
+    processCommandString(command);
   }
 }
 
