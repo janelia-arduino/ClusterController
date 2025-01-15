@@ -33,18 +33,23 @@ void setup() {
     QF::psInit(subscrSto, Q_DIM(subscrSto));
 
     // statically allocate event queues for the AOs and start them...
+    static QEvt const *watchdog_queueSto[2];
+    CC::AO_Watchdog->start(1U, // priority
+        watchdog_queueSto, Q_DIM(watchdog_queueSto),
+        (void *)0, 0U); // no stack
+
     static QEvt const *serial_command_interface_queueSto[10];
-    CC::AO_SerialCommandInterface->start(1U, // priority
+    CC::AO_SerialCommandInterface->start(2U, // priority
         serial_command_interface_queueSto, Q_DIM(serial_command_interface_queueSto),
         (void *)0, 0U); // no stack
 
     static QEvt const *ethernet_command_interface_queueSto[10];
-    CC::AO_EthernetCommandInterface->start(2U, // priority
+    CC::AO_EthernetCommandInterface->start(3U, // priority
         ethernet_command_interface_queueSto, Q_DIM(ethernet_command_interface_queueSto),
         (void *)0, 0U); // no stack
 
     static QEvt const *cluster_queueSto[10];
-    CC::AO_Cluster->start(3U, // priority
+    CC::AO_Cluster->start(4U, // priority
         cluster_queueSto, Q_DIM(cluster_queueSto),
         (void *)0, 0U); // no stack
 

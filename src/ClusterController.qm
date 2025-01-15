@@ -29,6 +29,7 @@ This structure of the code is recommended for applications with only one active 
    <statechart properties="0x00">
     <initial target="../1">
      <action>BSP::initializeCluster();
+subscribe(RESET_SIG);
 subscribe(POWER_ON_SIG);
 subscribe(POWER_OFF_SIG);</action>
      <initial_glyph conn="49,10,4,0,4">
@@ -43,13 +44,13 @@ subscribe(POWER_OFF_SIG);</action>
        <action box="0,-2,10,2"/>
       </initial_glyph>
      </initial>
-     <tran trig="RESET" target="..">
-      <tran_glyph conn="98,22,1,1,5,5,-5">
-       <action box="0,-2,7,3"/>
+     <tran trig="RESET" target="../4">
+      <tran_glyph conn="31,25,3,3,11">
+       <action box="0,-2,10,2"/>
       </tran_glyph>
      </tran>
      <tran trig="POWER_OFF" target="../4">
-      <tran_glyph conn="31,26,3,3,11">
+      <tran_glyph conn="31,27,3,3,11">
        <action box="0,-2,10,2"/>
       </tran_glyph>
      </tran>
@@ -263,6 +264,38 @@ subscribe(POWER_OFF_SIG);</action>
     <code>: QActive(Q_STATE_CAST(&amp;Watchdog::initial)),
     watchdog_time_evt_(this, WATCHDOG_TIMEOUT_SIG, 0U)</code>
    </operation>
+   <statechart properties="0x00">
+    <initial target="../1">
+     <action>BSP::initializeWatchdog();
+subscribe(RESET_SIG);</action>
+     <initial_glyph conn="24,9,4,0,4">
+      <action box="0,-2,10,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="Feeding">
+     <entry brief="armWatchdogTimer(10Hz)">watchdog_time_evt_.armX(BSP::TICKS_PER_SEC/10, BSP::TICKS_PER_SEC/10);</entry>
+     <exit brief="disarmWatchdogTimer()">watchdog_time_evt_.disarm();</exit>
+     <tran trig="WATCHDOG_TIMEOUT">
+      <action brief="feedWatchdog()">BSP::feedWatchdog();</action>
+      <tran_glyph conn="18,26,3,-1,13">
+       <action box="0,-5,19,4"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="RESET" target="../../2">
+      <tran_glyph conn="26,31,2,0,8">
+       <action box="1,3,10,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="18,13,22,18">
+      <entry box="1,2,21,2"/>
+      <exit box="1,4,21,2"/>
+     </state_glyph>
+    </state>
+    <state name="Resetting">
+     <state_glyph node="18,39,22,12"/>
+    </state>
+    <state_diagram size="90,73"/>
+   </statechart>
   </class>
  </package>
  <package name="Shared" stereotype="0x00" namespace="CC::">
@@ -275,6 +308,9 @@ subscribe(POWER_OFF_SIG);</action>
   </attribute>
   <attribute name="AO_EthernetCommandInterface" type="QP::QActive * const" visibility="0x00" properties="0x00">
    <code>= &amp;EthernetCommandInterface::instance;</code>
+  </attribute>
+  <attribute name="AO_Watchdog" type="QP::QActive * const" visibility="0x00" properties="0x00">
+   <code>= &amp;Watchdog::instance;</code>
   </attribute>
  </package>
  <directory name=".">
@@ -290,12 +326,10 @@ namespace CC {
 enum ClusterControllerSignals {
 
     // commands from serial or ethernet interface
-    POWER_ON_SIG = QP::Q_USER_SIG,
+    RESET_SIG = QP::Q_USER_SIG,
+    POWER_ON_SIG,
     POWER_OFF_SIG,
     MAX_PUB_SIG,    // the last published signal
-
-    // bsp POST to Watchdog
-    RESET_SIG,
 
     // bsp POST to SerialCommandInterface
     ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
@@ -345,6 +379,9 @@ public:
     static void ledOff();
     static void ledOn();
 
+    static void initializeWatchdog();
+    static void feedWatchdog();
+
     static void initializeCluster();
 
     static void powerOff();
@@ -377,6 +414,8 @@ namespace CC
 {
 namespace constants
 {
+constexpr uint32_t watchdog_delay_ms = 500;
+
 // SPI Settings
 constexpr uint8_t spi_bit_order = MSBFIRST;
 constexpr uint8_t spi_data_mode = SPI_MODE0;
@@ -431,18 +470,23 @@ void setup() {
     QF::psInit(subscrSto, Q_DIM(subscrSto));
 
     // statically allocate event queues for the AOs and start them...
+    static QEvt const *watchdog_queueSto[2];
+    CC::AO_Watchdog-&gt;start(1U, // priority
+        watchdog_queueSto, Q_DIM(watchdog_queueSto),
+        (void *)0, 0U); // no stack
+
     static QEvt const *serial_command_interface_queueSto[10];
-    CC::AO_SerialCommandInterface-&gt;start(1U, // priority
+    CC::AO_SerialCommandInterface-&gt;start(2U, // priority
         serial_command_interface_queueSto, Q_DIM(serial_command_interface_queueSto),
         (void *)0, 0U); // no stack
 
     static QEvt const *ethernet_command_interface_queueSto[10];
-    CC::AO_EthernetCommandInterface-&gt;start(2U, // priority
+    CC::AO_EthernetCommandInterface-&gt;start(3U, // priority
         ethernet_command_interface_queueSto, Q_DIM(ethernet_command_interface_queueSto),
         (void *)0, 0U); // no stack
 
     static QEvt const *cluster_queueSto[10];
-    CC::AO_Cluster-&gt;start(3U, // priority
+    CC::AO_Cluster-&gt;start(4U, // priority
         cluster_queueSto, Q_DIM(cluster_queueSto),
         (void *)0, 0U); // no stack
 
@@ -491,6 +535,24 @@ $define${Shared::AO_EthernetCommandInterface}
 //============================================================================
 // generate definition of the AO
 $define${AOs::EthernetCommandInterface}</text>
+  </file>
+  <file name="Watchdog.cpp">
+   <text>#include &quot;ClusterController.hpp&quot;  // ClusterController application interface
+
+
+using namespace QP;
+
+//============================================================================
+// generate declaration of the active object
+$declare${AOs::Watchdog}
+
+//============================================================================
+// generate definition of to opaque pointer to the AO
+$define${Shared::AO_Watchdog}
+
+//============================================================================
+// generate definition of the AO
+$define${AOs::Watchdog}</text>
   </file>
  </directory>
 </model>

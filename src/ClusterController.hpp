@@ -27,12 +27,10 @@ namespace CC {
 enum ClusterControllerSignals {
 
     // commands from serial or ethernet interface
-    POWER_ON_SIG = QP::Q_USER_SIG,
+    RESET_SIG = QP::Q_USER_SIG,
+    POWER_ON_SIG,
     POWER_OFF_SIG,
     MAX_PUB_SIG,    // the last published signal
-
-    // bsp POST to Watchdog
-    RESET_SIG,
 
     // bsp POST to SerialCommandInterface
     ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
@@ -71,6 +69,7 @@ class CommandEvt : public QP::QEvt {};
 extern QP::QActive * const AO_Cluster;
 extern QP::QActive * const AO_SerialCommandInterface;
 extern QP::QActive * const AO_EthernetCommandInterface;
+extern QP::QActive * const AO_Watchdog;
 
 } // namespace CC
 //.$enddecl${Shared} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -29,6 +29,9 @@ public:
     static void ledOff();
     static void ledOn();
 
+    static void initializeWatchdog();
+    static void feedWatchdog();
+
     static void initializeCluster();
 
     static void powerOff();
