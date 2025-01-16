@@ -34,6 +34,7 @@ constexpr uint8_t spi_data_mode = SPI_MODE0;
 
 // Ethernet Settings
 constexpr uint8_t mac_address_size = 6;
+constexpr uint32_t server_port = 7777;
 
 // Conversions
 constexpr uint32_t MILLISECONDS_PER_SECOND = 1000;

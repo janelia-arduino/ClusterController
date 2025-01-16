@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <Ticker.h>
 #include <W5500lwIP.h>
+#include <WiFiUdp.h>
 #include "bsp.hpp"
 #include "ClusterController.hpp"
 
@@ -14,10 +15,6 @@ namespace constants
 {
 constexpr uint8_t led_pin = 25;
 constexpr uint8_t power_pin = 15;
-
-// Ethernet Communication Interface
-// constexpr IPAddress ip(192, 168, 10, 196);
-constexpr uint16_t port = 62222;
 
 // Serial Communication Interface
 HardwareSerial & SERIAL_COMMUNICATION_INTERFACE_STREAM = Serial;
@@ -54,12 +51,13 @@ static QEvt const serialReadyEvt = { CC::SERIAL_READY_SIG, 0U, 0U};
 static QEvt const ethernetInitializedEvt = { CC::ETHERNET_INITIALIZED_SIG, 0U, 0U};
 static QEvt const ethernetIPAddressFoundEvt = { CC::ETHERNET_IP_ADDRESS_FOUND_SIG, 0U, 0U};
 static QEvt const ethernetServerInitializedEvt = { CC::ETHERNET_SERVER_INITIALIZED_SIG, 0U, 0U};
-static QEvt const ethernetClientConnectedEvt = { CC::ETHERNET_CLIENT_CONNECTED_SIG, 0U, 0U};
+
 static CC::CommandEvt const resetEvt = { CC::RESET_SIG, 0U, 0U};
 static CC::CommandEvt const powerOnEvt = { CC::POWER_ON_SIG, 0U, 0U};
 static CC::CommandEvt const powerOffEvt = { CC::POWER_OFF_SIG, 0U, 0U};
 
 static Wiznet5500lwIP eth(17, SPI, 21);
+static WiFiServer server;
 
 //----------------------------------------------------------------------------
 // Local functions
@@ -207,51 +205,29 @@ void BSP::checkForEthernetIPAddress()
 {
   if (eth.connected())
   {
-    Serial.println("Ethernet connected!");
-    Serial.println("IP address: ");
-    Serial.println(eth.localIP());
+    CC::AO_EthernetCommandInterface->POST(&ethernetIPAddressFoundEvt, &l_TIMER_ID);
   }
-  else
-  {
-    Serial.println("Ethernet not connected!");
-  }
-  // IPAddress ip_address = Ethernet.localIP();
-  // if (ip_address)
-  // {
-  //   CC::AO_EthernetCommandInterface->POST(&ethernetIPAddressFoundEvt, &l_TIMER_ID);
-  // }
 }
 
 void BSP::beginEthernetServer()
 {
-  // Serial.println("beginEthernetServer()");
-  // IPAddress ip_address = Ethernet.localIP();
-  // Serial.println(ip_address);
-  // ethernet_server.begin();
-  // CC::AO_EthernetCommandInterface->POST(&ethernetServerInitializedEvt, &l_TIMER_ID);
-}
-
-void BSP::checkForEthernetClient()
-{
-  // ethernet_client = ethernet_server.available();
-  // if (ethernet_client)
-  // {
-  //   Serial.println("Ethernet client connected!");
-  //   CC::AO_EthernetCommandInterface->POST(&ethernetClientConnectedEvt, &l_TIMER_ID);
-  // }
-  // else
-  // {
-  //   Serial.print("No Ethernet client connected. ");
-  //   Serial.print("My IP address: ");
-  //   Serial.println(Ethernet.localIP());
-  // }
+  server.begin(CC::constants::server_port);
+  CC::AO_EthernetCommandInterface->POST(&ethernetServerInitializedEvt, &l_TIMER_ID);
 }
 
 void BSP::pollEthernetCommand()
 {
-  // print your local IP address:
-  // Serial.print("My IP address: ");
-  // Serial.println(Ethernet.localIP());
+  WiFiClient client = server.accept();
+  // while (client && client.available())
+  // {
+  //   char ch = static_cast<char>(client.read());
+  //   client.read()
+  //   String command = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readStringUntil('\n');
+  //   processCommandString(command);
+  // }
+  // {
+  //   Serial.write();
+  // }
 }
 
 //----------------------------------------------------------------------------

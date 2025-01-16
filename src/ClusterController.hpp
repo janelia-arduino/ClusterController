@@ -43,7 +43,6 @@ enum ClusterControllerSignals {
     ETHERNET_INITIALIZED_SIG,
     ETHERNET_IP_ADDRESS_FOUND_SIG,
     ETHERNET_SERVER_INITIALIZED_SIG,
-    ETHERNET_CLIENT_CONNECTED_SIG,
 
     WATCHDOG_TIMEOUT_SIG, // signal for Watchdog timeout event
     SERIAL_TIMEOUT_SIG, // signal for SerialCommandInterface timeout event
