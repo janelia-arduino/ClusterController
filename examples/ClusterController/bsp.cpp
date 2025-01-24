@@ -83,6 +83,10 @@ void processCommandString(String command)
   {
     QF::PUBLISH(&powerOffEvt, &l_TIMER_ID);
   }
+  else if (command.equalsIgnoreCase("GET_IP_ADDRESS"))
+  {
+    Serial.println(eth.localIP());
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -191,6 +195,7 @@ void BSP::initializeEthernet()
 
 void BSP::beginEthernet()
 {
+  IPAddress ip_address;
   if (eth.begin())
   {
     CC::AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_TIMER_ID);
