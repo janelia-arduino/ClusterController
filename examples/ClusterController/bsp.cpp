@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Ticker.h>
-#include <W5500lwIP.h>
+// #include <W5500lwIP.h>
+#include <EthernetCompat.h>
 #include <WiFiUdp.h>
 #include <TCA6408.h>
 
@@ -56,6 +57,7 @@ static QEvt const activateEthernetCommandInterfaceEvt = { CC::ACTIVATE_ETHERNET_
 static QEvt const deactivateSerialCommandInterfaceEvt = { CC::DEACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const deactivateEthernetCommandInterfaceEvt = { CC::DEACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const serialReadyEvt = { CC::SERIAL_READY_SIG, 0U, 0U};
+
 static QEvt const ethernetInitializedEvt = { CC::ETHERNET_INITIALIZED_SIG, 0U, 0U};
 static QEvt const ethernetIPAddressFoundEvt = { CC::ETHERNET_IP_ADDRESS_FOUND_SIG, 0U, 0U};
 static QEvt const ethernetServerInitializedEvt = { CC::ETHERNET_SERVER_INITIALIZED_SIG, 0U, 0U};
@@ -64,7 +66,8 @@ static CC::CommandEvt const resetEvt = { CC::RESET_SIG, 0U, 0U};
 static CC::CommandEvt const powerOnEvt = { CC::POWER_ON_SIG, 0U, 0U};
 static CC::CommandEvt const powerOffEvt = { CC::POWER_OFF_SIG, 0U, 0U};
 
-static Wiznet5500lwIP eth(17, SPI, 21);
+// static Wiznet5500lwIP eth(17, SPI, 21);
+static ArduinoWiznet5500lwIP Ethernet(17, SPI, 21);
 static WiFiServer server;
 static TwoWire & wire = Wire1;
 static TCA6408 tca6408;
@@ -93,9 +96,17 @@ void processCommandString(String command)
   {
     QF::PUBLISH(&powerOffEvt, &l_TIMER_ID);
   }
+  else if (command.equalsIgnoreCase("EHS"))
+  {
+    Serial.println(Ethernet.hardwareStatus());
+  }
+  else if (command.equalsIgnoreCase("ELS"))
+  {
+    Serial.println(Ethernet.linkStatus());
+  }
   else if (command.equalsIgnoreCase("GET_IP_ADDRESS"))
   {
-    Serial.println(eth.localIP());
+    Serial.println(Ethernet.localIP());
   }
   else if (command.equalsIgnoreCase("GET_CLUSTER_ADDRESS"))
   {
@@ -168,7 +179,7 @@ void BSP::initializeCluster()
   tca6408.attachInterrupt(CC::constants::cluster_address_interrupt_pin, addressInterruptCallback);
 }
 
-uint8_t BSP::readAddress()
+uint8_t BSP::readClusterAddress()
 {
   return tca6408.readInputRegister();
 }
@@ -227,34 +238,48 @@ void BSP::initializeEthernet()
 
 void BSP::beginEthernet()
 {
-  IPAddress ip_address;
-  if (eth.begin())
+  uint8_t cluster_address = readClusterAddress();
+  uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, cluster_address };
+  IPAddress ip(192, 168, 10, cluster_address);
+
+  if (Ethernet.begin(mac, ip))
   {
     CC::AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_TIMER_ID);
   }
   else
   {
-    Serial.println("No wired Ethernet hardware detected. Check pinouts, wiring.");
+    if (not Ethernet.hardwareStatus())
+    {
+      Serial.println("No Ethernet hardware detected. Check pinouts, wiring.");
+    }
+    else if (not Ethernet.linkStatus())
+    {
+      Serial.println("No Ethernet link detected. Check cable connections.");
+    }
+    else
+    {
+      Serial.println("Ethernet not initialized with mac and IP address.");
+    }
   }
 }
 
 void BSP::checkForEthernetIPAddress()
 {
-  if (eth.connected())
-  {
-    CC::AO_EthernetCommandInterface->POST(&ethernetIPAddressFoundEvt, &l_TIMER_ID);
-  }
+  // if (eth.connected())
+  // {
+  //   CC::AO_EthernetCommandInterface->POST(&ethernetIPAddressFoundEvt, &l_TIMER_ID);
+  // }
 }
 
 void BSP::beginEthernetServer()
 {
-  server.begin(CC::constants::server_port);
-  CC::AO_EthernetCommandInterface->POST(&ethernetServerInitializedEvt, &l_TIMER_ID);
+  // server.begin(CC::constants::server_port);
+  // CC::AO_EthernetCommandInterface->POST(&ethernetServerInitializedEvt, &l_TIMER_ID);
 }
 
 void BSP::pollEthernetCommand()
 {
-  WiFiClient client = server.accept();
+  // WiFiClient client = server.accept();
   // while (client && client.available())
   // {
   //   char ch = static_cast<char>(client.read());

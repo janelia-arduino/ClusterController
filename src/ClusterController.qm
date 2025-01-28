@@ -23,7 +23,6 @@ This structure of the code is recommended for applications with only one active 
    <attribute name="instance" type="Cluster" visibility="0x00" properties="0x01">
     <documentation>static class instance (Singleton)</documentation>
    </attribute>
-   <attribute name="address_" type="QP::QHsm *" visibility="0x02" properties="0x00"/>
    <operation name="Cluster" type="" visibility="0x00" properties="0x00">
     <code>: QActive(Q_STATE_CAST(&amp;Cluster::initial))</code>
    </operation>
@@ -38,8 +37,7 @@ subscribe(POWER_OFF_SIG);</action>
      </initial_glyph>
     </initial>
     <state name="ClusterOn">
-     <entry brief="activateCommandInterfaces()">BSP::activateCommandInterfaces();
-BSP::readAddress();</entry>
+     <entry brief="activateCommandInterfaces()">BSP::activateCommandInterfaces();</entry>
      <exit brief="deactivateCommandInterfaces()">BSP::deactivateCommandInterfaces();</exit>
      <initial target="../4">
       <initial_glyph conn="60,20,4,0,3">
@@ -169,7 +167,7 @@ BSP::readAddress();</entry>
      <entry brief="armEthernetTimer(1Hz)">ethernet_time_evt_.armX(BSP::TICKS_PER_SEC/1, BSP::TICKS_PER_SEC/1);</entry>
      <exit brief="disarmEthernetTimer()">ethernet_time_evt_.disarm();</exit>
      <initial target="../2">
-      <initial_glyph conn="11,28,5,3,3">
+      <initial_glyph conn="12,29,5,3,3">
        <action box="0,-2,10,2"/>
       </initial_glyph>
      </initial>
@@ -180,56 +178,56 @@ BSP::readAddress();</entry>
      </tran>
      <state name="Unintitalized">
       <tran trig="ETHERNET_INITIALIZED" target="../../5">
-       <tran_glyph conn="42,28,1,3,13">
-        <action box="-3,-7,19,2"/>
+       <tran_glyph conn="43,29,1,3,20">
+        <action box="1,-3,19,2"/>
        </tran_glyph>
       </tran>
       <tran trig="ETHERNET_TIMEOUT">
        <action brief="beginEthernet()">BSP::beginEthernet();</action>
-       <tran_glyph conn="14,31,3,-1,18">
+       <tran_glyph conn="15,32,3,-1,18">
         <action box="0,-2,18,5"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="14,24,28,10"/>
+      <state_glyph node="15,25,28,10"/>
      </state>
      <state name="IPAddressFound">
       <tran trig="ETHERNET_SERVER_INITIALIZED" target="../../4">
-       <tran_glyph conn="46,41,1,0,4,8">
+       <tran_glyph conn="47,43,1,0,4,9">
         <action box="5,2,27,2"/>
        </tran_glyph>
       </tran>
       <tran trig="ETHERNET_TIMEOUT">
        <action brief="beginEthernetServer()">BSP::beginEthernetServer();</action>
-       <tran_glyph conn="14,43,3,-1,18">
+       <tran_glyph conn="15,45,3,-1,18">
         <action box="0,-2,18,4"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="14,36,32,11"/>
+      <state_glyph node="15,38,32,11"/>
      </state>
      <state name="ServerRunning">
       <tran trig="ETHERNET_TIMEOUT">
        <action brief="pollEthernetCommand()">BSP::pollEthernetCommand();</action>
-       <tran_glyph conn="14,54,3,-1,23">
+       <tran_glyph conn="15,57,3,-1,23">
         <action box="0,-2,19,4"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="14,49,42,11"/>
+      <state_glyph node="15,52,42,11"/>
      </state>
      <state name="WaitingForIPAddress">
       <tran trig="ETHERNET_TIMEOUT">
        <action brief="checkForIPAddress()">BSP::checkForEthernetIPAddress();</action>
-       <tran_glyph conn="55,31,3,-1,18">
+       <tran_glyph conn="63,32,3,-1,18">
         <action box="0,-2,17,4"/>
        </tran_glyph>
       </tran>
       <tran trig="ETHERNET_IP_ADDRESS_FOUND" target="../../3">
-       <tran_glyph conn="80,28,1,1,13,10,-47">
+       <tran_glyph conn="82,29,1,1,13,11,-48">
         <action box="0,-2,28,3"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="55,24,25,10"/>
+      <state_glyph node="63,25,19,10"/>
      </state>
-     <state_glyph node="8,16,99,50">
+     <state_glyph node="8,16,99,59">
       <entry box="1,2,24,2"/>
       <exit box="1,4,24,2"/>
      </state_glyph>
@@ -363,7 +361,7 @@ public:
 
     static void initializeCluster();
 
-    static uint8_t readAddress();
+    static uint8_t readClusterAddress();
 
     static void powerOff();
     static void powerOn();
