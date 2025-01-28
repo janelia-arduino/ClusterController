@@ -34,6 +34,8 @@ public:
 
     static void initializeCluster();
 
+    static uint8_t readAddress();
+
     static void powerOff();
     static void powerOn();
 

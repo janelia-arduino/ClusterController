@@ -31,6 +31,9 @@ class Cluster : public QP::QActive {
 public:
     static Cluster instance;
 
+private:
+    QP::QHsm * address_;
+
 public:
     Cluster();
 
@@ -89,6 +92,7 @@ Q_STATE_DEF(Cluster, ClusterOn) {
         //.${AOs::Cluster::SM::ClusterOn}
         case Q_ENTRY_SIG: {
             BSP::activateCommandInterfaces();
+            BSP::readAddress();
             status_ = Q_RET_HANDLED;
             break;
         }

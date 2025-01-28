@@ -3,6 +3,8 @@
 #include <Ticker.h>
 #include <W5500lwIP.h>
 #include <WiFiUdp.h>
+#include <TCA6408.h>
+
 #include "bsp.hpp"
 #include "ClusterController.hpp"
 
@@ -25,7 +27,13 @@ constexpr uint16_t SERIAL_COMMUNICATION_INTERFACE_TIMEOUT = 100;
 // SPI Settings
 constexpr uint32_t spi_clock_speed = 5000000;
 
-constexpr uint8_t reset_pin = 34;
+// Wire settings
+constexpr uint8_t sda_pin = 26;
+constexpr uint8_t scl_pin = 27;
+
+constexpr uint8_t cluster_address_reset_pin = 0;
+constexpr uint8_t cluster_address_interrupt_pin = 1;
+constexpr TCA6408::DeviceAddress cluster_address_device_address = TCA6408::DEVICE_ADDRESS_0;
 
 } // namespace constants
 } // namespace CC
@@ -58,6 +66,8 @@ static CC::CommandEvt const powerOffEvt = { CC::POWER_OFF_SIG, 0U, 0U};
 
 static Wiznet5500lwIP eth(17, SPI, 21);
 static WiFiServer server;
+static TwoWire & wire = Wire1;
+static TCA6408 tca6408;
 
 //----------------------------------------------------------------------------
 // Local functions
@@ -87,6 +97,15 @@ void processCommandString(String command)
   {
     Serial.println(eth.localIP());
   }
+  else if (command.equalsIgnoreCase("GET_CLUSTER_ADDRESS"))
+  {
+    Serial.println(tca6408.readInputRegister());
+  }
+}
+
+void addressInterruptCallback()
+{
+  // CC::AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_TIMER_ID);
 }
 
 //----------------------------------------------------------------------------
@@ -139,6 +158,19 @@ void BSP::initializeCluster()
 {
   pinMode(CC::constants::power_pin, OUTPUT);
   powerOff();
+
+  wire.setSDA(CC::constants::sda_pin);
+  wire.setSCL(CC::constants::scl_pin);
+
+  tca6408.setup(wire, CC::constants::cluster_address_device_address);
+  tca6408.setResetPin(CC::constants::cluster_address_reset_pin);
+
+  tca6408.attachInterrupt(CC::constants::cluster_address_interrupt_pin, addressInterruptCallback);
+}
+
+uint8_t BSP::readAddress()
+{
+  return tca6408.readInputRegister();
 }
 
 void BSP::powerOff()

@@ -23,6 +23,7 @@ This structure of the code is recommended for applications with only one active 
    <attribute name="instance" type="Cluster" visibility="0x00" properties="0x01">
     <documentation>static class instance (Singleton)</documentation>
    </attribute>
+   <attribute name="address_" type="QP::QHsm *" visibility="0x02" properties="0x00"/>
    <operation name="Cluster" type="" visibility="0x00" properties="0x00">
     <code>: QActive(Q_STATE_CAST(&amp;Cluster::initial))</code>
    </operation>
@@ -37,7 +38,8 @@ subscribe(POWER_OFF_SIG);</action>
      </initial_glyph>
     </initial>
     <state name="ClusterOn">
-     <entry brief="activateCommandInterfaces()">BSP::activateCommandInterfaces();</entry>
+     <entry brief="activateCommandInterfaces()">BSP::activateCommandInterfaces();
+BSP::readAddress();</entry>
      <exit brief="deactivateCommandInterfaces()">BSP::deactivateCommandInterfaces();</exit>
      <initial target="../4">
       <initial_glyph conn="60,20,4,0,3">
@@ -360,6 +362,8 @@ public:
     static void feedWatchdog();
 
     static void initializeCluster();
+
+    static uint8_t readAddress();
 
     static void powerOff();
     static void powerOn();
