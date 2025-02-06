@@ -59,7 +59,6 @@ static QEvt const deactivateEthernetCommandInterfaceEvt = { CC::DEACTIVATE_ETHER
 static QEvt const serialReadyEvt = { CC::SERIAL_READY_SIG, 0U, 0U};
 
 static QEvt const ethernetInitializedEvt = { CC::ETHERNET_INITIALIZED_SIG, 0U, 0U};
-static QEvt const ethernetIPAddressFoundEvt = { CC::ETHERNET_IP_ADDRESS_FOUND_SIG, 0U, 0U};
 static QEvt const ethernetServerInitializedEvt = { CC::ETHERNET_SERVER_INITIALIZED_SIG, 0U, 0U};
 
 static CC::CommandEvt const resetEvt = { CC::RESET_SIG, 0U, 0U};
@@ -263,17 +262,9 @@ void BSP::beginEthernet()
   }
 }
 
-void BSP::checkForEthernetIPAddress()
-{
-  // if (eth.connected())
-  // {
-  //   CC::AO_EthernetCommandInterface->POST(&ethernetIPAddressFoundEvt, &l_TIMER_ID);
-  // }
-}
-
 void BSP::beginEthernetServer()
 {
-  // server.begin(CC::constants::server_port);
+  server.begin(CC::constants::server_port);
   // CC::AO_EthernetCommandInterface->POST(&ethernetServerInitializedEvt, &l_TIMER_ID);
 }
 

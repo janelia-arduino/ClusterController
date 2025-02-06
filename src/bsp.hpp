@@ -47,7 +47,6 @@ public:
 
     static void initializeEthernet();
     static void beginEthernet();
-    static void checkForEthernetIPAddress();
     static void beginEthernetServer();
     static void pollEthernetCommand();
 };

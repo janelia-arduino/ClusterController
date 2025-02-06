@@ -9,17 +9,17 @@
   <item name="backups">0</item>
  </group>
  <group name="windows">
-  <item id="AOs::Watchdog::SM">-4,0,640,480</item>
-  <item id="AOs::Cluster::SM">0,33,871,625</item>
-  <item id="AOs::SerialCommandInterface::SM">-235,33,871,625</item>
-  <item id="AOs::EthernetCommandInterface::SM">0,0,1050,625</item>
-  <item id="./ClusterController::ClusterController.cpp">-238,0,874,625</item>
-  <item id=".::bsp.hpp">0,0,1002,625,*</item>
-  <item id=".::ClusterController.hpp">0,33,1050,625</item>
-  <item id=".::Constants.hpp">-414,0,1050,821</item>
-  <item id="./ClusterController::Watchdog.cpp">0,358,596,300</item>
-  <item id="./ClusterController::EthernetCommandInterface.cpp">0,0,596,300</item>
-  <item id="./ClusterController::Cluster.cpp">40,358,596,300</item>
+  <item id="AOs::Watchdog::SM">0,0,640,480</item>
+  <item id="AOs::Cluster::SM">131,33,871,625</item>
+  <item id="AOs::SerialCommandInterface::SM">0,0,871,625</item>
+  <item id="AOs::EthernetCommandInterface::SM">-48,33,1050,625</item>
+  <item id="./ClusterController::ClusterController.cpp">128,0,874,625</item>
+  <item id=".::bsp.hpp">0,33,1002,625</item>
+  <item id=".::ClusterController.hpp">0,0,1050,625</item>
+  <item id=".::Constants.hpp">0,0,1002,625,*</item>
+  <item id="./ClusterController::Watchdog.cpp">406,358,596,300</item>
+  <item id="./ClusterController::EthernetCommandInterface.cpp">406,0,596,300</item>
+  <item id="./ClusterController::Cluster.cpp">0,358,596,300</item>
  </group>
  <group name="search">
   <item name="options">2032128</item>
