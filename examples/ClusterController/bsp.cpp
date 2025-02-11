@@ -1,9 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Ticker.h>
-// #include <W5500lwIP.h>
 #include <EthernetCompat.h>
-#include <WiFiUdp.h>
 #include <TCA6408.h>
 
 #include "bsp.hpp"
@@ -65,7 +63,6 @@ static CC::CommandEvt const resetEvt = { CC::RESET_SIG, 0U, 0U};
 static CC::CommandEvt const powerOnEvt = { CC::POWER_ON_SIG, 0U, 0U};
 static CC::CommandEvt const powerOffEvt = { CC::POWER_OFF_SIG, 0U, 0U};
 
-// static Wiznet5500lwIP eth(17, SPI, 21);
 static ArduinoWiznet5500lwIP Ethernet(17, SPI, 21);
 static WiFiServer server;
 static TwoWire & wire = Wire1;
@@ -73,8 +70,18 @@ static TCA6408 tca6408;
 
 //----------------------------------------------------------------------------
 // Local functions
-void processCommandString(String command)
+String ipAddressToString(const IPAddress& ipAddress)
 {
+  return String(ipAddress[0]) + String(".") +\
+  String(ipAddress[1]) + String(".") +\
+  String(ipAddress[2]) + String(".") +\
+  String(ipAddress[3]);
+}
+
+String processCommandString(String command)
+{
+  command.trim();
+  String response = command;
   if (command.equalsIgnoreCase("RESET"))
   {
     QF::PUBLISH(&resetEvt, &l_TIMER_ID);
@@ -97,20 +104,27 @@ void processCommandString(String command)
   }
   else if (command.equalsIgnoreCase("EHS"))
   {
-    Serial.println(Ethernet.hardwareStatus());
+    response = String(Ethernet.hardwareStatus());
   }
   else if (command.equalsIgnoreCase("ELS"))
   {
-    Serial.println(Ethernet.linkStatus());
+    response = String(Ethernet.linkStatus());
   }
   else if (command.equalsIgnoreCase("GET_IP_ADDRESS"))
   {
-    Serial.println(Ethernet.localIP());
+    response = ipAddressToString(Ethernet.localIP());
   }
   else if (command.equalsIgnoreCase("GET_CLUSTER_ADDRESS"))
   {
-    Serial.println(tca6408.readInputRegister());
+    response = String(tca6408.readInputRegister());
   }
+  else if (command.equalsIgnoreCase("GET_ADDRESSES"))
+  {
+    response = String(tca6408.readInputRegister());
+    response.concat(" ");
+    response.concat(ipAddressToString(Ethernet.localIP()));
+  }
+  return response;
 }
 
 void addressInterruptCallback()
@@ -223,7 +237,8 @@ void BSP::pollSerialCommand()
   if (CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.available() > 0)
   {
     String command = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readStringUntil('\n');
-    processCommandString(command);
+    String response = processCommandString(command);
+    Serial.print(response);
   }
 }
 
@@ -239,9 +254,10 @@ void BSP::beginEthernet()
 {
   uint8_t cluster_address = readClusterAddress();
   uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, cluster_address };
-  IPAddress ip(192, 168, 10, cluster_address);
+  // IPAddress ip(192, 168, 10, cluster_address);
 
-  if (Ethernet.begin(mac, ip))
+  // if (Ethernet.begin(mac, ip))
+  if (Ethernet.begin(mac))
   {
     CC::AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_TIMER_ID);
   }
@@ -265,22 +281,18 @@ void BSP::beginEthernet()
 void BSP::beginEthernetServer()
 {
   server.begin(CC::constants::server_port);
-  // CC::AO_EthernetCommandInterface->POST(&ethernetServerInitializedEvt, &l_TIMER_ID);
+  CC::AO_EthernetCommandInterface->POST(&ethernetServerInitializedEvt, &l_TIMER_ID);
 }
 
 void BSP::pollEthernetCommand()
 {
-  // WiFiClient client = server.accept();
-  // while (client && client.available())
-  // {
-  //   char ch = static_cast<char>(client.read());
-  //   client.read()
-  //   String command = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readStringUntil('\n');
-  //   processCommandString(command);
-  // }
-  // {
-  //   Serial.write();
-  // }
+  WiFiClient client = server.accept();
+  if (client && client.available())
+  {
+    String command = client.readStringUntil('\n');
+    String response = processCommandString(command);
+    client.write(response.c_str());
+  }
 }
 
 //----------------------------------------------------------------------------
