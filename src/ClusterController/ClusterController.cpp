@@ -16,49 +16,19 @@
 // for more details.
 //
 //.$endhead${./ClusterControl~::ClusterController.cpp} ^^^^^^^^^^^^^^^^^^^^^^^
-#include "ClusterController.hpp"  // ClusterController application interface
+#include "ClusterController.hpp"
 
 using namespace QP;
 
-namespace ArduinoInterface {
-
-//............................................................................
-void setup() {
-
-    QF::init(); // initialize the framework
-    BSP::init(); // initialize the BSP
-
-    // init publish-subscribe
-    static QSubscrList subscrSto[CC::MAX_PUB_SIG];
-    QF::psInit(subscrSto, Q_DIM(subscrSto));
-
-    // statically allocate event queues for the AOs and start them...
-    static QEvt const *watchdog_queueSto[2];
-    CC::AO_Watchdog->start(1U, // priority
-        watchdog_queueSto, Q_DIM(watchdog_queueSto),
-        (void *)0, 0U); // no stack
-
-    static QEvt const *serial_command_interface_queueSto[10];
-    CC::AO_SerialCommandInterface->start(2U, // priority
-        serial_command_interface_queueSto, Q_DIM(serial_command_interface_queueSto),
-        (void *)0, 0U); // no stack
-
-    static QEvt const *ethernet_command_interface_queueSto[10];
-    CC::AO_EthernetCommandInterface->start(3U, // priority
-        ethernet_command_interface_queueSto, Q_DIM(ethernet_command_interface_queueSto),
-        (void *)0, 0U); // no stack
-
-    static QEvt const *cluster_queueSto[10];
-    CC::AO_Cluster->start(4U, // priority
-        cluster_queueSto, Q_DIM(cluster_queueSto),
-        (void *)0, 0U); // no stack
-
-   //...
+namespace ArduinoInterface
+{
+void setup()
+{
+  FSP::ClusterController_setup();
 }
 
-//............................................................................
-void loop() {
-    QF::run(); // run the QF/C++ framework
+void loop()
+{
+  QF::run();
 }
-
-} // namespace AC
+}

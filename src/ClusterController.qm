@@ -28,17 +28,14 @@ This structure of the code is recommended for applications with only one active 
    </operation>
    <statechart properties="0x00">
     <initial target="../1">
-     <action>BSP::initializeCluster();
-subscribe(RESET_SIG);
-subscribe(POWER_ON_SIG);
-subscribe(POWER_OFF_SIG);</action>
+     <action brief="initializeAndSubscribe()">FSP::Cluster_initializeAndSubscribe(this, e);</action>
      <initial_glyph conn="49,10,4,0,4">
-      <action box="-1,-1,10,2"/>
+      <action box="1,0,21,2"/>
      </initial_glyph>
     </initial>
     <state name="ClusterOn">
-     <entry brief="activateCommandInterfaces()">BSP::activateCommandInterfaces();</entry>
-     <exit brief="deactivateCommandInterfaces()">BSP::deactivateCommandInterfaces();</exit>
+     <entry brief="activateCommandInterfaces()">FSP::Cluster_activateCommandInterfaces(this, e);</entry>
+     <exit brief="deactivateCommandInterfaces()">FSP::Cluster_deactivateCommandInterfaces(this, e);</exit>
      <initial target="../4">
       <initial_glyph conn="60,20,4,0,3">
        <action box="0,-2,10,2"/>
@@ -55,13 +52,13 @@ subscribe(POWER_OFF_SIG);</action>
       </tran_glyph>
      </tran>
      <state name="PowerOn">
-      <entry brief="powerOn()">BSP::powerOn();</entry>
+      <entry brief="powerOn()">FSP::Cluster_powerOn(this, e);</entry>
       <state_glyph node="42,32,25,6">
        <entry box="1,2,20,2"/>
       </state_glyph>
      </state>
      <state name="PowerOff">
-      <entry brief="PowerOff()">BSP::powerOff();</entry>
+      <entry brief="PowerOff()">FSP::Cluster_powerOff(this, e);</entry>
       <tran trig="POWER_ON" target="../../3">
        <tran_glyph conn="54,28,2,0,4">
         <action box="2,1,10,2"/>
@@ -88,8 +85,9 @@ subscribe(POWER_OFF_SIG);</action>
    </operation>
    <statechart properties="0x00">
     <initial target="../2">
+     <action brief="subscribe()">FSP::SerialCommandInterface_subscribe(this, e);</action>
      <initial_glyph conn="46,8,4,0,3">
-      <action box="0,-2,10,2"/>
+      <action box="1,0,12,2"/>
      </initial_glyph>
     </initial>
     <state name="Active">
@@ -104,7 +102,7 @@ subscribe(POWER_OFF_SIG);</action>
       </tran_glyph>
      </tran>
      <state name="NotReady">
-      <entry brief="beginSerial()">BSP::beginSerial();</entry>
+      <entry brief="beginSerial()">FSP::SerialCommandInterface_beginSerial(this, e);</entry>
       <tran trig="SERIAL_READY" target="../../3">
        <tran_glyph conn="49,34,1,1,14,11,-5">
         <action box="0,-2,13,2"/>
@@ -115,10 +113,10 @@ subscribe(POWER_OFF_SIG);</action>
       </state_glyph>
      </state>
      <state name="Ready">
-      <entry brief="armSerialTimer(50Hz)">serial_time_evt_.armX(BSP::TICKS_PER_SEC/2, BSP::TICKS_PER_SEC/50);</entry>
-      <exit brief="disarmSerialTimer()">serial_time_evt_.disarm();</exit>
+      <entry brief="armSerialTimer()">FSP::SerialCommandInterface_armSerialTimer(this, e);</entry>
+      <exit brief="disarmSerialTimer()">FSP::SerialCommandInterface_disarmSerialTimer(this, e);</exit>
       <tran trig="SERIAL_TIMEOUT">
-       <action brief="pollSerialCommand()">BSP::pollSerialCommand();</action>
+       <action brief="pollSerialCommand()">FSP::SerialCommandInterface_pollSerialCommand(this, e);</action>
        <tran_glyph conn="27,53,3,-1,16">
         <action box="0,-2,24,4"/>
        </tran_glyph>
@@ -150,9 +148,9 @@ subscribe(POWER_OFF_SIG);</action>
    </operation>
    <statechart properties="0x00">
     <initial target="../1">
-     <action>BSP::initializeEthernet();</action>
+     <action brief="initializeAndSubscribe()">FSP::EthernetCommandInterface_initializeAndSubscribe(this, e);</action>
      <initial_glyph conn="55,2,4,0,3">
-      <action box="0,-2,10,2"/>
+      <action box="1,0,18,2"/>
      </initial_glyph>
     </initial>
     <state name="Inactive">
@@ -164,8 +162,8 @@ subscribe(POWER_OFF_SIG);</action>
      <state_glyph node="49,5,14,9"/>
     </state>
     <state name="Active">
-     <entry brief="armEthernetTimer(1Hz)">ethernet_time_evt_.armX(BSP::TICKS_PER_SEC/1, BSP::TICKS_PER_SEC/1);</entry>
-     <exit brief="disarmEthernetTimer()">ethernet_time_evt_.disarm();</exit>
+     <entry brief="armEthernetTimer()">FSP::EthernetCommandInterface_armEthernetTimer(this, e);</entry>
+     <exit brief="disarmEthernetTimer()">FSP::EthernetCommandInterface_disarmEthernetTimer(this, e);</exit>
      <initial target="../2">
       <initial_glyph conn="12,29,5,3,3">
        <action box="0,-2,10,2"/>
@@ -183,7 +181,7 @@ subscribe(POWER_OFF_SIG);</action>
        </tran_glyph>
       </tran>
       <tran trig="ETHERNET_TIMEOUT">
-       <action brief="beginEthernet()">BSP::beginEthernet();</action>
+       <action brief="beginEthernet()">FSP::EthernetCommandInterface_beginEthernet(this, e);</action>
        <tran_glyph conn="15,32,3,-1,18">
         <action box="0,-2,18,5"/>
        </tran_glyph>
@@ -197,7 +195,7 @@ subscribe(POWER_OFF_SIG);</action>
        </tran_glyph>
       </tran>
       <tran trig="ETHERNET_TIMEOUT">
-       <action brief="beginEthernetServer()">BSP::beginEthernetServer();</action>
+       <action brief="beginServer()">FSP::EthernetCommandInterface_beginServer(this, e);</action>
        <tran_glyph conn="15,45,3,-1,18">
         <action box="0,-2,18,4"/>
        </tran_glyph>
@@ -206,7 +204,7 @@ subscribe(POWER_OFF_SIG);</action>
      </state>
      <state name="ServerRunning">
       <tran trig="ETHERNET_TIMEOUT">
-       <action brief="pollEthernetCommand()">BSP::pollEthernetCommand();</action>
+       <action brief="pollEthernetCommand()">FSP::EthernetCommandInterface_pollEthernetCommand(this, e);</action>
        <tran_glyph conn="15,57,3,-1,23">
         <action box="0,-2,19,4"/>
        </tran_glyph>
@@ -230,17 +228,16 @@ subscribe(POWER_OFF_SIG);</action>
    </operation>
    <statechart properties="0x00">
     <initial target="../1">
-     <action>BSP::initializeWatchdog();
-subscribe(RESET_SIG);</action>
+     <action brief="initializeAndSubscribe()">FSP::Watchdog_initializeAndSubscribe(this, e);</action>
      <initial_glyph conn="24,9,4,0,4">
-      <action box="0,-2,10,2"/>
+      <action box="1,1,18,2"/>
      </initial_glyph>
     </initial>
     <state name="Feeding">
-     <entry brief="armWatchdogTimer(10Hz)">watchdog_time_evt_.armX(BSP::TICKS_PER_SEC/10, BSP::TICKS_PER_SEC/10);</entry>
-     <exit brief="disarmWatchdogTimer()">watchdog_time_evt_.disarm();</exit>
+     <entry brief="armWatchdogTimer()">FSP::Watchdog_armWatchdogTimer(this, e);</entry>
+     <exit brief="disarmWatchdogTimer()">FSP::Watchdog_disarmWatchdogTimer(this, e);</exit>
      <tran trig="WATCHDOG_TIMEOUT">
-      <action brief="feedWatchdog()">BSP::feedWatchdog();</action>
+      <action brief="feedWatchdog()">FSP::Watchdog_feedWatchdog(this, e);</action>
       <tran_glyph conn="18,26,3,-1,13">
        <action box="0,-5,19,4"/>
       </tran_glyph>
@@ -282,130 +279,79 @@ subscribe(RESET_SIG);</action>
    <text>#ifndef CLUSTER_CONTROLLER_HPP
 #define CLUSTER_CONTROLLER_HPP
 
-#include &quot;qpcpp.hpp&quot;   // QP-C++ framework
-#include &quot;bsp.hpp&quot;
+#include &quot;qpcpp.hpp&quot;
+#include &quot;fsp.hpp&quot;
 
-namespace CC {
 
-enum ClusterControllerSignals {
-
-    // commands from serial or ethernet interface
-    RESET_SIG = QP::Q_USER_SIG,
-    POWER_ON_SIG,
-    POWER_OFF_SIG,
-    MAX_PUB_SIG,    // the last published signal
-
-    // bsp POST to SerialCommandInterface
-    ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
-    DEACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
-    SERIAL_READY_SIG,
-
-    // bsp POST to EthernetCommandInterface
-    ACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG,
-    DEACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG,
-    ETHERNET_INITIALIZED_SIG,
-    ETHERNET_SERVER_INITIALIZED_SIG,
-
-    WATCHDOG_TIMEOUT_SIG, // signal for Watchdog timeout event
-    SERIAL_TIMEOUT_SIG, // signal for SerialCommandInterface timeout event
-    ETHERNET_TIMEOUT_SIG, // signal for EthernetCommandInterface timeout event
-
-    MAX_SIG         // the last signal
-};
-
-} // namespace CC
-
-namespace ArduinoInterface {
-
+namespace ArduinoInterface
+{
 void setup();
 void loop();
-
-} // namespace ArduinoInterface
+}
 
 $declare${Shared}
 
-#endif // CLUSTER_CONTROLLER_HPP
-   </text>
+#endif</text>
   </file>
-  <file name="bsp.hpp">
-   <text>#ifndef BSP_HPP
-#define BSP_HPP
-#include &quot;Constants.hpp&quot;
+  <file name="Cluster.hpp">
+   <text>#ifndef CLUSTER_HPP
+#define CLUSTER_HPP
 
-class BSP {
-public:
-    enum { TICKS_PER_SEC = 100} ;
+#include &quot;ClusterController.hpp&quot;
 
-    static void init();
-
-    static void ledOff();
-    static void ledOn();
-
-    static void initializeWatchdog();
-    static void feedWatchdog();
-
-    static void initializeCluster();
-
-    static uint8_t readClusterAddress();
-
-    static void powerOff();
-    static void powerOn();
-
-    static void activateCommandInterfaces();
-    static void deactivateCommandInterfaces();
-
-    static void beginSerial();
-    static void pollSerialCommand();
-
-    static void initializeEthernet();
-    static void beginEthernet();
-    static void beginEthernetServer();
-    static void pollEthernetCommand();
-};
-
-#endif // BSP_HPP</text>
-  </file>
-  <file name="Constants.hpp">
-   <text>#ifndef CLUSTER_CONTROLLER_CONSTANTS_HPP
-#define CLUSTER_CONTROLLER_CONSTANTS_HPP
-
-#include &lt;SPI.h&gt;
-
-
-namespace CC
-{
-namespace constants
-{
-constexpr uint32_t watchdog_delay_ms = 500;
-
-// SPI Settings
-constexpr uint8_t spi_bit_order = MSBFIRST;
-constexpr uint8_t spi_data_mode = SPI_MODE0;
-
-// Ethernet Settings
-constexpr uint8_t mac_address_size = 6;
-constexpr uint32_t server_port = 7777;
-
-// Conversions
-constexpr uint32_t MILLISECONDS_PER_SECOND = 1000;
-constexpr uint32_t MICROSECONDS_PER_SECOND = 1000000;
-
-}
-}
-#endif
-</text>
-  </file>
- </directory>
- <directory name="./ClusterController">
-  <file name="Cluster.cpp">
-   <text>#include &quot;ClusterController.hpp&quot;  // ClusterController application interface
-
-
-using namespace QP;
 
 //============================================================================
 // generate declaration of the active object
 $declare${AOs::Cluster}
+
+#endif</text>
+  </file>
+  <file name="SerialCommandInterface.hpp">
+   <text>#ifndef SERIAL_COMMAND_INTERFACE_HPP
+#define SERIAL_COMMAND_INTERFACE_HPP
+
+#include &quot;ClusterController.hpp&quot;
+
+
+//============================================================================
+// generate declaration of the active object
+$declare${AOs::SerialCommandInterface}
+
+#endif</text>
+  </file>
+  <file name="EthernetCommandInterface.hpp">
+   <text>#ifndef ETHERNET_COMMAND_INTERFACE_HPP
+#define ETHERNET_COMMAND_INTERFACE_HPP
+
+#include &quot;ClusterController.hpp&quot;
+
+
+//============================================================================
+// generate declaration of the active object
+$declare${AOs::EthernetCommandInterface}
+
+#endif</text>
+  </file>
+  <file name="Watchdog.hpp">
+   <text>#ifndef WATCHDOG_HPP
+#define WATCHDOG_HPP
+
+#include &quot;ClusterController.hpp&quot;
+
+
+//============================================================================
+// generate declaration of the active object
+$declare${AOs::Watchdog}
+
+#endif</text>
+  </file>
+ </directory>
+ <directory name="./ClusterController">
+  <file name="Cluster.cpp">
+   <text>#include &quot;Cluster.hpp&quot;
+
+
+using namespace QP;
 
 //============================================================================
 // generate definition of to opaque pointer to the AO
@@ -416,62 +362,28 @@ $define${Shared::AO_Cluster}
 $define${AOs::Cluster}</text>
   </file>
   <file name="ClusterController.cpp">
-   <text>#include &quot;ClusterController.hpp&quot;  // ClusterController application interface
+   <text>#include &quot;ClusterController.hpp&quot;
 
 using namespace QP;
 
-namespace ArduinoInterface {
-
-//............................................................................
-void setup() {
-
-    QF::init(); // initialize the framework
-    BSP::init(); // initialize the BSP
-
-    // init publish-subscribe
-    static QSubscrList subscrSto[CC::MAX_PUB_SIG];
-    QF::psInit(subscrSto, Q_DIM(subscrSto));
-
-    // statically allocate event queues for the AOs and start them...
-    static QEvt const *watchdog_queueSto[2];
-    CC::AO_Watchdog-&gt;start(1U, // priority
-        watchdog_queueSto, Q_DIM(watchdog_queueSto),
-        (void *)0, 0U); // no stack
-
-    static QEvt const *serial_command_interface_queueSto[10];
-    CC::AO_SerialCommandInterface-&gt;start(2U, // priority
-        serial_command_interface_queueSto, Q_DIM(serial_command_interface_queueSto),
-        (void *)0, 0U); // no stack
-
-    static QEvt const *ethernet_command_interface_queueSto[10];
-    CC::AO_EthernetCommandInterface-&gt;start(3U, // priority
-        ethernet_command_interface_queueSto, Q_DIM(ethernet_command_interface_queueSto),
-        (void *)0, 0U); // no stack
-
-    static QEvt const *cluster_queueSto[10];
-    CC::AO_Cluster-&gt;start(4U, // priority
-        cluster_queueSto, Q_DIM(cluster_queueSto),
-        (void *)0, 0U); // no stack
-
-   //...
+namespace ArduinoInterface
+{
+void setup()
+{
+  FSP::ClusterController_setup();
 }
 
-//............................................................................
-void loop() {
-    QF::run(); // run the QF/C++ framework
+void loop()
+{
+  QF::run();
 }
-
-} // namespace AC</text>
+}</text>
   </file>
   <file name="SerialCommandInterface.cpp">
-   <text>#include &quot;ClusterController.hpp&quot;  // ClusterController application interface
+   <text>#include &quot;SerialCommandInterface.hpp&quot;
 
 
 using namespace QP;
-
-//============================================================================
-// generate declaration of the active object
-$declare${AOs::SerialCommandInterface}
 
 //============================================================================
 // generate definition of to opaque pointer to the AO
@@ -482,14 +394,10 @@ $define${Shared::AO_SerialCommandInterface}
 $define${AOs::SerialCommandInterface}</text>
   </file>
   <file name="EthernetCommandInterface.cpp">
-   <text>#include &quot;ClusterController.hpp&quot;  // ClusterController application interface
+   <text>#include &quot;EthernetCommandInterface.hpp&quot;
 
 
 using namespace QP;
-
-//============================================================================
-// generate declaration of the active object
-$declare${AOs::EthernetCommandInterface}
 
 //============================================================================
 // generate definition of to opaque pointer to the AO
@@ -500,14 +408,10 @@ $define${Shared::AO_EthernetCommandInterface}
 $define${AOs::EthernetCommandInterface}</text>
   </file>
   <file name="Watchdog.cpp">
-   <text>#include &quot;ClusterController.hpp&quot;  // ClusterController application interface
+   <text>#include &quot;Watchdog.hpp&quot;
 
 
 using namespace QP;
-
-//============================================================================
-// generate declaration of the active object
-$declare${AOs::Watchdog}
 
 //============================================================================
 // generate definition of to opaque pointer to the AO

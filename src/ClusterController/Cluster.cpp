@@ -16,33 +16,10 @@
 // for more details.
 //
 //.$endhead${./ClusterControl~::Cluster.cpp} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#include "ClusterController.hpp"  // ClusterController application interface
+#include "Cluster.hpp"
 
 
 using namespace QP;
-
-//============================================================================
-// generate declaration of the active object
-//.$declare${AOs::Cluster} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace CC {
-
-//.${AOs::Cluster} ...........................................................
-class Cluster : public QP::QActive {
-public:
-    static Cluster instance;
-
-public:
-    Cluster();
-
-protected:
-    Q_STATE_DECL(initial);
-    Q_STATE_DECL(ClusterOn);
-    Q_STATE_DECL(PowerOn);
-    Q_STATE_DECL(PowerOff);
-};
-
-} // namespace CC
-//.$enddecl${AOs::Cluster} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //============================================================================
 // generate definition of to opaque pointer to the AO
@@ -76,10 +53,7 @@ Cluster::Cluster()
 //.${AOs::Cluster::SM} .......................................................
 Q_STATE_DEF(Cluster, initial) {
     //.${AOs::Cluster::SM::initial}
-    BSP::initializeCluster();
-    subscribe(RESET_SIG);
-    subscribe(POWER_ON_SIG);
-    subscribe(POWER_OFF_SIG);
+    FSP::Cluster_initializeAndSubscribe(this, e);
     return tran(&ClusterOn);
 }
 //.${AOs::Cluster::SM::ClusterOn} ............................................
@@ -88,13 +62,13 @@ Q_STATE_DEF(Cluster, ClusterOn) {
     switch (e->sig) {
         //.${AOs::Cluster::SM::ClusterOn}
         case Q_ENTRY_SIG: {
-            BSP::activateCommandInterfaces();
+            FSP::Cluster_activateCommandInterfaces(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::Cluster::SM::ClusterOn}
         case Q_EXIT_SIG: {
-            BSP::deactivateCommandInterfaces();
+            FSP::Cluster_deactivateCommandInterfaces(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -126,7 +100,7 @@ Q_STATE_DEF(Cluster, PowerOn) {
     switch (e->sig) {
         //.${AOs::Cluster::SM::ClusterOn::PowerOn}
         case Q_ENTRY_SIG: {
-            BSP::powerOn();
+            FSP::Cluster_powerOn(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -143,7 +117,7 @@ Q_STATE_DEF(Cluster, PowerOff) {
     switch (e->sig) {
         //.${AOs::Cluster::SM::ClusterOn::PowerOff}
         case Q_ENTRY_SIG: {
-            BSP::powerOff();
+            FSP::Cluster_powerOff(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }

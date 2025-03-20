@@ -16,36 +16,10 @@
 // for more details.
 //
 //.$endhead${./ClusterControl~::EthernetCommandInterface.cpp} ^^^^^^^^^^^^^^^^
-#include "ClusterController.hpp"  // ClusterController application interface
+#include "EthernetCommandInterface.hpp"
 
 
 using namespace QP;
-
-//============================================================================
-// generate declaration of the active object
-//.$declare${AOs::EthernetCommandInterface} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace CC {
-
-//.${AOs::EthernetCommandInterface} ..........................................
-class EthernetCommandInterface : public QP::QActive {
-public:
-    static EthernetCommandInterface instance;
-    QP::QTimeEvt ethernet_time_evt_;
-
-public:
-    EthernetCommandInterface();
-
-protected:
-    Q_STATE_DECL(initial);
-    Q_STATE_DECL(Inactive);
-    Q_STATE_DECL(Active);
-    Q_STATE_DECL(Unintitalized);
-    Q_STATE_DECL(Initialized);
-    Q_STATE_DECL(ServerRunning);
-};
-
-} // namespace CC
-//.$enddecl${AOs::EthernetCommandInterface} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //============================================================================
 // generate definition of to opaque pointer to the AO
@@ -80,7 +54,7 @@ EthernetCommandInterface::EthernetCommandInterface()
 //.${AOs::EthernetCommandI~::SM} .............................................
 Q_STATE_DEF(EthernetCommandInterface, initial) {
     //.${AOs::EthernetCommandI~::SM::initial}
-    BSP::initializeEthernet();
+    FSP::EthernetCommandInterface_initializeAndSubscribe(this, e);
     return tran(&Inactive);
 }
 //.${AOs::EthernetCommandI~::SM::Inactive} ...................................
@@ -105,13 +79,13 @@ Q_STATE_DEF(EthernetCommandInterface, Active) {
     switch (e->sig) {
         //.${AOs::EthernetCommandI~::SM::Active}
         case Q_ENTRY_SIG: {
-            ethernet_time_evt_.armX(BSP::TICKS_PER_SEC/1, BSP::TICKS_PER_SEC/1);
+            FSP::EthernetCommandInterface_armEthernetTimer(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::EthernetCommandI~::SM::Active}
         case Q_EXIT_SIG: {
-            ethernet_time_evt_.disarm();
+            FSP::EthernetCommandInterface_disarmEthernetTimer(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -143,7 +117,7 @@ Q_STATE_DEF(EthernetCommandInterface, Unintitalized) {
         }
         //.${AOs::EthernetCommandI~::SM::Active::Unintitalized::ETHERNET_TIMEOUT}
         case ETHERNET_TIMEOUT_SIG: {
-            BSP::beginEthernet();
+            FSP::EthernetCommandInterface_beginEthernet(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -165,7 +139,7 @@ Q_STATE_DEF(EthernetCommandInterface, Initialized) {
         }
         //.${AOs::EthernetCommandI~::SM::Active::Initialized::ETHERNET_TIMEOUT}
         case ETHERNET_TIMEOUT_SIG: {
-            BSP::beginEthernetServer();
+            FSP::EthernetCommandInterface_beginServer(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -182,7 +156,7 @@ Q_STATE_DEF(EthernetCommandInterface, ServerRunning) {
     switch (e->sig) {
         //.${AOs::EthernetCommandI~::SM::Active::ServerRunning::ETHERNET_TIMEOUT}
         case ETHERNET_TIMEOUT_SIG: {
-            BSP::pollEthernetCommand();
+            FSP::EthernetCommandInterface_pollEthernetCommand(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }

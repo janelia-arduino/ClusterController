@@ -19,9 +19,7 @@ constexpr uint8_t power_pin = 15;
 
 // Serial Communication Interface
 HardwareSerial & SERIAL_COMMUNICATION_INTERFACE_STREAM = Serial;
-HardwareSerial & QS_SERIAL_STREAM = Serial;
-constexpr uint32_t SERIAL_COMMUNICATION_INTERFACE_BAUD_RATE = 115200;
-constexpr uint16_t SERIAL_COMMUNICATION_INTERFACE_TIMEOUT = 100;
+HardwareSerial & QS_SERIAL_STREAM = Serial1;
 
 // SPI Settings
 constexpr uint32_t spi_clock_speed = 5000000;
@@ -41,95 +39,29 @@ constexpr TCA6408::DeviceAddress cluster_address_device_address = TCA6408::DEVIC
 // QS facilities
 
 // un-comment if QS instrumentation needed
-//#define QS_ON
+#define QS_ON
 
-static QP::QSpyId const l_TIMER_ID = { 0U }; // QSpy source ID
+static QP::QSpyId const l_BSP_ID = { 1U }; // QSpy source ID
 
 //----------------------------------------------------------------------------
 // Static global variables
 static Ticker system_clock;
-static Ticker test_timer;
-
-static QEvt const activateSerialCommandInterfaceEvt = { CC::ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, 0U, 0U};
-static QEvt const activateEthernetCommandInterfaceEvt = { CC::ACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, 0U, 0U};
-static QEvt const deactivateSerialCommandInterfaceEvt = { CC::DEACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, 0U, 0U};
-static QEvt const deactivateEthernetCommandInterfaceEvt = { CC::DEACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, 0U, 0U};
-static QEvt const serialReadyEvt = { CC::SERIAL_READY_SIG, 0U, 0U};
-
-static QEvt const ethernetInitializedEvt = { CC::ETHERNET_INITIALIZED_SIG, 0U, 0U};
-static QEvt const ethernetServerInitializedEvt = { CC::ETHERNET_SERVER_INITIALIZED_SIG, 0U, 0U};
-
-static CC::CommandEvt const resetEvt = { CC::RESET_SIG, 0U, 0U};
-static CC::CommandEvt const powerOnEvt = { CC::POWER_ON_SIG, 0U, 0U};
-static CC::CommandEvt const powerOffEvt = { CC::POWER_OFF_SIG, 0U, 0U};
 
 static ArduinoWiznet5500lwIP Ethernet(17, SPI, 21);
-static WiFiServer server;
+static WiFiServer ethernet_server;
 static TwoWire & wire = Wire1;
 static TCA6408 tca6408;
 
 //----------------------------------------------------------------------------
 // Local functions
-String ipAddressToString(const IPAddress& ipAddress)
+void ipAddressToString(IPAddress ip_address, char * ip_address_str)
 {
-  return String(ipAddress[0]) + String(".") +\
-  String(ipAddress[1]) + String(".") +\
-  String(ipAddress[2]) + String(".") +\
-  String(ipAddress[3]);
-}
-
-String processCommandString(String command)
-{
-  command.trim();
-  String response = command;
-  if (command.equalsIgnoreCase("RESET"))
-  {
-    QF::PUBLISH(&resetEvt, &l_TIMER_ID);
-  }
-  if (command.equalsIgnoreCase("LED_ON"))
-  {
-    BSP::ledOn();
-  }
-  else if (command.equalsIgnoreCase("LED_OFF"))
-  {
-    BSP::ledOff();
-  }
-  else if (command.equalsIgnoreCase("POWER_ON"))
-  {
-    QF::PUBLISH(&powerOnEvt, &l_TIMER_ID);
-  }
-  else if (command.equalsIgnoreCase("POWER_OFF"))
-  {
-    QF::PUBLISH(&powerOffEvt, &l_TIMER_ID);
-  }
-  else if (command.equalsIgnoreCase("EHS"))
-  {
-    response = String(Ethernet.hardwareStatus());
-  }
-  else if (command.equalsIgnoreCase("ELS"))
-  {
-    response = String(Ethernet.linkStatus());
-  }
-  else if (command.equalsIgnoreCase("GET_IP_ADDRESS"))
-  {
-    response = ipAddressToString(Ethernet.localIP());
-  }
-  else if (command.equalsIgnoreCase("GET_CLUSTER_ADDRESS"))
-  {
-    response = String(tca6408.readInputRegister());
-  }
-  else if (command.equalsIgnoreCase("GET_ADDRESSES"))
-  {
-    response = String(tca6408.readInputRegister());
-    response.concat(" ");
-    response.concat(ipAddressToString(Ethernet.localIP()));
-  }
-  return response;
+  sprintf(ip_address_str,"%u.%u.%u.%u", ip_address[0], ip_address[1], ip_address[2], ip_address[3]);
 }
 
 void addressInterruptCallback()
 {
-  // CC::AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_TIMER_ID);
+  // CC::AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_BSP_ID);
 }
 
 //----------------------------------------------------------------------------
@@ -140,8 +72,6 @@ void BSP::init()
   // initialize the hardware used in this sketch...
   // NOTE: interrupts are configured and started later in QF::onStartup()
 
-  Serial.begin(CC::constants::SERIAL_COMMUNICATION_INTERFACE_BAUD_RATE);
-
   pinMode(CC::constants::led_pin, OUTPUT);
   ledOff();
 
@@ -149,7 +79,7 @@ void BSP::init()
   QS_INIT(nullptr);
 
   // output QS dictionaries...
-  QS_OBJ_DICTIONARY(&l_TIMER_ID);
+  QS_OBJ_DICTIONARY(&l_BSP_ID);
 
   // setup the QS filters...
   QS_GLB_FILTER(QP::QS_SM_RECORDS); // state machine records
@@ -207,39 +137,16 @@ void BSP::powerOn()
   digitalWriteFast(CC::constants::power_pin, HIGH);
 }
 
-void BSP::activateCommandInterfaces()
+bool BSP::beginSerial()
 {
-#ifndef QS_ON
-  CC::AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_TIMER_ID);
-#endif
-
-  CC::AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_TIMER_ID);
+  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.begin(CC::constants::serial_baud_rate);
+  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.setTimeout(CC::constants::serial_timeout);
+  return true;
 }
 
-void BSP::deactivateCommandInterfaces()
+bool BSP::pollSerialCommand()
 {
-#ifndef QS_ON
-  CC::AO_SerialCommandInterface->POST(&deactivateSerialCommandInterfaceEvt, &l_TIMER_ID);
-#endif
-
-  CC::AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_TIMER_ID);
-}
-
-void BSP::beginSerial()
-{
-  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.begin(CC::constants::SERIAL_COMMUNICATION_INTERFACE_BAUD_RATE);
-  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.setTimeout(CC::constants::SERIAL_COMMUNICATION_INTERFACE_TIMEOUT);
-  CC::AO_SerialCommandInterface->POST(&serialReadyEvt, &l_TIMER_ID);
-}
-
-void BSP::pollSerialCommand()
-{
-  if (CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.available() > 0)
-  {
-    String command = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readStringUntil('\n');
-    String response = processCommandString(command);
-    Serial.print(response);
-  }
+  return CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.available();
 }
 
 void BSP::initializeEthernet()
@@ -250,49 +157,52 @@ void BSP::initializeEthernet()
   SPI.setTX(19);
 }
 
-void BSP::beginEthernet()
+bool BSP::beginEthernet()
 {
   uint8_t cluster_address = readClusterAddress();
   uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, cluster_address };
-  // IPAddress ip(192, 168, 10, cluster_address);
+  return Ethernet.begin(mac);
+  // // IPAddress ip(192, 168, 10, cluster_address);
 
-  // if (Ethernet.begin(mac, ip))
-  if (Ethernet.begin(mac))
-  {
-    CC::AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_TIMER_ID);
-  }
-  else
-  {
-    if (not Ethernet.hardwareStatus())
-    {
-      Serial.println("No Ethernet hardware detected. Check pinouts, wiring.");
-    }
-    else if (not Ethernet.linkStatus())
-    {
-      Serial.println("No Ethernet link detected. Check cable connections.");
-    }
-    else
-    {
-      Serial.println("Ethernet not initialized with mac and IP address.");
-    }
-  }
+  // // if (Ethernet.begin(mac, ip))
+  // if (Ethernet.begin(mac))
+  // {
+  //   CC::AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_BSP_ID);
+  // }
+  // else
+  // {
+  //   if (not Ethernet.hardwareStatus())
+  //   {
+  //     Serial.println("No Ethernet hardware detected. Check pinouts, wiring.");
+  //   }
+  //   else if (not Ethernet.linkStatus())
+  //   {
+  //     Serial.println("No Ethernet link detected. Check cable connections.");
+  //   }
+  //   else
+  //   {
+  //     Serial.println("Ethernet not initialized with mac and IP address.");
+  //   }
+  // }
 }
 
-void BSP::beginEthernetServer()
+bool BSP::beginEthernetServer()
 {
-  server.begin(CC::constants::server_port);
-  CC::AO_EthernetCommandInterface->POST(&ethernetServerInitializedEvt, &l_TIMER_ID);
+  ethernet_server.begin(CC::constants::ethernet_server_port);
+  return true;
 }
 
-void BSP::pollEthernetCommand()
+bool BSP::pollEthernetCommand()
 {
-  WiFiClient client = server.accept();
+  WiFiClient client = ethernet_server.accept();
   if (client && client.available())
   {
-    String command = client.readStringUntil('\n');
-    String response = processCommandString(command);
-    client.write(response.c_str());
+    return true;
+    // String command = client.readStringUntil('\n');
+    // String response = processCommandString(command);
+    // client.write(response.c_str());
   }
+  return false;
 }
 
 //----------------------------------------------------------------------------
@@ -311,13 +221,13 @@ void BSP::pollEthernetCommand()
 // interrupts.................................................................
 void TIMER_HANDLER()
 {
-  QF::TICK_X(0, &l_TIMER_ID); // process time events for tick rate 0
+  QF::TICK_X(0, &l_BSP_ID); // process time events for tick rate 0
 }
 //............................................................................
 void QF::onStartup()
 {
   // configure the timer-counter channel........
-  system_clock.attach_ms(CC::constants::MILLISECONDS_PER_SECOND / BSP::TICKS_PER_SEC,
+  system_clock.attach_ms(CC::constants::milliseconds_per_second / CC::constants::ticks_per_second,
     TIMER_HANDLER);
   // ...
 }

@@ -16,33 +16,10 @@
 // for more details.
 //
 //.$endhead${./ClusterControl~::Watchdog.cpp} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#include "ClusterController.hpp"  // ClusterController application interface
+#include "Watchdog.hpp"
 
 
 using namespace QP;
-
-//============================================================================
-// generate declaration of the active object
-//.$declare${AOs::Watchdog} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-namespace CC {
-
-//.${AOs::Watchdog} ..........................................................
-class Watchdog : public QP::QActive {
-public:
-    static Watchdog instance;
-    QP::QTimeEvt watchdog_time_evt_;
-
-public:
-    Watchdog();
-
-protected:
-    Q_STATE_DECL(initial);
-    Q_STATE_DECL(Feeding);
-    Q_STATE_DECL(Resetting);
-};
-
-} // namespace CC
-//.$enddecl${AOs::Watchdog} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //============================================================================
 // generate definition of to opaque pointer to the AO
@@ -77,8 +54,7 @@ Watchdog::Watchdog()
 //.${AOs::Watchdog::SM} ......................................................
 Q_STATE_DEF(Watchdog, initial) {
     //.${AOs::Watchdog::SM::initial}
-    BSP::initializeWatchdog();
-    subscribe(RESET_SIG);
+    FSP::Watchdog_initializeAndSubscribe(this, e);
     return tran(&Feeding);
 }
 //.${AOs::Watchdog::SM::Feeding} .............................................
@@ -87,19 +63,19 @@ Q_STATE_DEF(Watchdog, Feeding) {
     switch (e->sig) {
         //.${AOs::Watchdog::SM::Feeding}
         case Q_ENTRY_SIG: {
-            watchdog_time_evt_.armX(BSP::TICKS_PER_SEC/10, BSP::TICKS_PER_SEC/10);
+            FSP::Watchdog_armWatchdogTimer(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::Watchdog::SM::Feeding}
         case Q_EXIT_SIG: {
-            watchdog_time_evt_.disarm();
+            FSP::Watchdog_disarmWatchdogTimer(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::Watchdog::SM::Feeding::WATCHDOG_TIMEOUT}
         case WATCHDOG_TIMEOUT_SIG: {
-            BSP::feedWatchdog();
+            FSP::Watchdog_feedWatchdog(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }

@@ -19,45 +19,15 @@
 #ifndef CLUSTER_CONTROLLER_HPP
 #define CLUSTER_CONTROLLER_HPP
 
-#include "qpcpp.hpp"   // QP-C++ framework
-#include "bsp.hpp"
+#include "qpcpp.hpp"
+#include "fsp.hpp"
 
-namespace CC {
 
-enum ClusterControllerSignals {
-
-    // commands from serial or ethernet interface
-    RESET_SIG = QP::Q_USER_SIG,
-    POWER_ON_SIG,
-    POWER_OFF_SIG,
-    MAX_PUB_SIG,    // the last published signal
-
-    // bsp POST to SerialCommandInterface
-    ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
-    DEACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
-    SERIAL_READY_SIG,
-
-    // bsp POST to EthernetCommandInterface
-    ACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG,
-    DEACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG,
-    ETHERNET_INITIALIZED_SIG,
-    ETHERNET_SERVER_INITIALIZED_SIG,
-
-    WATCHDOG_TIMEOUT_SIG, // signal for Watchdog timeout event
-    SERIAL_TIMEOUT_SIG, // signal for SerialCommandInterface timeout event
-    ETHERNET_TIMEOUT_SIG, // signal for EthernetCommandInterface timeout event
-
-    MAX_SIG         // the last signal
-};
-
-} // namespace CC
-
-namespace ArduinoInterface {
-
+namespace ArduinoInterface
+{
 void setup();
 void loop();
-
-} // namespace ArduinoInterface
+}
 
 //.$declare${Shared} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 namespace CC {
@@ -72,4 +42,4 @@ extern QP::QActive * const AO_Watchdog;
 } // namespace CC
 //.$enddecl${Shared} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-#endif // CLUSTER_CONTROLLER_HPP
+#endif
