@@ -72,13 +72,13 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 void FSP::Cluster_activateCommandInterfaces(QActive * const ao, QEvt const * e)
 {
   AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_FSP_ID);
-  AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_FSP_ID);
+  // AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
 void FSP::Cluster_deactivateCommandInterfaces(QActive * const ao, QEvt const * e)
 {
   AO_SerialCommandInterface->POST(&deactivateSerialCommandInterfaceEvt, &l_FSP_ID);
-  AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_FSP_ID);
+  // AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
 void FSP::Cluster_powerOn(QActive * const ao, QEvt const * e)
@@ -93,9 +93,9 @@ void FSP::Cluster_powerOff(QActive * const ao, QEvt const * e)
 
 void FSP::SerialCommandInterface_subscribe(QActive * const ao, QEvt const * e)
 {
-  // ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
+  ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
   // ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);
-  // ao->subscribe(COMMAND_PROCESSED_SIG);
+  ao->subscribe(COMMAND_PROCESSED_SIG);
 }
 
 void FSP::SerialCommandInterface_armSerialTimer(QActive * const ao, QEvt const * e)
@@ -140,23 +140,23 @@ void FSP::SerialCommandInterface_pollSerialCommand(QActive * const ao, QEvt cons
 //   return (sci->first_command_byte_ <= constants::first_command_byte_max_value_binary);
 // }
 
-// void FSP::SerialCommandInterface_readSerialStringCommand(QActive * const ao, QEvt const * e)
-// {
-//   SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);
-//   BSP::readSerialStringCommand(sci->string_command_, (char)sci->first_command_byte_);
-// }
+void FSP::SerialCommandInterface_readSerialStringCommand(QActive * const ao, QEvt const * e)
+{
+  SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);
+  BSP::readSerialStringCommand(sci->string_command_);
+}
 
-// void FSP::SerialCommandInterface_processStringCommand(QActive * const ao, QEvt const * e)
-// {
-//   SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);
-//   FSP::processStringCommand(sci->string_command_, sci->string_response_);
-// }
+void FSP::SerialCommandInterface_processStringCommand(QActive * const ao, QEvt const * e)
+{
+  SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);
+  FSP::processStringCommand(sci->string_command_, sci->string_response_);
+}
 
-// void FSP::SerialCommandInterface_writeSerialStringResponse(QActive * const ao, QEvt const * e)
-// {
-//   SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);
-//   BSP::writeSerialStringResponse(sci->string_response_);
-// }
+void FSP::SerialCommandInterface_writeSerialStringResponse(QActive * const ao, QEvt const * e)
+{
+  SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);
+  BSP::writeSerialStringResponse(sci->string_response_);
+}
 
 // void FSP::SerialCommandInterface_writeSerialBinaryResponse(QActive * const ao, QEvt const * e)
 // {
@@ -239,6 +239,7 @@ void FSP::Watchdog_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 
 void FSP::Watchdog_armWatchdogTimer(QActive * const ao, QEvt const * e)
 {
+  Serial.println("arming watchdog timer");
   Watchdog * const watchdog = static_cast<Watchdog * const>(ao);
   watchdog->watchdog_time_evt_.armX(constants::ticks_per_second, constants::ticks_per_second);
 }
@@ -276,6 +277,11 @@ void FSP::processStringCommand(const char * command, char * response)
   else if (strcmp(command, "POWER_OFF") == 0)
   {
     QF::PUBLISH(&powerOffEvt, &l_FSP_ID);
+  }
+  else if (strcmp(command, "READ_CLUSTER_ADDRESS") == 0)
+  {
+    uint8_t cluster_address = BSP::readClusterAddress();
+    sprintf(response, "%d", cluster_address);
   }
   // else if (strcmp(command, "EHS") == 0)
   // {

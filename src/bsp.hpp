@@ -21,6 +21,8 @@ public:
 
   static bool beginSerial();
   static bool pollSerialCommand();
+  static void readSerialStringCommand(char * command_str);
+  static void writeSerialStringResponse(char * response);
 
   static void initializeEthernet();
   static bool beginEthernet();

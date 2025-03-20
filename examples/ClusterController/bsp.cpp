@@ -100,12 +100,12 @@ void BSP::ledOn()
 
 void BSP::initializeWatchdog()
 {
-  // rp2040.wdt_begin(CC::constants::watchdog_delay_ms);
+  rp2040.wdt_begin(CC::constants::watchdog_delay_ms);
 }
 
 void BSP::feedWatchdog()
 {
-  // rp2040.wdt_reset();
+  rp2040.wdt_reset();
 }
 
 void BSP::initializeCluster()
@@ -147,6 +147,18 @@ bool BSP::beginSerial()
 bool BSP::pollSerialCommand()
 {
   return CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.available();
+}
+
+void BSP::readSerialStringCommand(char * command_str)
+{
+  size_t chars_read = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readBytesUntil(CC::constants::command_termination_character,
+    command_str, CC::constants::string_command_length_max - 1);
+  command_str[chars_read] = '\0';
+}
+
+void BSP::writeSerialStringResponse(char * response)
+{
+  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.println(response);
 }
 
 void BSP::initializeEthernet()

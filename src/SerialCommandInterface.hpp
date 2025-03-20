@@ -42,7 +42,8 @@ protected:
     Q_STATE_DECL(initial);
     Q_STATE_DECL(Active);
     Q_STATE_DECL(NotReady);
-    Q_STATE_DECL(Ready);
+    Q_STATE_DECL(PollingForNewCommand);
+    Q_STATE_DECL(ProcessingStringCommand);
     Q_STATE_DECL(Inactive);
 };
 

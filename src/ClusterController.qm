@@ -93,46 +93,69 @@ This structure of the code is recommended for applications with only one active 
      </initial_glyph>
     </initial>
     <state name="Active">
-     <initial target="../2">
-      <initial_glyph conn="34,28,4,0,4">
+     <entry brief="armSerialTimer()">FSP::SerialCommandInterface_armSerialTimer(this, e);</entry>
+     <exit brief="disarmSerialTimer()">FSP::SerialCommandInterface_disarmSerialTimer(this, e);</exit>
+     <initial target="../3">
+      <initial_glyph conn="34,27,4,0,4">
        <action box="0,-2,10,2"/>
       </initial_glyph>
      </initial>
      <tran trig="DEACTIVATE_SERIAL_COMMAND_INTERFACE" target="../../2">
-      <tran_glyph conn="23,27,3,3,-3,-14,17">
-       <action box="-22,-16,35,2"/>
+      <tran_glyph conn="4,26,3,3,-2,-13,35">
+       <action box="-3,-16,35,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="SERIAL_TIMEOUT">
+      <tran_glyph conn="4,28,3,-1,18">
+       <action box="0,-2,16,2"/>
       </tran_glyph>
      </tran>
      <state name="NotReady">
       <entry brief="beginSerial()">FSP::SerialCommandInterface_beginSerial(this, e);</entry>
-      <tran trig="SERIAL_READY" target="../../3">
-       <tran_glyph conn="49,34,1,1,14,11,-5">
+      <tran trig="SERIAL_READY" target="../../4">
+       <tran_glyph conn="49,33,1,1,14,11,-13">
         <action box="0,-2,13,2"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="27,32,22,8">
+      <state_glyph node="27,31,22,8">
        <entry box="1,2,13,2"/>
       </state_glyph>
      </state>
-     <state name="Ready">
-      <entry brief="armSerialTimer()">FSP::SerialCommandInterface_armSerialTimer(this, e);</entry>
-      <exit brief="disarmSerialTimer()">FSP::SerialCommandInterface_disarmSerialTimer(this, e);</exit>
+     <state name="PollingForNewCommand">
       <tran trig="SERIAL_TIMEOUT">
        <action brief="pollSerialCommand()">FSP::SerialCommandInterface_pollSerialCommand(this, e);</action>
-       <tran_glyph conn="27,53,3,-1,16">
+       <tran_glyph conn="27,46,3,-1,17">
         <action box="0,-2,24,4"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="27,43,31,18">
-       <entry box="1,2,20,2"/>
-       <exit box="1,4,19,2"/>
+      <tran trig="SERIAL_COMMAND_AVAILABLE" target="../../5">
+       <action brief="readSerialStringCommand()">FSP::SerialCommandInterface_readSerialStringCommand(this, e);</action>
+       <tran_glyph conn="44,51,2,1,7,-10">
+        <action box="2,3,26,4"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="27,42,23,9"/>
+     </state>
+     <state name="ProcessingStringCommand">
+      <entry brief="processStringCommand()">FSP::SerialCommandInterface_processStringCommand(this, e);</entry>
+      <tran trig="COMMAND_PROCESSED" target="../../4">
+       <action brief="writeSerialStringResponse()">FSP::SerialCommandInterface_writeSerialStringResponse(this, e);</action>
+       <tran_glyph conn="13,53,0,3,-8,14">
+        <action box="-8,-13,24,4"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="11,53,23,10">
+       <entry box="1,2,21,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="23,21,42,46"/>
+     <state_glyph node="4,20,85,46">
+      <entry box="1,2,18,2"/>
+      <exit box="1,4,18,2"/>
+     </state_glyph>
     </state>
     <state name="Inactive">
      <tran trig="ACTIVATE_SERIAL_COMMAND_INTERFACE" target="../../1">
-      <tran_glyph conn="55,13,1,1,18,12,-8">
+      <tran_glyph conn="55,13,1,1,37,11,-3">
        <action box="2,-2,35,2"/>
       </tran_glyph>
      </tran>
@@ -178,7 +201,7 @@ This structure of the code is recommended for applications with only one active 
      </tran>
      <state name="Unintitalized">
       <tran trig="ETHERNET_INITIALIZED" target="../../3">
-       <tran_glyph conn="43,29,1,1,6,11,-2">
+       <tran_glyph conn="43,29,1,1,6,11,-10">
         <action box="1,-3,19,2"/>
        </tran_glyph>
       </tran>
@@ -192,26 +215,26 @@ This structure of the code is recommended for applications with only one active 
      </state>
      <state name="Initialized">
       <tran trig="ETHERNET_SERVER_INITIALIZED" target="../../4">
-       <tran_glyph conn="47,43,1,0,4,9">
-        <action box="5,2,27,2"/>
+       <tran_glyph conn="39,43,1,0,4,5">
+        <action box="5,1,27,2"/>
        </tran_glyph>
       </tran>
       <tran trig="ETHERNET_TIMEOUT">
        <action brief="beginServer()">FSP::EthernetCommandInterface_beginServer(this, e);</action>
-       <tran_glyph conn="15,45,3,-1,18">
+       <tran_glyph conn="15,43,3,-1,18">
         <action box="0,-2,18,4"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="15,38,32,11"/>
+      <state_glyph node="15,38,24,8"/>
      </state>
      <state name="ServerRunning">
       <tran trig="ETHERNET_TIMEOUT">
        <action brief="pollEthernetCommand()">FSP::EthernetCommandInterface_pollEthernetCommand(this, e);</action>
-       <tran_glyph conn="15,57,3,-1,23">
+       <tran_glyph conn="15,53,3,-1,23">
         <action box="0,-2,19,4"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="15,52,42,11"/>
+      <state_glyph node="15,48,31,11"/>
      </state>
      <state_glyph node="8,16,99,59">
       <entry box="1,2,24,2"/>
