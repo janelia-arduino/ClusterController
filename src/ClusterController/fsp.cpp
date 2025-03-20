@@ -278,7 +278,7 @@ void FSP::processStringCommand(const char * command, char * response)
   {
     QF::PUBLISH(&powerOffEvt, &l_FSP_ID);
   }
-  else if (strcmp(command, "READ_CLUSTER_ADDRESS") == 0)
+  else if (strcmp(command, "RCA") == 0)
   {
     uint8_t cluster_address = BSP::readClusterAddress();
     sprintf(response, "%d", cluster_address);
