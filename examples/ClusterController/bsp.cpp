@@ -149,11 +149,20 @@ bool BSP::pollSerialCommand()
   return CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.available();
 }
 
-void BSP::readSerialStringCommand(char * command_str)
+uint8_t BSP::readSerialByte()
 {
+  return CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.read();
+}
+
+void BSP::readSerialStringCommand(char * command_str, char first_char)
+{
+  char command_tail[CC::constants::string_command_length_max];
   size_t chars_read = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readBytesUntil(CC::constants::command_termination_character,
-    command_str, CC::constants::string_command_length_max - 1);
-  command_str[chars_read] = '\0';
+    command_tail, CC::constants::string_command_length_max - 1);
+  command_tail[chars_read] = '\0';
+  command_str[0] = first_char;
+  command_str[1] = '\0';
+  strcat(command_str, command_tail);
 }
 
 void BSP::writeSerialStringResponse(char * response)

@@ -34,6 +34,7 @@ public:
     static SerialCommandInterface instance;
     char string_command_[constants::string_command_length_max];
     char string_response_[constants::string_response_length_max];
+    std::uint8_t first_command_byte_;
 
 public:
     SerialCommandInterface();
@@ -44,6 +45,8 @@ protected:
     Q_STATE_DECL(NotReady);
     Q_STATE_DECL(PollingForNewCommand);
     Q_STATE_DECL(ProcessingStringCommand);
+    Q_STATE_DECL(ProcessingBinaryCommand);
+    Q_STATE_DECL(Waiting);
     Q_STATE_DECL(Inactive);
 };
 

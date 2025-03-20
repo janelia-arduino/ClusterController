@@ -30,8 +30,8 @@ struct FSP
   static void SerialCommandInterface_disarmSerialTimer(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_beginSerial(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_pollSerialCommand(QP::QActive * const ao, QP::QEvt const * e);
-  // static void SerialCommandInterface_readFirstByte(QP::QActive * const ao, QP::QEvt const * e);
-  // static bool SerialCommandInterface_ifBinaryCommand(QP::QActive * const ao, QP::QEvt const * e);
+  static void SerialCommandInterface_readFirstByte(QP::QActive * const ao, QP::QEvt const * e);
+  static bool SerialCommandInterface_ifBinaryCommand(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_readSerialStringCommand(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_processStringCommand(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_writeSerialStringResponse(QP::QActive * const ao, QP::QEvt const * e);
