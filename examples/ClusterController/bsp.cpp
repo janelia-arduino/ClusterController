@@ -100,12 +100,12 @@ void BSP::ledOn()
 
 void BSP::initializeWatchdog()
 {
-  rp2040.wdt_begin(CC::constants::watchdog_delay_ms);
+  // rp2040.wdt_begin(CC::constants::watchdog_delay_ms);
 }
 
 void BSP::feedWatchdog()
 {
-  rp2040.wdt_reset();
+  // rp2040.wdt_reset();
 }
 
 void BSP::initializeCluster()

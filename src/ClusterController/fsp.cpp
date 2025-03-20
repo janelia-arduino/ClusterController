@@ -7,9 +7,9 @@ using namespace CC;
 
 static QSpyId const l_FSP_ID = { 0U }; // QSpy source ID
 
-// static CommandEvt const resetEvt = { RESET_SIG, 0U, 0U};
-// static CommandEvt const allOnEvt = { ALL_ON_SIG, 0U, 0U};
-// static CommandEvt const allOffEvt = { ALL_OFF_SIG, 0U, 0U};
+static CommandEvt const resetEvt = {RESET_SIG, 0U, 0U};
+static CommandEvt const powerOnEvt = {POWER_ON_SIG, 0U, 0U};
+static CommandEvt const powerOffEvt = {POWER_OFF_SIG, 0U, 0U};
 
 static QEvt const activateSerialCommandInterfaceEvt = {ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const deactivateSerialCommandInterfaceEvt = {DEACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, 0U, 0U};
@@ -23,7 +23,7 @@ static QEvt const ethernetInitializedEvt = {ETHERNET_INITIALIZED_SIG, 0U, 0U};
 static QEvt const ethernetServerInitializedEvt = {ETHERNET_SERVER_INITIALIZED_SIG, 0U, 0U};
 static QEvt const ethernetCommandAvailableEvt = {ETHERNET_COMMAND_AVAILABLE_SIG, 0U, 0U};
 
-// static QEvt const commandProcessedEvt = {COMMAND_PROCESSED_SIG, 0U, 0U};
+static QEvt const commandProcessedEvt = {COMMAND_PROCESSED_SIG, 0U, 0U};
 
 //----------------------------------------------------------------------------
 // Local functions
@@ -254,48 +254,40 @@ void FSP::Watchdog_feedWatchdog(QActive * const ao, QEvt const * e)
   BSP::feedWatchdog();
 }
 
-// void FSP::processStringCommand(const char * command, char * response)
-// {
-//   strcpy(response, command);
-//   if (strcmp(command, "RESET") == 0)
-//   {
-//     QF::PUBLISH(&resetEvt, &l_FSP_ID);
-//   }
-//   if (strcmp(command, "LED_ON") == 0)
-//   {
-//     BSP::ledOn();
-//   }
-//   else if (strcmp(command, "LED_OFF") == 0)
-//   {
-//     BSP::ledOff();
-//   }
-//   else if (strcmp(command, "ALL_ON") == 0)
-//   {
-//     QF::PUBLISH(&allOnEvt, &l_FSP_ID);
-//   }
-//   else if (strcmp(command, "ALL_OFF") == 0)
-//   {
-//     QF::PUBLISH(&allOffEvt, &l_FSP_ID);
-//   }
-//   else if (strcmp(command, "EHS") == 0)
-//   {
-//     BSP::getEthernetHardwareStatusString(response);
-//   }
-//   else if (strcmp(command, "ELS") == 0)
-//   {
-//     BSP::getEthernetLinkStatusString(response);
-//   }
-//   else if (strcmp(command, "SIP") == 0)
-//   {
-//     BSP::getServerIpAddressString(response);
-//   }
-//   else if (strcmp(command, "SET_DISPLAY_FREQUENCY") == 0)
-//   {
-//     //command.replace("SET_DISPLAY_FREQUENCY", "") == 0;
-//     //command.trim();
-//     //uint32_t frequency_hz = command.toInt();
-//     //BSP::setDisplayFrequency(frequency_hz);
-//   }
-//   QF::PUBLISH(&commandProcessedEvt, &l_FSP_ID);
-//   return response;
-// }
+void FSP::processStringCommand(const char * command, char * response)
+{
+  strcpy(response, command);
+  if (strcmp(command, "RESET") == 0)
+  {
+    QF::PUBLISH(&resetEvt, &l_FSP_ID);
+  }
+  if (strcmp(command, "LED_ON") == 0)
+  {
+    BSP::ledOn();
+  }
+  else if (strcmp(command, "LED_OFF") == 0)
+  {
+    BSP::ledOff();
+  }
+  else if (strcmp(command, "POWER_ON") == 0)
+  {
+    QF::PUBLISH(&powerOnEvt, &l_FSP_ID);
+  }
+  else if (strcmp(command, "POWER_OFF") == 0)
+  {
+    QF::PUBLISH(&powerOffEvt, &l_FSP_ID);
+  }
+  // else if (strcmp(command, "EHS") == 0)
+  // {
+  //   BSP::getEthernetHardwareStatusString(response);
+  // }
+  // else if (strcmp(command, "ELS") == 0)
+  // {
+  //   BSP::getEthernetLinkStatusString(response);
+  // }
+  // else if (strcmp(command, "SIP") == 0)
+  // {
+  //   BSP::getServerIpAddressString(response);
+  // }
+  QF::PUBLISH(&commandProcessedEvt, &l_FSP_ID);
+}
