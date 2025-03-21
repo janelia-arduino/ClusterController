@@ -54,6 +54,11 @@ Cluster::Cluster()
 Q_STATE_DEF(Cluster, initial) {
     //.${AOs::Cluster::SM::initial}
     FSP::Cluster_initializeAndSubscribe(this, e);
+
+    QS_FUN_DICTIONARY(&Cluster::ClusterOn);
+    QS_FUN_DICTIONARY(&Cluster::PowerOn);
+    QS_FUN_DICTIONARY(&Cluster::PowerOff);
+
     return tran(&ClusterOn);
 }
 //.${AOs::Cluster::SM::ClusterOn} ............................................

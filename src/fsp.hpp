@@ -25,7 +25,7 @@ struct FSP
   static void Cluster_powerOn(QP::QActive * const ao, QP::QEvt const * e);
   static void Cluster_powerOff(QP::QActive * const ao, QP::QEvt const * e);
 
-  static void SerialCommandInterface_subscribe(QP::QActive * const ao, QP::QEvt const * e);
+  static void SerialCommandInterface_initializeAndSubscribe(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_armSerialTimer(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_disarmSerialTimer(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_beginSerial(QP::QActive * const ao, QP::QEvt const * e);

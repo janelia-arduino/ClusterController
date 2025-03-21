@@ -54,7 +54,16 @@ SerialCommandInterface::SerialCommandInterface()
 //.${AOs::SerialCommandInt~::SM} .............................................
 Q_STATE_DEF(SerialCommandInterface, initial) {
     //.${AOs::SerialCommandInt~::SM::initial}
-    FSP::SerialCommandInterface_subscribe(this, e);
+    FSP::SerialCommandInterface_initializeAndSubscribe(this, e);
+
+    QS_FUN_DICTIONARY(&SerialCommandInterface::Active);
+    QS_FUN_DICTIONARY(&SerialCommandInterface::NotReady);
+    QS_FUN_DICTIONARY(&SerialCommandInterface::PollingForNewCommand);
+    QS_FUN_DICTIONARY(&SerialCommandInterface::ProcessingStringCommand);
+    QS_FUN_DICTIONARY(&SerialCommandInterface::ProcessingBinaryCommand);
+    QS_FUN_DICTIONARY(&SerialCommandInterface::Waiting);
+    QS_FUN_DICTIONARY(&SerialCommandInterface::Inactive);
+
     return tran(&Inactive);
 }
 //.${AOs::SerialCommandInt~::SM::Active} .....................................

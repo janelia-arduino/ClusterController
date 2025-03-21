@@ -91,7 +91,7 @@ void FSP::Cluster_powerOff(QActive * const ao, QEvt const * e)
   BSP::powerOff();
 }
 
-void FSP::SerialCommandInterface_subscribe(QActive * const ao, QEvt const * e)
+void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
   ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
   // ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);

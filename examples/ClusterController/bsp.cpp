@@ -18,8 +18,8 @@ constexpr uint8_t led_pin = 25;
 constexpr uint8_t power_pin = 15;
 
 // Serial Communication Interface
-HardwareSerial & SERIAL_COMMUNICATION_INTERFACE_STREAM = Serial;
-HardwareSerial & QS_SERIAL_STREAM = Serial1;
+constexpr uint8_t serial_rx_pin = 17;
+constexpr uint8_t serial_tx_pin = 16;
 
 // SPI Settings
 constexpr uint32_t spi_clock_speed = 5000000;
@@ -46,6 +46,12 @@ static QP::QSpyId const l_BSP_ID = { 1U }; // QSpy source ID
 //----------------------------------------------------------------------------
 // Static global variables
 static Ticker system_clock;
+
+// Serial Communication Interface
+// HardwareSerial & SERIAL_COMMUNICATION_INTERFACE_STREAM = Serial;
+// HardwareSerial & QS_SERIAL_STREAM = Serial1;
+static HardwareSerial & SERIAL_COMMUNICATION_INTERFACE_STREAM = Serial1;
+static HardwareSerial & QS_SERIAL_STREAM = Serial;
 
 static ArduinoWiznet5500lwIP Ethernet(17, SPI, 21);
 static WiFiServer ethernet_server;
@@ -139,6 +145,8 @@ void BSP::powerOn()
 
 bool BSP::beginSerial()
 {
+  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.setRx();
+  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.setTx();
   CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.begin(CC::constants::serial_baud_rate);
   CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.setTimeout(CC::constants::serial_timeout);
   return true;

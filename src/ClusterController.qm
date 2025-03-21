@@ -26,7 +26,7 @@ This structure of the code is recommended for applications with only one active 
    <operation name="Cluster" type="" visibility="0x00" properties="0x00">
     <code>: QActive(Q_STATE_CAST(&amp;Cluster::initial))</code>
    </operation>
-   <statechart properties="0x00">
+   <statechart properties="0x02">
     <initial target="../1">
      <action brief="initializeAndSubscribe()">FSP::Cluster_initializeAndSubscribe(this, e);</action>
      <initial_glyph conn="49,10,4,0,4">
@@ -86,11 +86,11 @@ This structure of the code is recommended for applications with only one active 
     <code>: QActive(Q_STATE_CAST(&amp;SerialCommandInterface::initial)),
     serial_time_evt_(this, SERIAL_TIMEOUT_SIG, 0U)</code>
    </operation>
-   <statechart properties="0x00">
+   <statechart properties="0x02">
     <initial target="../2">
-     <action brief="subscribe()">FSP::SerialCommandInterface_subscribe(this, e);</action>
+     <action brief="initializeAndSubscribe()">FSP::SerialCommandInterface_initializeAndSubscribe(this, e);</action>
      <initial_glyph conn="46,8,4,0,3">
-      <action box="1,0,12,2"/>
+      <action box="1,0,24,2"/>
      </initial_glyph>
     </initial>
     <state name="Active">
@@ -150,7 +150,7 @@ This structure of the code is recommended for applications with only one active 
        </tran_glyph>
       </tran>
       <tran trig="ETHERNET_COMMAND_AVAILABLE" target="../../7">
-       <tran_glyph conn="49,41,1,3,29,0,1">
+       <tran_glyph conn="49,41,1,3,30">
         <action box="2,0,29,2"/>
        </tran_glyph>
       </tran>
@@ -208,7 +208,7 @@ This structure of the code is recommended for applications with only one active 
     <code>: QActive(Q_STATE_CAST(&amp;EthernetCommandInterface::initial)),
     ethernet_time_evt_(this, ETHERNET_TIMEOUT_SIG, 0U)</code>
    </operation>
-   <statechart properties="0x00">
+   <statechart properties="0x02">
     <initial target="../1">
      <action brief="initializeAndSubscribe()">FSP::EthernetCommandInterface_initializeAndSubscribe(this, e);</action>
      <initial_glyph conn="55,2,4,0,3">
@@ -288,7 +288,7 @@ This structure of the code is recommended for applications with only one active 
     <code>: QActive(Q_STATE_CAST(&amp;Watchdog::initial)),
     watchdog_time_evt_(this, WATCHDOG_TIMEOUT_SIG, 0U)</code>
    </operation>
-   <statechart properties="0x00">
+   <statechart properties="0x02">
     <initial target="../1">
      <action brief="initializeAndSubscribe()">FSP::Watchdog_initializeAndSubscribe(this, e);</action>
      <initial_glyph conn="24,9,4,0,4">
