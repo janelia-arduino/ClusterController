@@ -38,9 +38,6 @@ constexpr TCA6408::DeviceAddress cluster_address_device_address = TCA6408::DEVIC
 //----------------------------------------------------------------------------
 // QS facilities
 
-// un-comment if QS instrumentation needed
-#define QS_ON
-
 static QP::QSpyId const l_BSP_ID = { 1U }; // QSpy source ID
 
 //----------------------------------------------------------------------------
@@ -48,10 +45,8 @@ static QP::QSpyId const l_BSP_ID = { 1U }; // QSpy source ID
 static Ticker system_clock;
 
 // Serial Communication Interface
-// HardwareSerial & SERIAL_COMMUNICATION_INTERFACE_STREAM = Serial;
-// HardwareSerial & QS_SERIAL_STREAM = Serial1;
-static HardwareSerial & SERIAL_COMMUNICATION_INTERFACE_STREAM = Serial1;
-static HardwareSerial & QS_SERIAL_STREAM = Serial;
+static SerialUART & serial_communication_interface_stream = Serial1;
+static HardwareSerial & qs_serial_stream = Serial;
 
 static ArduinoWiznet5500lwIP Ethernet(17, SPI, 21);
 static WiFiServer ethernet_server;
@@ -81,17 +76,7 @@ void BSP::init()
   pinMode(CC::constants::led_pin, OUTPUT);
   ledOff();
 
-#ifdef QS_ON
-  QS_INIT(nullptr);
-
-  // output QS dictionaries...
   QS_OBJ_DICTIONARY(&l_BSP_ID);
-
-  // setup the QS filters...
-  QS_GLB_FILTER(QP::QS_SM_RECORDS); // state machine records
-  QS_GLB_FILTER(QP::QS_AO_RECORDS); // active object records
-  QS_GLB_FILTER(QP::QS_UA_RECORDS); // all user records
-#endif
 }
 
 void BSP::ledOff()
@@ -145,27 +130,27 @@ void BSP::powerOn()
 
 bool BSP::beginSerial()
 {
-  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.setRx();
-  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.setTx();
-  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.begin(CC::constants::serial_baud_rate);
-  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.setTimeout(CC::constants::serial_timeout);
+  serial_communication_interface_stream.setRX(CC::constants::serial_rx_pin);
+  serial_communication_interface_stream.setTX(CC::constants::serial_tx_pin);
+  serial_communication_interface_stream.begin(CC::constants::serial_baud_rate);
+  serial_communication_interface_stream.setTimeout(CC::constants::serial_timeout);
   return true;
 }
 
 bool BSP::pollSerialCommand()
 {
-  return CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.available();
+  return serial_communication_interface_stream.available();
 }
 
 uint8_t BSP::readSerialByte()
 {
-  return CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.read();
+  return serial_communication_interface_stream.read();
 }
 
 void BSP::readSerialStringCommand(char * command_str, char first_char)
 {
   char command_tail[CC::constants::string_command_length_max];
-  size_t chars_read = CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.readBytesUntil(CC::constants::command_termination_character,
+  size_t chars_read = serial_communication_interface_stream.readBytesUntil(CC::constants::command_termination_character,
     command_tail, CC::constants::string_command_length_max - 1);
   command_tail[chars_read] = '\0';
   command_str[0] = first_char;
@@ -175,7 +160,7 @@ void BSP::readSerialStringCommand(char * command_str, char first_char)
 
 void BSP::writeSerialStringResponse(char * response)
 {
-  CC::constants::SERIAL_COMMUNICATION_INTERFACE_STREAM.println(response);
+  serial_communication_interface_stream.println(response);
 }
 
 void BSP::initializeEthernet()
@@ -271,32 +256,27 @@ void QV::onIdle()
 #else
   QF_INT_ENABLE(); // simply re-enable interrupts
 
-#ifdef QS_ON
-
   // transmit QS outgoing data (QS-TX)
-  uint16_t len = CC::constants::QS_SERIAL_STREAM.availableForWrite();
+  uint16_t len = qs_serial_stream.availableForWrite();
   if (len > 0U)
   { // any space available in the output buffer?
     uint8_t const *buf = QS::getBlock(&len);
     if (buf)
     {
-      CC::constants::QS_SERIAL_STREAM.write(buf, len); // asynchronous and non-blocking
+      qs_serial_stream.write(buf, len); // asynchronous and non-blocking
     }
   }
 
   // receive QS incoming data (QS-RX)
-  len = CC::constants::QS_SERIAL_STREAM.available();
+  len = qs_serial_stream.available();
   if (len > 0U)
   {
     do
     {
-      QP::QS::rxPut(CC::constants::QS_SERIAL_STREAM.read());
+      QP::QS::rxPut(qs_serial_stream.read());
     } while (--len > 0U);
     QS::rxParse();
   }
-
-#endif // QS_ON
-
 #endif
 }
 //............................................................................
@@ -317,16 +297,14 @@ extern "C" Q_NORETURN Q_onAssert(char const * const module, int location)
 
 //----------------------------------------------------------------------------
 // QS callbacks...
-#ifdef QS_ON
-
 //............................................................................
 bool QP::QS::onStartup(void const * arg)
 {
-  static uint8_t qsTxBuf[1024]; // buffer for QS transmit channel (QS-TX)
-  static uint8_t qsRxBuf[128];  // buffer for QS receive channel (QS-RX)
+  static uint8_t qsTxBuf[2048]; // buffer for QS transmit channel (QS-TX)
+  static uint8_t qsRxBuf[1024];  // buffer for QS receive channel (QS-RX)
   initBuf  (qsTxBuf, sizeof(qsTxBuf));
   rxInitBuf(qsRxBuf, sizeof(qsRxBuf));
-  CC::constants::QS_SERIAL_STREAM.begin(115200); // run serial port at 115200 baud rate
+  qs_serial_stream.begin(115200); // run serial port at 115200 baud rate
   return true; // return success
 }
 //............................................................................
@@ -334,8 +312,6 @@ void QP::QS::onCommand(uint8_t cmdId, uint32_t param1,
   uint32_t param2, uint32_t param3)
 {
 }
-
-#endif // QS_ON
 
 //............................................................................
 void QP::QS::onCleanup()
@@ -349,20 +325,18 @@ QP::QSTimeCtr QP::QS::onGetTime()
 //............................................................................
 void QP::QS::onFlush()
 {
-#ifdef QS_ON
   uint16_t len = 0xFFFFU; // big number to get as many bytes as available
   uint8_t const *buf = QS::getBlock(&len); // get continguous block of data
   while (buf != nullptr)
   { // data available?
-    CC::constants::QS_SERIAL_STREAM.write(buf, len); // might poll until all bytes fit
+    qs_serial_stream.write(buf, len); // might poll until all bytes fit
     len = 0xFFFFU; // big number to get as many bytes as available
     buf = QS::getBlock(&len); // try to get more data
   }
-  CC::constants::QS_SERIAL_STREAM.flush(); // wait for the transmission of outgoing data to complete
-#endif // QS_ON
+  qs_serial_stream.flush(); // wait for the transmission of outgoing data to complete
 }
 //............................................................................
 void QP::QS::onReset()
 {
-  //??? TBD
+  rp2040.wdt_begin(10);
 }

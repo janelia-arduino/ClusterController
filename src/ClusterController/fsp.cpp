@@ -5,7 +5,7 @@ using namespace QP;
 
 using namespace CC;
 
-static QSpyId const l_FSP_ID = { 0U }; // QSpy source ID
+static QSpyId const l_FSP_ID = {0U}; // QSpy source ID
 
 static CommandEvt const resetEvt = {RESET_SIG, 0U, 0U};
 static CommandEvt const powerOnEvt = {POWER_ON_SIG, 0U, 0U};
@@ -31,7 +31,29 @@ static QEvt const commandProcessedEvt = {COMMAND_PROCESSED_SIG, 0U, 0U};
 void FSP::ClusterController_setup()
 {
   QF::init(); // initialize the framework
+
+  QS_INIT(nullptr);
+
   BSP::init(); // initialize the BSP
+
+  // object dictionaries for AOs...
+  QS_OBJ_DICTIONARY(CC::AO_Cluster);
+  QS_OBJ_DICTIONARY(CC::AO_SerialCommandInterface);
+  QS_OBJ_DICTIONARY(CC::AO_EthernetCommandInterface);
+  QS_OBJ_DICTIONARY(CC::AO_Watchdog);
+
+  // signal dictionaries for globally published events...
+  QS_SIG_DICTIONARY(CC::RESET_SIG, nullptr);
+  QS_SIG_DICTIONARY(CC::POWER_ON_SIG, nullptr);
+  QS_SIG_DICTIONARY(CC::POWER_OFF_SIG, nullptr);
+  QS_SIG_DICTIONARY(CC::SERIAL_COMMAND_AVAILABLE_SIG, nullptr);
+  QS_SIG_DICTIONARY(CC::ETHERNET_COMMAND_AVAILABLE_SIG, nullptr);
+  QS_SIG_DICTIONARY(CC::COMMAND_PROCESSED_SIG, nullptr);
+
+  // setup the QS filters...
+  QS_GLB_FILTER(QP::QS_SM_RECORDS); // state machine records
+  QS_GLB_FILTER(QP::QS_AO_RECORDS); // active object records
+  QS_GLB_FILTER(QP::QS_UA_RECORDS); // all user records
 
   // init publish-subscribe
   static QSubscrList subscrSto[MAX_PUB_SIG];
@@ -71,13 +93,13 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 
 void FSP::Cluster_activateCommandInterfaces(QActive * const ao, QEvt const * e)
 {
-  AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_FSP_ID);
+  // AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_FSP_ID);
   // AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
 void FSP::Cluster_deactivateCommandInterfaces(QActive * const ao, QEvt const * e)
 {
-  AO_SerialCommandInterface->POST(&deactivateSerialCommandInterfaceEvt, &l_FSP_ID);
+  // AO_SerialCommandInterface->POST(&deactivateSerialCommandInterfaceEvt, &l_FSP_ID);
   // AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
@@ -96,6 +118,13 @@ void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt
   ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
   // ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);
   ao->subscribe(COMMAND_PROCESSED_SIG);
+
+  SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);
+  QS_OBJ_DICTIONARY(&(sci->serial_time_evt_));
+  QS_SIG_DICTIONARY(SERIAL_TIMEOUT_SIG, ao);
+  QS_SIG_DICTIONARY(ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, ao);
+  QS_SIG_DICTIONARY(DEACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, ao);
+  QS_SIG_DICTIONARY(SERIAL_READY_SIG, ao);
 }
 
 void FSP::SerialCommandInterface_armSerialTimer(QActive * const ao, QEvt const * e)
@@ -168,6 +197,14 @@ void FSP::EthernetCommandInterface_initializeAndSubscribe(QActive * const ao, QE
   // ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
   // ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);
   // ao->subscribe(COMMAND_PROCESSED_SIG);
+
+  EthernetCommandInterface * const eci = static_cast<EthernetCommandInterface * const>(ao);
+  QS_OBJ_DICTIONARY(&(eci->ethernet_time_evt_));
+  QS_SIG_DICTIONARY(ETHERNET_TIMEOUT_SIG, ao);
+  QS_SIG_DICTIONARY(ACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, ao);
+  QS_SIG_DICTIONARY(DEACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, ao);
+  QS_SIG_DICTIONARY(ETHERNET_INITIALIZED_SIG, ao);
+  QS_SIG_DICTIONARY(ETHERNET_SERVER_INITIALIZED_SIG, ao);
 }
 
 void FSP::EthernetCommandInterface_armEthernetTimer(QActive * const ao, QEvt const * e)
@@ -239,9 +276,11 @@ void FSP::Watchdog_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 
 void FSP::Watchdog_armWatchdogTimer(QActive * const ao, QEvt const * e)
 {
-  Serial.println("arming watchdog timer");
   Watchdog * const watchdog = static_cast<Watchdog * const>(ao);
   watchdog->watchdog_time_evt_.armX(constants::ticks_per_second, constants::ticks_per_second);
+
+  QS_OBJ_DICTIONARY(&(watchdog->watchdog_time_evt_));
+  QS_SIG_DICTIONARY(WATCHDOG_TIMEOUT_SIG, ao);
 }
 
 void FSP::Watchdog_disarmWatchdogTimer(QActive * const ao, QEvt const * e)
