@@ -11,6 +11,10 @@ static CommandEvt const resetEvt = {RESET_SIG, 0U, 0U};
 static CommandEvt const powerOnEvt = {POWER_ON_SIG, 0U, 0U};
 static CommandEvt const powerOffEvt = {POWER_OFF_SIG, 0U, 0U};
 
+static QEvt const processBinaryCommandEvt = {PROCESS_BINARY_COMMAND_SIG, 0U, 0U};
+static QEvt const processStringCommandEvt = {PROCESS_STRING_COMMAND_SIG, 0U, 0U};
+static QEvt const commandProcessedEvt = {COMMAND_PROCESSED_SIG, 0U, 0U};
+
 static QEvt const activateSerialCommandInterfaceEvt = {ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const deactivateSerialCommandInterfaceEvt = {DEACTIVATE_SERIAL_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const serialReadyEvt = {SERIAL_READY_SIG, 0U, 0U};
@@ -19,11 +23,7 @@ static QEvt const serialCommandAvailableEvt = {SERIAL_COMMAND_AVAILABLE_SIG, 0U,
 static QEvt const activateEthernetCommandInterfaceEvt = {ACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const deactivateEthernetCommandInterfaceEvt = {DEACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const ethernetInitializedEvt = {ETHERNET_INITIALIZED_SIG, 0U, 0U};
-// static QEvt const ethernetIPAddressFoundEvt = {ETHERNET_IP_ADDRESS_FOUND_SIG, 0U, 0U};
-static QEvt const ethernetServerInitializedEvt = {ETHERNET_SERVER_INITIALIZED_SIG, 0U, 0U};
-static QEvt const ethernetCommandAvailableEvt = {ETHERNET_COMMAND_AVAILABLE_SIG, 0U, 0U};
-
-static QEvt const commandProcessedEvt = {COMMAND_PROCESSED_SIG, 0U, 0U};
+static QEvt const ethernetServerConnectedEvt = {ETHERNET_SERVER_CONNECTED_SIG, 0U, 0U};
 
 //----------------------------------------------------------------------------
 // Local functions
@@ -42,6 +42,8 @@ void FSP::ClusterController_setup()
   QS_OBJ_DICTIONARY(CC::AO_EthernetCommandInterface);
   QS_OBJ_DICTIONARY(CC::AO_Watchdog);
 
+  QS_OBJ_DICTIONARY(&l_FSP_ID);
+
   // signal dictionaries for globally published events...
   QS_SIG_DICTIONARY(CC::RESET_SIG, nullptr);
   QS_SIG_DICTIONARY(CC::POWER_ON_SIG, nullptr);
@@ -49,6 +51,10 @@ void FSP::ClusterController_setup()
   QS_SIG_DICTIONARY(CC::SERIAL_COMMAND_AVAILABLE_SIG, nullptr);
   QS_SIG_DICTIONARY(CC::ETHERNET_COMMAND_AVAILABLE_SIG, nullptr);
   QS_SIG_DICTIONARY(CC::COMMAND_PROCESSED_SIG, nullptr);
+
+  // user record dictionaries
+  QS_USR_DICTIONARY(ETHERNET_LOG);
+  QS_USR_DICTIONARY(USER_COMMENT);
 
   // setup the QS filters...
   QS_GLB_FILTER(QP::QS_SM_RECORDS); // state machine records
@@ -193,10 +199,11 @@ void FSP::SerialCommandInterface_writeSerialStringResponse(QActive * const ao, Q
 
 void FSP::EthernetCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
-  BSP::initializeEthernet();
-  // ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
-  // ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);
-  // ao->subscribe(COMMAND_PROCESSED_SIG);
+  ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
+  ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);
+  ao->subscribe(PROCESS_BINARY_COMMAND_SIG);
+  ao->subscribe(PROCESS_STRING_COMMAND_SIG);
+  ao->subscribe(COMMAND_PROCESSED_SIG);
 
   EthernetCommandInterface * const eci = static_cast<EthernetCommandInterface * const>(ao);
   QS_OBJ_DICTIONARY(&(eci->ethernet_time_evt_));
@@ -204,13 +211,13 @@ void FSP::EthernetCommandInterface_initializeAndSubscribe(QActive * const ao, QE
   QS_SIG_DICTIONARY(ACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, ao);
   QS_SIG_DICTIONARY(DEACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, ao);
   QS_SIG_DICTIONARY(ETHERNET_INITIALIZED_SIG, ao);
-  QS_SIG_DICTIONARY(ETHERNET_SERVER_INITIALIZED_SIG, ao);
+  QS_SIG_DICTIONARY(ETHERNET_SERVER_CONNECTED_SIG, ao);
 }
 
 void FSP::EthernetCommandInterface_armEthernetTimer(QActive * const ao, QEvt const * e)
 {
   EthernetCommandInterface * const eci = static_cast<EthernetCommandInterface * const>(ao);
-  eci->ethernet_time_evt_.armX(constants::ticks_per_second/2, constants::ticks_per_second/50);
+  eci->ethernet_time_evt_.armX(constants::ticks_per_second, constants::ticks_per_second/100);
 }
 
 void FSP::EthernetCommandInterface_disarmEthernetTimer(QActive * const ao, QEvt const * e)
@@ -219,54 +226,68 @@ void FSP::EthernetCommandInterface_disarmEthernetTimer(QActive * const ao, QEvt 
   eci->ethernet_time_evt_.disarm();
 }
 
-void FSP::EthernetCommandInterface_beginEthernet(QActive * const ao, QEvt const * e)
+void FSP::EthernetCommandInterface_initializeEthernet(QActive * const ao, QEvt const * e)
 {
-  bool ethernet_begun = BSP::beginEthernet();
-  if (ethernet_begun)
+  bool ethernet_initialized = BSP::initializeEthernet();
+  if (ethernet_initialized)
   {
-    CC::AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_FSP_ID);
+    AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_FSP_ID);
   }
 }
 
-// void FSP::EthernetCommandInterface_checkForIPAddress(QActive * const ao, QEvt const * e)
-// {
-//   bool ip_address_found = BSP::checkForEthernetIPAddress();
-//   if (ip_address_found)
-//   {
-//     AO_EthernetCommandInterface->POST(&ethernetIPAddressFoundEvt, &l_FSP_ID);
-//   }
-// }
-
-void FSP::EthernetCommandInterface_beginServer(QActive * const ao, QEvt const * e)
+void FSP::EthernetCommandInterface_pollEthernet(QActive * const ao, QEvt const * e)
 {
-  bool ethernet_server_begun = BSP::beginEthernetServer();
-  if (ethernet_server_begun)
+  BSP::pollEthernet();
+}
+
+void FSP::EthernetCommandInterface_createServerConnection(QActive * const ao, QEvt const * e)
+{
+  bool server_connected = BSP::createEthernetServerConnection();
+  if (server_connected)
   {
-    AO_EthernetCommandInterface->POST(&ethernetServerInitializedEvt, &l_FSP_ID);
+    AO_EthernetCommandInterface->POST(&ethernetServerConnectedEvt, &l_FSP_ID);
   }
 }
 
-void FSP::EthernetCommandInterface_pollEthernetCommand(QActive * const ao, QEvt const * e)
+void FSP::EthernetCommandInterface_analyzeCommand(QActive * const ao, QEvt const * e)
 {
-  bool bytes_available = BSP::pollEthernetCommand();
-  if (bytes_available)
+  EthernetCommandInterface * const eci = static_cast<EthernetCommandInterface * const>(ao);
+  EthernetCommandEvt const * ece = static_cast<EthernetCommandEvt const *>(e);
+  eci->connection_ = ece->connection;
+  eci->binary_command_ = ece->binary_command;
+  eci->binary_command_byte_count_ = ece->binary_command_byte_count;
+
+  uint8_t first_command_byte = (uint8_t)(eci->binary_command_[0]);
+  if (first_command_byte > constants::first_command_byte_max_value_binary)
   {
-    QF::PUBLISH(&ethernetCommandAvailableEvt, &l_FSP_ID);
+    QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+      QS_STR("string command");
+    QS_END()
+    QF::PUBLISH(&processStringCommandEvt, &l_FSP_ID);
+  }
+  else
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+      QS_STR("binary command");
+    QS_END()
+    QF::PUBLISH(&processBinaryCommandEvt, &l_FSP_ID);
   }
 }
 
-// void FSP::EthernetCommandInterface_readEthernetBinaryCommand(QActive * const ao, QEvt const * e)
-// {
-//   EthernetCommandInterface * const eci = static_cast<EthernetCommandInterface * const>(ao);
-//   BSP::readEthernetBinaryCommand();
-//   // eci->binary_command_ = BSP::readEthernetBinaryCommand(sci->first_command_byte_);
-// }
+void FSP::EthernetCommandInterface_processBinaryCommand(QActive * const ao, QEvt const * e)
+{
+  EthernetCommandInterface * const eci = static_cast<EthernetCommandInterface * const>(ao);
+  eci->binary_response_byte_count_ = FSP::processBinaryCommand(eci->binary_command_,
+    eci->binary_command_byte_count_,
+    eci->binary_response_);
+  QF::PUBLISH(&commandProcessedEvt, &l_FSP_ID);
+}
 
-// void FSP::EthernetCommandInterface_writeEthernetBinaryResponse(QActive * const ao, QEvt const * e)
-// {
-//   EthernetCommandInterface * const eci = static_cast<EthernetCommandInterface * const>(ao);
-//   // eci->string_command_ = BSP::readSerialStringCommand(sci->first_command_byte_);
-// }
+void FSP::EthernetCommandInterface_writeBinaryResponse(QActive * const ao, QEvt const * e)
+{
+  EthernetCommandInterface * const eci = static_cast<EthernetCommandInterface * const>(ao);
+  BSP::writeEthernetBinaryResponse(eci->connection_, eci->binary_response_, eci->binary_response_byte_count_);
+}
 
 void FSP::Watchdog_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
@@ -292,6 +313,47 @@ void FSP::Watchdog_disarmWatchdogTimer(QActive * const ao, QEvt const * e)
 void FSP::Watchdog_feedWatchdog(QActive * const ao, QEvt const * e)
 {
   BSP::feedWatchdog();
+}
+
+uint8_t FSP::processBinaryCommand(uint8_t const * command_buffer,
+    size_t command_byte_count,
+    uint8_t response[constants::byte_count_per_response_max])
+{
+  uint8_t response_byte_count = 0;
+  // uint8_t second_command_byte = (uint8_t)(command_buffer[1]);
+  // response[response_byte_count++] = 2;
+  // response[response_byte_count++] = 0;
+  // response[response_byte_count++] = second_command_byte;
+  // switch (second_command_byte)
+  // {
+  //   case 0x01:
+  //   {
+  //     AO_Watchdog->POST(&resetEvt, &l_FSP_ID);
+  //     appendMessage(response, response_byte_count, "Reset Command Sent to FPGA");
+  //     break;
+  //   }
+  //   case 0x30:
+  //   {
+  //     AO_Arena->POST(&allOffEvt, &l_FSP_ID);
+  //     appendMessage(response, response_byte_count, "Display has been stopped");
+  //     break;
+  //   }
+  //   case 0x00:
+  //   {
+  //     AO_Arena->POST(&allOffEvt, &l_FSP_ID);
+  //     appendMessage(response, response_byte_count, "All-Off Received");
+  //     break;
+  //   }
+  //   case 0xFF:
+  //   {
+  //     AO_Arena->POST(&allOnEvt, &l_FSP_ID);
+  //     appendMessage(response, response_byte_count, "All-On Received");
+  //     break;
+  //   }
+  //   default:
+  //     break;
+  // }
+  return response_byte_count;
 }
 
 void FSP::processStringCommand(const char * command, char * response)

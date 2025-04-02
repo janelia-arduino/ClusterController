@@ -204,6 +204,11 @@ This structure of the code is recommended for applications with only one active 
   <class name="EthernetCommandInterface" superclass="qpcpp::QActive">
    <attribute name="instance" type="EthernetCommandInterface" visibility="0x00" properties="0x01"/>
    <attribute name="ethernet_time_evt_" type="QP::QTimeEvt" visibility="0x00" properties="0x00"/>
+   <attribute name="binary_response_[constants::byte_count_per_response_max]" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="binary_response_byte_count_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="connection_" type="void *" visibility="0x00" properties="0x00"/>
+   <attribute name="binary_command_" type="std::uint8_t const *" visibility="0x00" properties="0x00"/>
+   <attribute name="binary_command_byte_count_" type="std::uint32_t" visibility="0x00" properties="0x00"/>
    <operation name="EthernetCommandInterface" type="" visibility="0x00" properties="0x00">
     <code>: QActive(Q_STATE_CAST(&amp;EthernetCommandInterface::initial)),
     ethernet_time_evt_(this, ETHERNET_TIMEOUT_SIG, 0U)</code>
@@ -226,8 +231,8 @@ This structure of the code is recommended for applications with only one active 
     <state name="Active">
      <entry brief="armEthernetTimer()">FSP::EthernetCommandInterface_armEthernetTimer(this, e);</entry>
      <exit brief="disarmEthernetTimer()">FSP::EthernetCommandInterface_disarmEthernetTimer(this, e);</exit>
-     <initial target="../2">
-      <initial_glyph conn="12,29,5,3,3">
+     <initial target="../3">
+      <initial_glyph conn="12,35,5,3,4">
        <action box="0,-2,10,2"/>
       </initial_glyph>
      </initial>
@@ -236,44 +241,83 @@ This structure of the code is recommended for applications with only one active 
        <action box="0,-17,39,2"/>
       </tran_glyph>
      </tran>
-     <state name="Unintitalized">
-      <tran trig="ETHERNET_INITIALIZED" target="../../3">
-       <tran_glyph conn="43,29,1,1,6,11,-10">
-        <action box="1,-3,19,2"/>
-       </tran_glyph>
-      </tran>
+     <tran trig="ETHERNET_TIMEOUT">
+      <action brief="pollEthernet()">FSP::EthernetCommandInterface_pollEthernet(this, e);</action>
+      <tran_glyph conn="8,25,3,-1,19">
+       <action box="0,-2,17,4"/>
+      </tran_glyph>
+     </tran>
+     <state name="ETHERNET_TIMEOUT">
       <tran trig="ETHERNET_TIMEOUT">
-       <action brief="beginEthernet()">FSP::EthernetCommandInterface_beginEthernet(this, e);</action>
-       <tran_glyph conn="15,32,3,-1,18">
+       <action brief="initializeEthernet()">FSP::EthernetCommandInterface_initializeEthernet(this, e);</action>
+       <tran_glyph conn="16,38,3,-1,18">
         <action box="0,-2,18,5"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="15,25,28,10"/>
-     </state>
-     <state name="Initialized">
-      <tran trig="ETHERNET_SERVER_INITIALIZED" target="../../4">
-       <tran_glyph conn="39,43,1,0,4,5">
-        <action box="5,1,27,2"/>
+      <tran trig="ETHERNET_INITIALIZED" target="../../4">
+       <tran_glyph conn="44,35,1,3,23">
+        <action box="0,-2,19,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="ETHERNET_TIMEOUT">
-       <action brief="beginServer()">FSP::EthernetCommandInterface_beginServer(this, e);</action>
-       <tran_glyph conn="15,43,3,-1,18">
-        <action box="0,-2,18,4"/>
-       </tran_glyph>
-      </tran>
-      <state_glyph node="15,38,24,8"/>
+      <state_glyph node="16,31,28,11"/>
      </state>
-     <state name="ServerRunning">
+     <state name="CreatingServerConnection">
       <tran trig="ETHERNET_TIMEOUT">
-       <action brief="pollEthernetCommand()">FSP::EthernetCommandInterface_pollEthernetCommand(this, e);</action>
-       <tran_glyph conn="15,53,3,-1,23">
+       <action brief="createServerConnection()">FSP::EthernetCommandInterface_createServerConnection(this, e);</action>
+       <tran_glyph conn="67,38,3,-1,20">
         <action box="0,-2,19,4"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="15,48,31,11"/>
+      <tran trig="ETHERNET_SERVER_CONNECTED" target="../../5">
+       <tran_glyph conn="69,42,2,0,5,-50,4">
+        <action box="-49,3,30,3"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="67,31,23,11"/>
      </state>
-     <state_glyph node="8,16,99,59">
+     <state name="WaitingForNewCommand">
+      <tran trig="SERIAL_COMMAND_AVAILABLE" target="../../6">
+       <tran_glyph conn="42,56,1,3,28">
+        <action box="2,0,26,2"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="ETHERNET_COMMAND_AVAILABLE" target="../../7">
+       <action brief="analyzeCommand()">FSP::EthernetCommandInterface_analyzeCommand(this, e);</action>
+       <tran_glyph conn="18,59,2,0,16">
+        <action box="0,10,31,4"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="14,51,28,8"/>
+     </state>
+     <state name="Waiting">
+      <tran trig="COMMAND_PROCESSED" target="../../5">
+       <tran_glyph conn="70,54,3,1,-28">
+        <action box="-26,-2,21,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="70,51,17,8"/>
+     </state>
+     <state name="ChoosingCommandProcessor">
+      <tran trig="PROCESS_BINARY_COMMAND" target="../../8">
+       <tran_glyph conn="37,78,1,2,11,-4">
+        <action box="0,0,25,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="14,75,23,10"/>
+     </state>
+     <state name="ProcessingBinaryCommand">
+      <entry brief="processBinaryCommand()">FSP::EthernetCommandInterface_processBinaryCommand(this, e);</entry>
+      <tran trig="COMMAND_PROCESSED" target="../../5">
+       <action brief="writeBinaryResponse()">FSP::EthernetCommandInterface_writeBinaryResponse(this, e);</action>
+       <tran_glyph conn="49,68,0,2,-2,-29,-7">
+        <action box="-28,-4,21,4"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="46,68,24,6">
+       <entry box="1,2,22,2"/>
+      </state_glyph>
+     </state>
+     <state_glyph node="8,16,99,70">
       <entry box="1,2,24,2"/>
       <exit box="1,4,24,2"/>
      </state_glyph>
@@ -323,6 +367,11 @@ This structure of the code is recommended for applications with only one active 
  </package>
  <package name="Shared" stereotype="0x00" namespace="CC::">
   <class name="CommandEvt" superclass="qpcpp::QEvt"/>
+  <class name="EthernetCommandEvt" superclass="qpcpp::QEvt">
+   <attribute name="connection" type="void *" visibility="0x00" properties="0x00"/>
+   <attribute name="binary_command" type="std::uint8_t const *" visibility="0x00" properties="0x00"/>
+   <attribute name="binary_command_byte_count" type="std::uint32_t" visibility="0x00" properties="0x00"/>
+  </class>
   <attribute name="AO_Cluster" type="QP::QActive * const" visibility="0x00" properties="0x00">
    <code>= &amp;Cluster::instance;</code>
   </attribute>

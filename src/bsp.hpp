@@ -25,10 +25,10 @@ public:
   static void readSerialStringCommand(char * command_str, char first_char);
   static void writeSerialStringResponse(char * response);
 
-  static void initializeEthernet();
-  static bool beginEthernet();
-  static bool beginEthernetServer();
-  static bool pollEthernetCommand();
+  static bool initializeEthernet();
+  static void pollEthernet();
+  static bool createEthernetServerConnection();
+  static void writeEthernetBinaryResponse(void * connection, uint8_t response[CC::constants::byte_count_per_response_max], uint8_t response_byte_count);
 };
 
 #endif // BSP_HPP
