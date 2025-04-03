@@ -23,6 +23,23 @@
 
 Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 
+Commands would be like a few bytes, sent to one IP: one byte for command, one byte for prism id, two for arguments.
+Commands would be e.g.
+Beep (no arg, no arg),
+Calibrate to bottom position (prism, no arg),
+set target (prism, position),
+start move (prism, no arg),
+stop move (prism, no arg),
+report position (prism, no arg),
+set parameters (param id, param value)
+
+| Command Name | Command Number | Prism ID | Arg 1 | Arg 2 | Response |
+|--------------+----------------+----------+-------+-------+----------|
+| reset        |           0x01 |          |       |       |     0x01 |
+| power-off    |           0x02 |          |       |       |     0x02 |
+| power-on     |           0x03 |          |       |       |     0x03 |
+|              |                |          |       |       |          |
+
 * Host Computer Setup
 
 ** Download this repository

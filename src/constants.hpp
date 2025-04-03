@@ -1,8 +1,6 @@
 #ifndef CLUSTER_CONTROLLER_CONSTANTS_HPP
 #define CLUSTER_CONTROLLER_CONSTANTS_HPP
 
-#include <SPI.h>
-
 
 namespace CC
 {

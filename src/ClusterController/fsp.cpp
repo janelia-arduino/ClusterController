@@ -57,8 +57,8 @@ void FSP::ClusterController_setup()
   QS_USR_DICTIONARY(USER_COMMENT);
 
   // setup the QS filters...
-  QS_GLB_FILTER(QP::QS_SM_RECORDS); // state machine records
-  QS_GLB_FILTER(QP::QS_AO_RECORDS); // active object records
+  // QS_GLB_FILTER(QP::QS_SM_RECORDS); // state machine records
+  // QS_GLB_FILTER(QP::QS_AO_RECORDS); // active object records
   QS_GLB_FILTER(QP::QS_UA_RECORDS); // all user records
 
   // init publish-subscribe
@@ -100,13 +100,13 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 void FSP::Cluster_activateCommandInterfaces(QActive * const ao, QEvt const * e)
 {
   // AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_FSP_ID);
-  // AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_FSP_ID);
+  AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
 void FSP::Cluster_deactivateCommandInterfaces(QActive * const ao, QEvt const * e)
 {
   // AO_SerialCommandInterface->POST(&deactivateSerialCommandInterfaceEvt, &l_FSP_ID);
-  // AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_FSP_ID);
+  AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
 void FSP::Cluster_powerOn(QActive * const ao, QEvt const * e)
@@ -122,7 +122,7 @@ void FSP::Cluster_powerOff(QActive * const ao, QEvt const * e)
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
   ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
-  // ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);
+  ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);
   ao->subscribe(COMMAND_PROCESSED_SIG);
 
   SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);

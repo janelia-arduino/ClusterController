@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
+#include "mongoose_glue.h"
 #include <Ticker.h>
 #include <TCA6408.h>
 
@@ -13,24 +14,38 @@ namespace CC
 {
 namespace constants
 {
-constexpr uint8_t led_pin = 25;
-constexpr uint8_t power_pin = 15;
+constexpr pin_size_t led_pin = 25;
+constexpr pin_size_t power_pin = 15;
 
 // Serial Communication Interface
-constexpr uint8_t serial_rx_pin = 17;
-constexpr uint8_t serial_tx_pin = 16;
+constexpr pin_size_t serial_rx_pin = 17;
+constexpr pin_size_t serial_tx_pin = 16;
 
-// SPI Settings
-constexpr uint8_t spi_bit_order = MSBFIRST;
-constexpr uint8_t spi_data_mode = SPI_MODE0;
-constexpr uint32_t spi_clock_speed = 5000000;
+// Ethernet
+constexpr BitOrder ethernet_spi_bit_order = MSBFIRST;
+constexpr uint8_t ethernet_spi_data_mode = SPI_MODE0;
+constexpr uint32_t ethernet_spi_clock_speed = 4000000;
+constexpr pin_size_t ethernet_spi_rx_pin = 16;
+constexpr pin_size_t ethernet_spi_csn_pin = 17;
+constexpr pin_size_t ethernet_spi_sck_pin = 18;
+constexpr pin_size_t ethernet_spi_tx_pin = 19;
+constexpr pin_size_t ethernet_reset_pin = 20;
+constexpr pin_size_t ethernet_int_pin = 21;
+// constexpr bool ethernet_hw_csn = true;
+constexpr bool ethernet_hw_csn = false;
+
+// Prism SPI Settings
+// constexpr BitOrder prism_spi_bit_order = MSBFIRST;
+// constexpr uint8_t prism_spi_data_mode = SPI_MODE0;
+// constexpr uint32_t prism_spi_clock_speed = 5000000;
+// constexpr pin_size_t prism_spi_rx_pin = 
 
 // Wire settings
-constexpr uint8_t sda_pin = 26;
-constexpr uint8_t scl_pin = 27;
+constexpr pin_size_t sda_pin = 26;
+constexpr pin_size_t scl_pin = 27;
 
-constexpr uint8_t cluster_address_reset_pin = 0;
-constexpr uint8_t cluster_address_interrupt_pin = 1;
+constexpr pin_size_t cluster_address_reset_pin = 0;
+constexpr pin_size_t cluster_address_interrupt_pin = 1;
 constexpr TCA6408::DeviceAddress cluster_address_device_address = TCA6408::DEVICE_ADDRESS_0;
 
 } // namespace constants
@@ -53,8 +68,12 @@ static TwoWire & wire = Wire1;
 static TCA6408 tca6408;
 
 // Ethernet Communication Interface
-// static const char *s_lsn = "tcp://192.168.10.62:62222";
-static const char *s_lsn = "tcp://192.168.10.62:62222";
+SPIClassRP2040 & ethernet_spi = SPI;
+SPISettings ethernet_spi_settings(constants::ethernet_spi_clock_speed,
+  constants::ethernet_spi_bit_order,
+  constants::ethernet_spi_data_mode);
+struct mg_tcpip_if mif = {.mac = {2, 0, 1, 2, 3, 5}};  // network interface
+static const char *s_lsn = "tcp://0.0.0.0:7777";
 
 // Log
 static char log_str[constants::string_log_length_max];
@@ -62,6 +81,15 @@ static uint16_t log_str_pos = 0;
 
 //----------------------------------------------------------------------------
 // Local functions
+struct mg_tcpip_spi mongoose_spi = {
+    NULL,  // SPI metadata
+    [](void *) { digitalWriteFast(constants::ethernet_spi_csn_pin, LOW); ethernet_spi.beginTransaction(ethernet_spi_settings); },
+    [](void *) { digitalWriteFast(constants::ethernet_spi_csn_pin, HIGH); ethernet_spi.endTransaction(); },
+    // [](void *) { ethernet_spi.beginTransaction(ethernet_spi_settings); },
+    // [](void *) { ethernet_spi.endTransaction(); },
+    [](void *, uint8_t c) { return ethernet_spi.transfer(c); }, // Execute transaction
+};
+
 void addressInterruptCallback()
 {
   // CC::AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_BSP_ID);
@@ -184,62 +212,70 @@ void log_fn(char ch, void *param)
 
 bool BSP::initializeEthernet()
 {
-  // SPI.setRX(16);
-  // SPI.setCS(17);
-  // SPI.setSCK(18);
-  // SPI.setTX(19);
+  pinMode(constants::ethernet_spi_csn_pin, OUTPUT);
 
-  // mg_log_set_fn(log_fn, 0);
-  // ethernet_init();
-  // mongoose_init();
+  ethernet_spi.setRX(constants::ethernet_spi_rx_pin);
+  // ethernet_spi.setCS(constants::ethernet_spi_csn_pin);
+  ethernet_spi.setSCK(constants::ethernet_spi_sck_pin);
+  ethernet_spi.setTX(constants::ethernet_spi_tx_pin);
+  ethernet_spi.begin(constants::ethernet_hw_csn);
+
+  mg_log_set_fn(log_fn, 0);
+  mongoose_init();
+
+  // Initialise built-in TCP/IP stack with W5500 driver
+  mif.driver = &mg_tcpip_driver_w5500;
+  mif.driver_data = &mongoose_spi;
+  mg_tcpip_init(&g_mgr, &mif);
+
   return true;
 }
 
 void BSP::pollEthernet()
 {
-  // mongoose_poll();
+  mongoose_poll();
 }
 
 void sfn(struct mg_connection *c, int ev, void *ev_data)
 {
-  // if (ev == MG_EV_OPEN && c->is_listening == 1)
-  // {
-  //   MG_INFO(("SERVER is listening"));
-  // }
-  // else if (ev == MG_EV_ACCEPT)
-  // {
-  //   MG_INFO(("SERVER accepted a connection"));
-  // }
-  // else if (ev == MG_EV_READ)
-  // {
-  //   struct mg_iobuf *r = &c->recv;
-  //   MG_INFO(("SERVER got data: %lu bytes", r->len));
+  if (ev == MG_EV_OPEN && c->is_listening == 1)
+  {
+    MG_INFO(("SERVER is listening"));
+  }
+  else if (ev == MG_EV_ACCEPT)
+  {
+    MG_INFO(("SERVER accepted a connection"));
+  }
+  else if (ev == MG_EV_READ)
+  {
+    struct mg_iobuf *r = &c->recv;
+    MG_INFO(("SERVER got data: %lu bytes", r->len));
 
-  //   static EthernetCommandEvt ethernetCommandEvt = {ETHERNET_COMMAND_AVAILABLE_SIG, 0U, 0U};
-  //   ethernetCommandEvt.connection = c;
-  //   ethernetCommandEvt.binary_command = r->buf;
-  //   ethernetCommandEvt.binary_command_byte_count = r->len;
-  //   QF::PUBLISH(&ethernetCommandEvt, &l_BSP_ID);
-  // }
-  // else if (ev == MG_EV_WRITE)
-  // {
-  //   MG_INFO(("MG_EV_WRITE"));
-  // }
-  // else if (ev == MG_EV_CLOSE)
-  // {
-  //   MG_INFO(("SERVER disconnected"));
-  // }
-  // else if (ev == MG_EV_ERROR)
-  // {
-  //   MG_INFO(("SERVER error: %s", (char *) ev_data));
-  // }
-  // else if (ev == MG_EV_POLL)
-  // {
-  // }
-  // else
-  // {
-  //   MG_INFO(("event %lu", ev));
-  // }
+    static EthernetCommandEvt ethernetCommandEvt = {ETHERNET_COMMAND_AVAILABLE_SIG, 0U, 0U};
+    ethernetCommandEvt.connection = c;
+    ethernetCommandEvt.binary_command = r->buf;
+    ethernetCommandEvt.binary_command_byte_count = r->len;
+    QF::PUBLISH(&ethernetCommandEvt, &l_BSP_ID);
+  }
+  else if (ev == MG_EV_WRITE)
+  {
+    MG_INFO(("MG_EV_WRITE"));
+  }
+  else if (ev == MG_EV_CLOSE)
+  {
+    MG_INFO(("SERVER disconnected"));
+  }
+  else if (ev == MG_EV_ERROR)
+  {
+    MG_INFO(("SERVER error: %s", (char *) ev_data));
+  }
+  else if (ev == MG_EV_POLL)
+  {
+  }
+  else
+  {
+    MG_INFO(("event %lu", ev));
+  }
 }
 
 bool BSP::createEthernetServerConnection()
@@ -255,10 +291,10 @@ bool BSP::createEthernetServerConnection()
 
 void BSP::writeEthernetBinaryResponse(void * connection, uint8_t response[constants::byte_count_per_response_max], uint8_t response_byte_count)
 {
-  // struct mg_connection * c = (struct mg_connection *)connection;
-  // struct mg_iobuf *r = &c->recv;
-  // mg_send(c, response, response_byte_count);
-  // r->len = 0;
+  struct mg_connection * c = (struct mg_connection *)connection;
+  struct mg_iobuf *r = &c->recv;
+  mg_send(c, response, response_byte_count);
+  r->len = 0;
 }
 
 //----------------------------------------------------------------------------
