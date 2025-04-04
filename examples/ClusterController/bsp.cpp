@@ -160,21 +160,23 @@ void BSP::powerOn()
 
 bool BSP::beginSerial()
 {
-  serial_communication_interface_stream.setRX(CC::constants::serial_rx_pin);
-  serial_communication_interface_stream.setTX(CC::constants::serial_tx_pin);
-  serial_communication_interface_stream.begin(CC::constants::serial_baud_rate);
-  serial_communication_interface_stream.setTimeout(CC::constants::serial_timeout);
+  // serial_communication_interface_stream.setRX(CC::constants::serial_rx_pin);
+  // serial_communication_interface_stream.setTX(CC::constants::serial_tx_pin);
+  // serial_communication_interface_stream.begin(CC::constants::serial_baud_rate);
+  // serial_communication_interface_stream.setTimeout(CC::constants::serial_timeout);
   return true;
 }
 
 bool BSP::pollSerialCommand()
 {
-  return serial_communication_interface_stream.available();
+  return false;
+  // return serial_communication_interface_stream.available();
 }
 
 uint8_t BSP::readSerialByte()
 {
-  return serial_communication_interface_stream.read();
+  return 0;
+  // return serial_communication_interface_stream.read();
 }
 
 void BSP::readSerialStringCommand(char * command_str, char first_char)
