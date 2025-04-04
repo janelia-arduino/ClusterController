@@ -19,11 +19,12 @@ constexpr pin_size_t led_pin = 25;
 constexpr pin_size_t power_pin = 15;
 
 // Serial Communication Interface
-constexpr pin_size_t serial_rx_pin = 17;
-constexpr pin_size_t serial_tx_pin = 16;
+// constexpr pin_size_t serial_rx_pin = 17;
+// constexpr pin_size_t serial_tx_pin = 16;
 
 // Ethernet SPI Settings
 constexpr pin_size_t ethernet_cs_pin = 17;
+constexpr pin_size_t ethernet_int_pin = 21;
 
 // Wire settings
 constexpr pin_size_t sda_pin = 26;
@@ -48,6 +49,9 @@ static Ticker system_clock;
 // Serial Communication Interface
 static SerialUART & serial_communication_interface_stream = Serial1;
 static SerialUSB & qs_serial_stream = Serial;
+
+// Ethernet Communication Interface
+Wiznet5500lwIP eth(constants::ethernet_cs_pin, SPI, constants::ethernet_int_pin);
 
 static TwoWire & wire = Wire1;
 static TCA6408 tca6408;
@@ -126,10 +130,10 @@ void BSP::powerOn()
 
 bool BSP::beginSerial()
 {
-  serial_communication_interface_stream.setRX(CC::constants::serial_rx_pin);
-  serial_communication_interface_stream.setTX(CC::constants::serial_tx_pin);
-  serial_communication_interface_stream.begin(CC::constants::serial_baud_rate);
-  serial_communication_interface_stream.setTimeout(CC::constants::serial_timeout);
+  // serial_communication_interface_stream.setRX(CC::constants::serial_rx_pin);
+  // serial_communication_interface_stream.setTX(CC::constants::serial_tx_pin);
+  // serial_communication_interface_stream.begin(CC::constants::serial_baud_rate);
+  // serial_communication_interface_stream.setTimeout(CC::constants::serial_timeout);
   return true;
 }
 
@@ -161,7 +165,20 @@ void BSP::writeSerialStringResponse(char * response)
 
 bool BSP::initializeEthernet()
 {
-  return true;
+  if (eth.begin())
+  {
+    return true;
+  }
+  return false;
+}
+
+bool BSP::ethernetConnected()
+{
+  if (eth.connected())
+  {
+    return true;
+  }
+  return false;
 }
 
 void BSP::pollEthernet()
@@ -170,7 +187,7 @@ void BSP::pollEthernet()
 
 bool BSP::createEthernetServerConnection()
 {
-  return true;
+  return false;
 }
 
 void BSP::writeEthernetBinaryResponse(void * connection, uint8_t response[constants::byte_count_per_response_max], uint8_t response_byte_count)

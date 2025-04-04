@@ -64,6 +64,7 @@ Q_STATE_DEF(EthernetCommandInterface, initial) {
     QS_FUN_DICTIONARY(&EthernetCommandInterface::Waiting);
     QS_FUN_DICTIONARY(&EthernetCommandInterface::ChoosingCommandProcessor);
     QS_FUN_DICTIONARY(&EthernetCommandInterface::ProcessingBinaryCommand);
+    QS_FUN_DICTIONARY(&EthernetCommandInterface::WaitingForConnection);
 
     return tran(&Inactive);
 }
@@ -134,7 +135,7 @@ Q_STATE_DEF(EthernetCommandInterface, ETHERNET_TIMEOUT) {
         }
         //.${AOs::EthernetCommandI~::SM::Active::ETHERNET_TIMEOUT::ETHERNET_INITIALIZED}
         case ETHERNET_INITIALIZED_SIG: {
-            status_ = tran(&CreatingServerConnection);
+            status_ = tran(&WaitingForConnection);
             break;
         }
         default: {
@@ -234,6 +235,28 @@ Q_STATE_DEF(EthernetCommandInterface, ProcessingBinaryCommand) {
         case COMMAND_PROCESSED_SIG: {
             FSP::EthernetCommandInterface_writeBinaryResponse(this, e);
             status_ = tran(&WaitingForNewCommand);
+            break;
+        }
+        default: {
+            status_ = super(&Active);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::EthernetCommandI~::SM::Active::WaitingForConnection} ...............
+Q_STATE_DEF(EthernetCommandInterface, WaitingForConnection) {
+    QP::QState status_;
+    switch (e->sig) {
+        //.${AOs::EthernetCommandI~::SM::Active::WaitingForConnec~::ETHERNET_CONNECTED}
+        case ETHERNET_CONNECTED_SIG: {
+            status_ = tran(&CreatingServerConnection);
+            break;
+        }
+        //.${AOs::EthernetCommandI~::SM::Active::WaitingForConnec~::ETHERNET_TIMEOUT}
+        case ETHERNET_TIMEOUT_SIG: {
+            FSP::EthernetCommandInterface_checkConnection(this, e);
+            status_ = Q_RET_HANDLED;
             break;
         }
         default: {

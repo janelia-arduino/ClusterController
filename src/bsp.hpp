@@ -26,6 +26,7 @@ public:
   static void writeSerialStringResponse(char * response);
 
   static bool initializeEthernet();
+  static bool ethernetConnected();
   static void pollEthernet();
   static bool createEthernetServerConnection();
   static void writeEthernetBinaryResponse(void * connection, uint8_t response[CC::constants::byte_count_per_response_max], uint8_t response_byte_count);

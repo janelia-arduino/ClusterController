@@ -23,6 +23,7 @@ static QEvt const serialCommandAvailableEvt = {SERIAL_COMMAND_AVAILABLE_SIG, 0U,
 static QEvt const activateEthernetCommandInterfaceEvt = {ACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const deactivateEthernetCommandInterfaceEvt = {DEACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG, 0U, 0U};
 static QEvt const ethernetInitializedEvt = {ETHERNET_INITIALIZED_SIG, 0U, 0U};
+static QEvt const ethernetConnectedEvt = {ETHERNET_CONNECTED_SIG, 0U, 0U};
 static QEvt const ethernetServerConnectedEvt = {ETHERNET_SERVER_CONNECTED_SIG, 0U, 0U};
 
 //----------------------------------------------------------------------------
@@ -57,8 +58,8 @@ void FSP::ClusterController_setup()
   QS_USR_DICTIONARY(USER_COMMENT);
 
   // setup the QS filters...
-  QS_GLB_FILTER(QP::QS_SM_RECORDS); // state machine records
-  QS_GLB_FILTER(QP::QS_AO_RECORDS); // active object records
+  // QS_GLB_FILTER(QP::QS_SM_RECORDS); // state machine records
+  // QS_GLB_FILTER(QP::QS_AO_RECORDS); // active object records
   QS_GLB_FILTER(QP::QS_UA_RECORDS); // all user records
 
   // init publish-subscribe
@@ -100,13 +101,13 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 void FSP::Cluster_activateCommandInterfaces(QActive * const ao, QEvt const * e)
 {
   // AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_FSP_ID);
-  // AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_FSP_ID);
+  AO_EthernetCommandInterface->POST(&activateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
 void FSP::Cluster_deactivateCommandInterfaces(QActive * const ao, QEvt const * e)
 {
   // AO_SerialCommandInterface->POST(&deactivateSerialCommandInterfaceEvt, &l_FSP_ID);
-  // AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_FSP_ID);
+  AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
 void FSP::Cluster_powerOn(QActive * const ao, QEvt const * e)
@@ -122,7 +123,7 @@ void FSP::Cluster_powerOff(QActive * const ao, QEvt const * e)
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
   ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
-  // ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);
+  ao->subscribe(ETHERNET_COMMAND_AVAILABLE_SIG);
   ao->subscribe(COMMAND_PROCESSED_SIG);
 
   SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);
@@ -231,7 +232,22 @@ void FSP::EthernetCommandInterface_initializeEthernet(QActive * const ao, QEvt c
   bool ethernet_initialized = BSP::initializeEthernet();
   if (ethernet_initialized)
   {
+    QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+      QS_STR("ethernet initialized");
+    QS_END()
     AO_EthernetCommandInterface->POST(&ethernetInitializedEvt, &l_FSP_ID);
+  }
+}
+
+void FSP::EthernetCommandInterface_checkConnection(QActive * const ao, QEvt const * e)
+{
+  bool ethernet_connected = BSP::ethernetConnected();
+  if (ethernet_connected)
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+      QS_STR("ethernet connected");
+    QS_END()
+    AO_EthernetCommandInterface->POST(&ethernetConnectedEvt, &l_FSP_ID);
   }
 }
 
