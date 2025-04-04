@@ -3,6 +3,8 @@
 #include <Ticker.h>
 #include <TCA6408.h>
 
+#include <W5500lwIP.h>
+
 #include "ClusterController.hpp"
 
 
@@ -13,24 +15,22 @@ namespace CC
 {
 namespace constants
 {
-constexpr uint8_t led_pin = 25;
-constexpr uint8_t power_pin = 15;
+constexpr pin_size_t led_pin = 25;
+constexpr pin_size_t power_pin = 15;
 
 // Serial Communication Interface
-constexpr uint8_t serial_rx_pin = 17;
-constexpr uint8_t serial_tx_pin = 16;
+constexpr pin_size_t serial_rx_pin = 17;
+constexpr pin_size_t serial_tx_pin = 16;
 
-// SPI Settings
-constexpr uint8_t spi_bit_order = MSBFIRST;
-constexpr uint8_t spi_data_mode = SPI_MODE0;
-constexpr uint32_t spi_clock_speed = 5000000;
+// Ethernet SPI Settings
+constexpr pin_size_t ethernet_cs_pin = 17;
 
 // Wire settings
-constexpr uint8_t sda_pin = 26;
-constexpr uint8_t scl_pin = 27;
+constexpr pin_size_t sda_pin = 26;
+constexpr pin_size_t scl_pin = 27;
 
-constexpr uint8_t cluster_address_reset_pin = 0;
-constexpr uint8_t cluster_address_interrupt_pin = 1;
+constexpr pin_size_t cluster_address_reset_pin = 0;
+constexpr pin_size_t cluster_address_interrupt_pin = 1;
 constexpr TCA6408::DeviceAddress cluster_address_device_address = TCA6408::DEVICE_ADDRESS_0;
 
 } // namespace constants
@@ -53,12 +53,6 @@ static TwoWire & wire = Wire1;
 static TCA6408 tca6408;
 
 // Ethernet Communication Interface
-// static const char *s_lsn = "tcp://192.168.10.62:62222";
-static const char *s_lsn = "tcp://192.168.10.62:62222";
-
-// Log
-static char log_str[constants::string_log_length_max];
-static uint16_t log_str_pos = 0;
 
 //----------------------------------------------------------------------------
 // Local functions
@@ -165,100 +159,22 @@ void BSP::writeSerialStringResponse(char * response)
   serial_communication_interface_stream.println(response);
 }
 
-void log_fn(char ch, void *param)
-{
-  if ((ch == '\n') || (log_str_pos == (constants::string_log_length_max - 1)))
-  {
-    log_str[log_str_pos] = 0;
-    QS_BEGIN_ID(ETHERNET_LOG, AO_EthernetCommandInterface->m_prio)
-      QS_STR(log_str);
-    QS_END()
-    log_str[0] = 0;
-    log_str_pos = 0;
-  }
-  else if (ch != '\r')
-  {
-    log_str[log_str_pos++] = ch;
-  }
-}
-
 bool BSP::initializeEthernet()
 {
-  // SPI.setRX(16);
-  // SPI.setCS(17);
-  // SPI.setSCK(18);
-  // SPI.setTX(19);
-
-  // mg_log_set_fn(log_fn, 0);
-  // ethernet_init();
-  // mongoose_init();
   return true;
 }
 
 void BSP::pollEthernet()
 {
-  // mongoose_poll();
-}
-
-void sfn(struct mg_connection *c, int ev, void *ev_data)
-{
-  // if (ev == MG_EV_OPEN && c->is_listening == 1)
-  // {
-  //   MG_INFO(("SERVER is listening"));
-  // }
-  // else if (ev == MG_EV_ACCEPT)
-  // {
-  //   MG_INFO(("SERVER accepted a connection"));
-  // }
-  // else if (ev == MG_EV_READ)
-  // {
-  //   struct mg_iobuf *r = &c->recv;
-  //   MG_INFO(("SERVER got data: %lu bytes", r->len));
-
-  //   static EthernetCommandEvt ethernetCommandEvt = {ETHERNET_COMMAND_AVAILABLE_SIG, 0U, 0U};
-  //   ethernetCommandEvt.connection = c;
-  //   ethernetCommandEvt.binary_command = r->buf;
-  //   ethernetCommandEvt.binary_command_byte_count = r->len;
-  //   QF::PUBLISH(&ethernetCommandEvt, &l_BSP_ID);
-  // }
-  // else if (ev == MG_EV_WRITE)
-  // {
-  //   MG_INFO(("MG_EV_WRITE"));
-  // }
-  // else if (ev == MG_EV_CLOSE)
-  // {
-  //   MG_INFO(("SERVER disconnected"));
-  // }
-  // else if (ev == MG_EV_ERROR)
-  // {
-  //   MG_INFO(("SERVER error: %s", (char *) ev_data));
-  // }
-  // else if (ev == MG_EV_POLL)
-  // {
-  // }
-  // else
-  // {
-  //   MG_INFO(("event %lu", ev));
-  // }
 }
 
 bool BSP::createEthernetServerConnection()
 {
-  // struct mg_connection *c = mg_listen(&g_mgr, s_lsn, sfn, NULL);
-  // if (c == NULL)
-  // {
-  //   MG_INFO(("SERVER cannot open a connection"));
-  //   return false;
-  // }
   return true;
 }
 
 void BSP::writeEthernetBinaryResponse(void * connection, uint8_t response[constants::byte_count_per_response_max], uint8_t response_byte_count)
 {
-  // struct mg_connection * c = (struct mg_connection *)connection;
-  // struct mg_iobuf *r = &c->recv;
-  // mg_send(c, response, response_byte_count);
-  // r->len = 0;
 }
 
 //----------------------------------------------------------------------------
