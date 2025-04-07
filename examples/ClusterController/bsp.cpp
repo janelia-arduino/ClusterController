@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include "mongoose_glue.h"
+#include "mongoose.h"
 #include <Ticker.h>
 #include <TCA6408.h>
 
@@ -14,25 +14,20 @@ namespace CC
 {
 namespace constants
 {
-constexpr pin_size_t led_pin = 25;
+constexpr pin_size_t led_pin = LED_BUILTIN;
 constexpr pin_size_t power_pin = 15;
 
 // Serial Communication Interface
-constexpr pin_size_t serial_rx_pin = 17;
-constexpr pin_size_t serial_tx_pin = 16;
+// constexpr pin_size_t serial_rx_pin = 17;
+// constexpr pin_size_t serial_tx_pin = 16;
 
 // Ethernet
-constexpr BitOrder ethernet_spi_bit_order = MSBFIRST;
-constexpr uint8_t ethernet_spi_data_mode = SPI_MODE0;
-constexpr uint32_t ethernet_spi_clock_speed = 4000000;
 constexpr pin_size_t ethernet_spi_rx_pin = 16;
 constexpr pin_size_t ethernet_spi_csn_pin = 17;
 constexpr pin_size_t ethernet_spi_sck_pin = 18;
 constexpr pin_size_t ethernet_spi_tx_pin = 19;
 constexpr pin_size_t ethernet_reset_pin = 20;
 constexpr pin_size_t ethernet_int_pin = 21;
-// constexpr bool ethernet_hw_csn = true;
-constexpr bool ethernet_hw_csn = false;
 
 // Prism SPI Settings
 // constexpr BitOrder prism_spi_bit_order = MSBFIRST;
@@ -69,10 +64,9 @@ static TCA6408 tca6408;
 
 // Ethernet Communication Interface
 SPIClassRP2040 & ethernet_spi = SPI;
-SPISettings ethernet_spi_settings(constants::ethernet_spi_clock_speed,
-  constants::ethernet_spi_bit_order,
-  constants::ethernet_spi_data_mode);
-struct mg_tcpip_if mif = {.mac = {2, 0, 1, 2, 3, 5}};  // network interface
+SPISettings ethernet_spi_settings = SPISettings();
+struct mg_mgr mgr;
+struct mg_tcpip_if mif;
 static const char *s_lsn = "tcp://0.0.0.0:7777";
 
 // Log
@@ -85,10 +79,46 @@ struct mg_tcpip_spi mongoose_spi = {
     NULL,  // SPI metadata
     [](void *) { digitalWriteFast(constants::ethernet_spi_csn_pin, LOW); ethernet_spi.beginTransaction(ethernet_spi_settings); },
     [](void *) { digitalWriteFast(constants::ethernet_spi_csn_pin, HIGH); ethernet_spi.endTransaction(); },
-    // [](void *) { ethernet_spi.beginTransaction(ethernet_spi_settings); },
-    // [](void *) { ethernet_spi.endTransaction(); },
     [](void *, uint8_t c) { return ethernet_spi.transfer(c); }, // Execute transaction
 };
+
+// // Construct MAC address from the unique board ID
+#include "pico/unique_id.h"
+static inline void genmac(unsigned char *mac) {
+  pico_unique_board_id_t board_id;
+  pico_get_unique_board_id(&board_id);
+  mac[0] = 2;
+  memcpy(&mac[1], &board_id.id[3], 5);
+}
+
+// Used by Mongoose for time tracking
+uint64_t mg_millis(void) {
+  return millis();
+}
+
+// Used by Mongoose to generate random data
+bool mg_random(void *buf, size_t len) {  // For TLS
+  uint8_t *p = (uint8_t *) buf;
+  while (len--) *p++ = (unsigned char) (rand() & 255);
+  return true;
+}
+
+// Crude function to get available RAM, for quick profiling
+extern "C" char *sbrk(int);
+extern char *__brkval;
+int getFreeRAM() {
+  char top;
+#ifdef __arm__
+  return &top - (char *) sbrk(0);
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+  return &top - __brkval;
+#else
+  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif
+}
+int getConst() {
+  return 77;
+}
 
 void addressInterruptCallback()
 {
@@ -212,30 +242,54 @@ void log_fn(char ch, void *param)
   }
 }
 
+static void http_ev_handler(struct mg_connection *c, int ev, void *ev_data) {
+  if (ev == MG_EV_HTTP_MSG) {
+    struct mg_http_message *hm = (struct mg_http_message *) ev_data;
+    if (mg_match(hm->uri, mg_str("/api/led/on"), NULL)) {
+      //BSP::ledOn();
+      //mg_http_reply(c, 200, "", "{%m: %d}\n", MG_ESC("led"), digitalRead(constants::led_pin));
+    } else if (mg_match(hm->uri, mg_str("/api/led/off"), NULL)) {
+      // BSP::ledOff();
+      //mg_http_reply(c, 200, "", "{%m: %d}\n", MG_ESC("led"), digitalRead(constants::led_pin));
+    } else {
+      mg_http_reply(c, 200, "", "ok, free RAM: %u\n", getFreeRAM());
+    }
+  }
+}
+
 bool BSP::initializeEthernet()
 {
   pinMode(constants::ethernet_spi_csn_pin, OUTPUT);
 
   ethernet_spi.setRX(constants::ethernet_spi_rx_pin);
-  // ethernet_spi.setCS(constants::ethernet_spi_csn_pin);
   ethernet_spi.setSCK(constants::ethernet_spi_sck_pin);
   ethernet_spi.setTX(constants::ethernet_spi_tx_pin);
-  ethernet_spi.begin(constants::ethernet_hw_csn);
+  ethernet_spi.begin();
 
+  mg_mgr_init(&mgr);        // Initialise Mongoose event manager
+
+  mg_log_set(MG_LL_DEBUG);  // Set debug log level
   mg_log_set_fn(log_fn, 0);
-  mongoose_init();
 
   // Initialise built-in TCP/IP stack with W5500 driver
+  genmac(mif.mac);
+  mif.enable_dhcp_client = false;
+  mif.ip = MG_IPV4(192, 168, 10, readClusterAddress());
+  mif.gw = MG_IPV4(192, 168, 10, 1);
+  mif.mask = MG_IPV4(255, 255, 255, 0);
   mif.driver = &mg_tcpip_driver_w5500;
   mif.driver_data = &mongoose_spi;
-  mg_tcpip_init(&g_mgr, &mif);
+  mg_tcpip_init(&mgr, &mif);
+
+  // Setup HTTP listener. Respond "ok" on any HTTP request
+  mg_http_listen(&mgr, "http://0.0.0.0:80", http_ev_handler, NULL);
 
   return true;
 }
 
 void BSP::pollEthernet()
 {
-  mongoose_poll();
+  mg_mgr_poll(&mgr, 1);
 }
 
 void sfn(struct mg_connection *c, int ev, void *ev_data)
