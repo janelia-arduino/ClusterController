@@ -16,6 +16,7 @@ namespace constants
 {
 constexpr pin_size_t led_pin = LED_BUILTIN;
 constexpr pin_size_t power_pin = 15;
+constexpr pin_size_t tone_pin = 28;
 
 // Serial Communication Interface
 // constexpr pin_size_t serial_rx_pin = 17;
@@ -164,6 +165,8 @@ void BSP::initializeCluster()
   pinMode(CC::constants::power_pin, OUTPUT);
   powerOff();
 
+  pinMode(CC::constants::tone_pin, OUTPUT);
+
   wire.setSDA(CC::constants::sda_pin);
   wire.setSCL(CC::constants::scl_pin);
 
@@ -176,6 +179,22 @@ void BSP::initializeCluster()
 uint8_t BSP::readClusterAddress()
 {
   return tca6408.readInputRegister();
+}
+
+long map(long x, long in_min, long in_max, long out_min, long out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+void BSP::beep(uint16_t duration_ms)
+{
+  uint8_t cluster_address = readClusterAddress();
+  uint16_t frequency = map(cluster_address,
+    constants::cluster_address_min,
+    constants::cluster_address_max,
+    constants::beep_frequency_min,
+    constants::beep_frequency_max);
+  tone(constants::tone_pin, frequency, duration_ms);
 }
 
 void BSP::powerOff()
@@ -266,9 +285,9 @@ bool BSP::initializeEthernet()
   ethernet_spi.setTX(constants::ethernet_spi_tx_pin);
   ethernet_spi.begin();
 
-  mg_mgr_init(&mgr);        // Initialise Mongoose event manager
+  mg_mgr_init(&mgr);
 
-  mg_log_set(MG_LL_DEBUG);  // Set debug log level
+  mg_log_set(MG_LL_INFO);
   mg_log_set_fn(log_fn, 0);
 
   // Initialise built-in TCP/IP stack with W5500 driver
@@ -336,12 +355,12 @@ void sfn(struct mg_connection *c, int ev, void *ev_data)
 
 bool BSP::createEthernetServerConnection()
 {
-  // struct mg_connection *c = mg_listen(&g_mgr, s_lsn, sfn, NULL);
-  // if (c == NULL)
-  // {
-  //   MG_INFO(("SERVER cannot open a connection"));
-  //   return false;
-  // }
+  struct mg_connection *c = mg_listen(&mgr, s_lsn, sfn, NULL);
+  if (c == NULL)
+  {
+    MG_INFO(("SERVER cannot open a connection"));
+    return false;
+  }
   return true;
 }
 

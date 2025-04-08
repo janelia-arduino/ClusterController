@@ -16,6 +16,8 @@ public:
 
   static uint8_t readClusterAddress();
 
+  static void beep(uint16_t duration_ms);
+
   static void powerOff();
   static void powerOn();
 

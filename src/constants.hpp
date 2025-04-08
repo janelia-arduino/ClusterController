@@ -27,6 +27,7 @@ constexpr char command_termination_character = '\n';
 // Response
 constexpr uint16_t string_response_length_max = 512;
 constexpr uint16_t byte_count_per_response_max = 32;
+constexpr uint8_t error_response = 0xEE;
 
 // Log
 constexpr uint16_t string_log_length_max = 512;
@@ -34,7 +35,15 @@ constexpr uint16_t string_log_length_max = 512;
 // Conversions
 constexpr uint32_t milliseconds_per_second = 1000;
 constexpr uint32_t microseconds_per_second = 1000000;
+constexpr uint8_t bit_count_per_byte = 8;
 
+// Cluster Addresses
+constexpr uint8_t cluster_address_min = 0;
+constexpr uint8_t cluster_address_max = 255;
+
+// Beep
+constexpr uint16_t beep_frequency_min = 1000;
+constexpr uint16_t beep_frequency_max = 10000;
 }
 }
 #endif

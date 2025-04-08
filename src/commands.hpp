@@ -1,0 +1,20 @@
+#ifndef COMMANDS_HPP
+#define COMMANDS_HPP
+
+
+namespace CC
+{
+
+enum ClusterControllerCommands
+{
+  READ_CLUSTER_ADDRESS_CMD = 0x01,
+  CHECK_COMMUNICATION_CMD = 0x02,
+  RESET_CMD = 0x03,
+  BEEP_CMD = 0x04,
+  POWER_OFF_CMD = 0x05,
+  POWER_ON_CMD = 0x06
+};
+
+} // namespace AC
+
+#endif // COMMANDS_HPP

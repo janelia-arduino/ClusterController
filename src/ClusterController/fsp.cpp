@@ -1,4 +1,5 @@
 #include "fsp.hpp"
+#include "commands.hpp"
 
 
 using namespace QP;
@@ -320,39 +321,69 @@ uint8_t FSP::processBinaryCommand(uint8_t const * command_buffer,
     uint8_t response[constants::byte_count_per_response_max])
 {
   uint8_t response_byte_count = 0;
-  // uint8_t second_command_byte = (uint8_t)(command_buffer[1]);
-  // response[response_byte_count++] = 2;
-  // response[response_byte_count++] = 0;
-  // response[response_byte_count++] = second_command_byte;
-  // switch (second_command_byte)
-  // {
-  //   case 0x01:
-  //   {
-  //     AO_Watchdog->POST(&resetEvt, &l_FSP_ID);
-  //     appendMessage(response, response_byte_count, "Reset Command Sent to FPGA");
-  //     break;
-  //   }
-  //   case 0x30:
-  //   {
-  //     AO_Arena->POST(&allOffEvt, &l_FSP_ID);
-  //     appendMessage(response, response_byte_count, "Display has been stopped");
-  //     break;
-  //   }
-  //   case 0x00:
-  //   {
-  //     AO_Arena->POST(&allOffEvt, &l_FSP_ID);
-  //     appendMessage(response, response_byte_count, "All-Off Received");
-  //     break;
-  //   }
-  //   case 0xFF:
-  //   {
-  //     AO_Arena->POST(&allOnEvt, &l_FSP_ID);
-  //     appendMessage(response, response_byte_count, "All-On Received");
-  //     break;
-  //   }
-  //   default:
-  //     break;
-  // }
+  if (command_byte_count < 2)
+  {
+    response[response_byte_count++] = constants::error_response;
+    return response_byte_count;
+  }
+  uint8_t protocol_version = command_buffer[0];
+  if (protocol_version == 0x01)
+  {
+    uint8_t command_number = command_buffer[1];
+    switch (command_number)
+    {
+      case READ_CLUSTER_ADDRESS_CMD:
+      {
+        response[response_byte_count++] = BSP::readClusterAddress();
+        break;
+      }
+      case CHECK_COMMUNICATION_CMD:
+      {
+        response[response_byte_count++] = 0x12;
+        response[response_byte_count++] = 0x34;
+        response[response_byte_count++] = 0x56;
+        response[response_byte_count++] = 0x78;
+        break;
+      }
+      case RESET_CMD:
+      {
+        response[response_byte_count++] = RESET_CMD;
+        QF::PUBLISH(&resetEvt, &l_FSP_ID);
+        break;
+      }
+      case BEEP_CMD:
+      {
+        if (command_byte_count < 4)
+        {
+          response[response_byte_count++] = constants::error_response;
+          return response_byte_count;
+        }
+        response[response_byte_count++] = BEEP_CMD;
+        uint16_t low_byte = command_buffer[2];
+        uint16_t high_byte = command_buffer[3];
+        uint16_t duration_ms = (high_byte << constants::bit_count_per_byte) | low_byte;
+        BSP::beep(duration_ms);
+        break;
+      }
+      case POWER_OFF_CMD:
+      {
+        response[response_byte_count++] = POWER_OFF_CMD;
+        BSP::powerOff();
+        break;
+      }
+      case POWER_ON_CMD:
+      {
+        response[response_byte_count++] = POWER_ON_CMD;
+        BSP::powerOn();
+        break;
+      }
+      default:
+      {
+        response[response_byte_count++] = constants::error_response;
+        break;
+      }
+    }
+  }
   return response_byte_count;
 }
 

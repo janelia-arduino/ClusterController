@@ -33,12 +33,15 @@ stop move (prism, no arg),
 report position (prism, no arg),
 set parameters (param id, param value)
 
-| Command Name | Command Number | Prism ID | Arg 1 | Arg 2 | Response |
-|--------------+----------------+----------+-------+-------+----------|
-| reset        |           0x01 |          |       |       |     0x01 |
-| power-off    |           0x02 |          |       |       |     0x02 |
-| power-on     |           0x03 |          |       |       |     0x03 |
-|              |                |          |       |       |          |
+| Command Name         | Protocol Version | Command Number | Arg 0 (2 bytes) | Arg 1 (2 bytes) | Arg 2 (2 bytes) |   Response |
+|----------------------+------------------+----------------+-----------------+-----------------+-----------------+------------|
+| read-cluster-address |             0x01 |           0x01 |                 |                 |                 |  0x00-0xFF |
+| check-communication  |             0x01 |           0x02 |                 |                 |                 | 0x12345678 |
+| reset                |             0x01 |           0x03 |                 |                 |                 |       0x03 |
+| beep                 |             0x01 |           0x04 | duration-ms     |                 |                 |       0x04 |
+| power-off            |             0x01 |           0x05 |                 |                 |                 |       0x05 |
+| power-on             |             0x01 |           0x06 |                 |                 |                 |       0x06 |
+|                      |                  |                |                 |                 |                 |            |
 
 * Host Computer Setup
 
