@@ -41,7 +41,6 @@ set parameters (param id, param value)
 | beep                 | '<BBH'         |             0x01 |           0x04 | duration-ms |       |       |       0x04 | '<B'            |
 | power-off            | '<BB'          |             0x01 |           0x05 |             |       |       |       0x05 | '<B'            |
 | power-on             | '<BB'          |             0x01 |           0x06 |             |       |       |       0x06 | '<B'            |
-|                      |                |                  |                |             |       |       |            | '<B'            |
 |                      |                |                  |                |             |       |       |            |                 |
 
 * Host Computer Setup

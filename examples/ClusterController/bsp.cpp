@@ -3,6 +3,7 @@
 #include "mongoose.h"
 #include <Ticker.h>
 #include <TCA6408.h>
+#include <TMC51X0.hpp>
 
 #include "ClusterController.hpp"
 
@@ -30,12 +31,6 @@ constexpr pin_size_t ethernet_spi_tx_pin = 19;
 constexpr pin_size_t ethernet_reset_pin = 20;
 constexpr pin_size_t ethernet_int_pin = 21;
 
-// Prism SPI Settings
-// constexpr BitOrder prism_spi_bit_order = MSBFIRST;
-// constexpr uint8_t prism_spi_data_mode = SPI_MODE0;
-// constexpr uint32_t prism_spi_clock_speed = 5000000;
-// constexpr pin_size_t prism_spi_rx_pin = 
-
 // Wire settings
 constexpr pin_size_t sda_pin = 26;
 constexpr pin_size_t scl_pin = 27;
@@ -44,6 +39,86 @@ constexpr pin_size_t cluster_address_reset_pin = 0;
 constexpr pin_size_t cluster_address_interrupt_pin = 1;
 constexpr TCA6408::DeviceAddress cluster_address_device_address = TCA6408::DEVICE_ADDRESS_0;
 
+// Prism Settings
+constexpr uint8_t prism_count = 7;
+constexpr pin_size_t prism_spi_sck_pin = 10;
+constexpr pin_size_t prism_spi_tx_pin = 11;
+constexpr pin_size_t prism_spi_rx_pin = 12;
+constexpr pin_size_t prism_spi_csn_pins[prism_count] = {14, 8, 7, 6, 5, 4, 3};
+constexpr uint32_t prism_spi_clock_rate = 1000000;
+
+const tmc51x0::ConverterParameters converter_parameters =
+{
+  16, // clock_frequency_mhz
+  4881 // microsteps_per_real_unit
+};
+// external clock is 16MHz
+// 200 fullsteps per revolution for many steppers * 256 microsteps per fullstep
+// 10.49 millimeters per revolution leadscrew -> 51200 / 10.49 ~= 4881
+// one "real unit" in this example is one millimeters of linear travel
+
+const tmc51x0::DriverParameters driver_parameters_real =
+{
+  100, // global_current_scaler (percent)
+  50, // run_current (percent)
+  20, // hold_current (percent)
+  0, // hold_delay (percent)
+  15, // pwm_offset (percent)
+  5, // pwm_gradient (percent)
+  false, // automatic_current_control_enabled
+  tmc51x0::REVERSE, // motor_direction
+  tmc51x0::NORMAL, // standstill_mode
+  tmc51x0::SPREAD_CYCLE, // chopper_mode
+  10, // stealth_chop_threshold (millimeters/s)
+  true, // stealth_chop_enabled
+  50, // cool_step_threshold (millimeters/s)
+  1, // cool_step_min
+  0, // cool_step_max
+  true, // cool_step_enabled
+  90, // high_velocity_threshold (millimeters/s)
+  false, // high_velocity_fullstep_enabled
+  false, // high_velocity_chopper_switch_enabled
+  1, // stall_guard_threshold
+  false, // stall_guard_filter_enabled
+  true, // short_to_ground_protection_enabled
+  3, // enabled_toff
+  tmc51x0::CLOCK_CYCLES_36, // comparator_blank_time
+  37, // dc_time
+  3 // dc_stall_guard_threshold
+};
+
+const tmc51x0::ControllerParameters controller_parameters_real =
+{
+  tmc51x0::POSITION, // ramp_mode
+  tmc51x0::HARD, // stop_mode
+  20, // max_velocity (millimeters/s)
+  2, // max_acceleration ((millimeters/s)/s)
+  1, // start_velocity (millimeters/s)
+  5, // stop_velocity (millimeters/s)
+  10, // first_velocity (millimeters/s)
+  10, // first_acceleration ((millimeters/s)/s)
+  20, // max_deceleration ((millimeters/s)/s)
+  25, // first_deceleration ((millimeters/s)/s)
+  0, // zero_wait_duration (milliseconds)
+  false // stall_stop_enabled
+};
+
+const tmc51x0::HomeParameters home_parameters_real =
+{
+  50, // run_current (percent)
+  20, // hold_current (percent)
+  -1000, // target_position (millimeters)
+  20, // velocity (millimeters/s)
+  2, // acceleration ((millimeters/s)/s)
+  100 // zero_wait_duration (milliseconds)
+};
+
+const tmc51x0::StallParameters stall_parameters_real =
+{
+  tmc51x0::COOL_STEP, // stall_mode
+  10, // stall_guard_threshold
+  15 // cool_step_threshold (millimeters/s)
+};
 } // namespace constants
 } // namespace CC
 
@@ -73,6 +148,13 @@ static const char *s_lsn = "tcp://0.0.0.0:7777";
 // Log
 static char log_str[constants::string_log_length_max];
 static uint16_t log_str_pos = 0;
+
+// Prism Settings
+TMC51X0 prisms[constants::prism_count];
+tmc51x0::DriverParameters driver_parameters_chip;
+tmc51x0::ControllerParameters controller_parameters_chip;
+tmc51x0::HomeParameters home_parameters_chip;
+tmc51x0::StallParameters stall_parameters_chip;
 
 //----------------------------------------------------------------------------
 // Local functions
