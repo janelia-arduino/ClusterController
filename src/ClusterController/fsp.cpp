@@ -316,6 +316,49 @@ void FSP::Watchdog_feedWatchdog(QActive * const ao, QEvt const * e)
   BSP::feedWatchdog();
 }
 
+void FSP::processStringCommand(const char * command, char * response)
+{
+  strcpy(response, command);
+  if (strcmp(command, "RESET") == 0)
+  {
+    QF::PUBLISH(&resetEvt, &l_FSP_ID);
+  }
+  if (strcmp(command, "LED_ON") == 0)
+  {
+    BSP::ledOn();
+  }
+  else if (strcmp(command, "LED_OFF") == 0)
+  {
+    BSP::ledOff();
+  }
+  else if (strcmp(command, "POWER_ON") == 0)
+  {
+    QF::PUBLISH(&powerOnEvt, &l_FSP_ID);
+  }
+  else if (strcmp(command, "POWER_OFF") == 0)
+  {
+    QF::PUBLISH(&powerOffEvt, &l_FSP_ID);
+  }
+  else if (strcmp(command, "RCA") == 0)
+  {
+    uint8_t cluster_address = BSP::readClusterAddress();
+    sprintf(response, "%d", cluster_address);
+  }
+  // else if (strcmp(command, "EHS") == 0)
+  // {
+  //   BSP::getEthernetHardwareStatusString(response);
+  // }
+  // else if (strcmp(command, "ELS") == 0)
+  // {
+  //   BSP::getEthernetLinkStatusString(response);
+  // }
+  // else if (strcmp(command, "SIP") == 0)
+  // {
+  //   BSP::getServerIpAddressString(response);
+  // }
+  QF::PUBLISH(&commandProcessedEvt, &l_FSP_ID);
+}
+
 uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
     size_t command_byte_count,
     uint8_t response[constants::byte_count_per_response_max])
@@ -386,47 +429,4 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
     }
   }
   return response_byte_count;
-}
-
-void FSP::processStringCommand(const char * command, char * response)
-{
-  strcpy(response, command);
-  if (strcmp(command, "RESET") == 0)
-  {
-    QF::PUBLISH(&resetEvt, &l_FSP_ID);
-  }
-  if (strcmp(command, "LED_ON") == 0)
-  {
-    BSP::ledOn();
-  }
-  else if (strcmp(command, "LED_OFF") == 0)
-  {
-    BSP::ledOff();
-  }
-  else if (strcmp(command, "POWER_ON") == 0)
-  {
-    QF::PUBLISH(&powerOnEvt, &l_FSP_ID);
-  }
-  else if (strcmp(command, "POWER_OFF") == 0)
-  {
-    QF::PUBLISH(&powerOffEvt, &l_FSP_ID);
-  }
-  else if (strcmp(command, "RCA") == 0)
-  {
-    uint8_t cluster_address = BSP::readClusterAddress();
-    sprintf(response, "%d", cluster_address);
-  }
-  // else if (strcmp(command, "EHS") == 0)
-  // {
-  //   BSP::getEthernetHardwareStatusString(response);
-  // }
-  // else if (strcmp(command, "ELS") == 0)
-  // {
-  //   BSP::getEthernetLinkStatusString(response);
-  // }
-  // else if (strcmp(command, "SIP") == 0)
-  // {
-  //   BSP::getServerIpAddressString(response);
-  // }
-  QF::PUBLISH(&commandProcessedEvt, &l_FSP_ID);
 }
