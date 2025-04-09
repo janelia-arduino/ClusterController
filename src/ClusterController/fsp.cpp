@@ -316,7 +316,7 @@ void FSP::Watchdog_feedWatchdog(QActive * const ao, QEvt const * e)
   BSP::feedWatchdog();
 }
 
-uint8_t FSP::processBinaryCommand(uint8_t const * command_buffer,
+uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
     size_t command_byte_count,
     uint8_t response[constants::byte_count_per_response_max])
 {
@@ -339,10 +339,8 @@ uint8_t FSP::processBinaryCommand(uint8_t const * command_buffer,
       }
       case CHECK_COMMUNICATION_CMD:
       {
-        response[response_byte_count++] = 0x12;
-        response[response_byte_count++] = 0x34;
-        response[response_byte_count++] = 0x56;
-        response[response_byte_count++] = 0x78;
+        memcpy(response, &constants::check_communication_response, sizeof(constants::check_communication_response));
+        response_byte_count += sizeof(constants::check_communication_response);
         break;
       }
       case RESET_CMD:
@@ -359,9 +357,12 @@ uint8_t FSP::processBinaryCommand(uint8_t const * command_buffer,
           return response_byte_count;
         }
         response[response_byte_count++] = BEEP_CMD;
-        uint16_t low_byte = command_buffer[2];
-        uint16_t high_byte = command_buffer[3];
-        uint16_t duration_ms = (high_byte << constants::bit_count_per_byte) | low_byte;
+        uint16_t duration_ms;
+        memcpy(&duration_ms, command_buffer + 2, sizeof(duration_ms));
+        // QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+        //   QS_U16(5, duration_ms_1);
+        //   QS_U16(5, duration_ms);
+        // QS_END()
         BSP::beep(duration_ms);
         break;
       }

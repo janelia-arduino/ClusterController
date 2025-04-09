@@ -28,6 +28,7 @@ constexpr char command_termination_character = '\n';
 constexpr uint16_t string_response_length_max = 512;
 constexpr uint16_t byte_count_per_response_max = 32;
 constexpr uint8_t error_response = 0xEE;
+constexpr uint32_t check_communication_response = 0x12345678;
 
 // Log
 constexpr uint16_t string_log_length_max = 512;

@@ -33,15 +33,16 @@ stop move (prism, no arg),
 report position (prism, no arg),
 set parameters (param id, param value)
 
-| Command Name         | Protocol Version | Command Number | Arg 0 (2 bytes) | Arg 1 (2 bytes) | Arg 2 (2 bytes) |   Response |
-|----------------------+------------------+----------------+-----------------+-----------------+-----------------+------------|
-| read-cluster-address |             0x01 |           0x01 |                 |                 |                 |  0x00-0xFF |
-| check-communication  |             0x01 |           0x02 |                 |                 |                 | 0x12345678 |
-| reset                |             0x01 |           0x03 |                 |                 |                 |       0x03 |
-| beep                 |             0x01 |           0x04 | duration-ms     |                 |                 |       0x04 |
-| power-off            |             0x01 |           0x05 |                 |                 |                 |       0x05 |
-| power-on             |             0x01 |           0x06 |                 |                 |                 |       0x06 |
-|                      |                  |                |                 |                 |                 |            |
+| Command Name         | Command Format | Protocol Version | Command Number | Arg 0       | Arg 1 | Arg 2 |   Response | Response Format |
+|----------------------+----------------+------------------+----------------+-------------+-------+-------+------------+-----------------|
+| read-cluster-address | '<BB'          |             0x01 |           0x01 |             |       |       |  0x00-0xFF | '<B'            |
+| check-communication  | '<BB'          |             0x01 |           0x02 |             |       |       | 0x12345678 | '<L'            |
+| reset                | '<BB'          |             0x01 |           0x03 |             |       |       |       0x03 | '<B'            |
+| beep                 | '<BBH'         |             0x01 |           0x04 | duration-ms |       |       |       0x04 | '<B'            |
+| power-off            |                |             0x01 |           0x05 |             |       |       |       0x05 | '<B'            |
+| power-on             |                |             0x01 |           0x06 |             |       |       |       0x06 | '<B'            |
+|                      |                |                  |                |             |       |       |            | '<B'            |
+|                      |                |                  |                |             |       |       |            |                 |
 
 * Host Computer Setup
 
