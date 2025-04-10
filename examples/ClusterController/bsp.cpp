@@ -133,7 +133,7 @@ static Ticker system_clock;
 
 // Serial Communication Interface
 static SerialUART & serial_communication_interface_stream = Serial1;
-static SerialUSB & qs_serial_stream = Serial;
+// static SerialUSB & qs_serial_stream = Serial;
 
 static TwoWire & wire = Wire1;
 static TCA6408 tca6408;
@@ -144,6 +144,7 @@ SPISettings ethernet_spi_settings = SPISettings();
 struct mg_mgr mgr;
 struct mg_tcpip_if mif;
 static const char *s_lsn = "tcp://0.0.0.0:7777";
+static const char *s_conn = "tcp://192.168.10.2:6601";
 
 // Log
 static char log_str[constants::string_log_length_max];
@@ -360,27 +361,8 @@ static void http_ev_handler(struct mg_connection *c, int ev, void *ev_data) {
 
 bool BSP::initializeEthernet()
 {
-  pinMode(constants::ethernet_spi_csn_pin, OUTPUT);
-
-  ethernet_spi.setRX(constants::ethernet_spi_rx_pin);
-  ethernet_spi.setSCK(constants::ethernet_spi_sck_pin);
-  ethernet_spi.setTX(constants::ethernet_spi_tx_pin);
-  ethernet_spi.begin();
-
-  mg_mgr_init(&mgr);
-
   mg_log_set(MG_LL_INFO);
   mg_log_set_fn(log_fn, 0);
-
-  // Initialise built-in TCP/IP stack with W5500 driver
-  genmac(mif.mac);
-  mif.enable_dhcp_client = false;
-  mif.ip = MG_IPV4(192, 168, 10, readClusterAddress());
-  mif.gw = MG_IPV4(192, 168, 10, 1);
-  mif.mask = MG_IPV4(255, 255, 255, 0);
-  mif.driver = &mg_tcpip_driver_w5500;
-  mif.driver_data = &mongoose_spi;
-  mg_tcpip_init(&mgr, &mif);
 
   // Setup HTTP listener. Respond "ok" on any HTTP request
   mg_http_listen(&mgr, "http://0.0.0.0:80", http_ev_handler, NULL);
@@ -481,6 +463,42 @@ void QF::onStartup()
   // ...
 }
 //............................................................................
+static void cfn(struct mg_connection *c, int ev, void *ev_data) {
+  int *i = &((struct c_res_s *) c->fn_data)->i;
+  if (ev == MG_EV_OPEN) {
+    MG_INFO(("CLIENT has been initialized"));
+  } else if (ev == MG_EV_CONNECT) {
+    MG_INFO(("CLIENT connected"));
+    if (mg_url_is_ssl(s_conn)) {
+      struct mg_tls_opts opts = {.ca = mg_unpacked("/certs/ss_ca.pem"),
+                                 .cert = mg_unpacked("/certs/ss_client.pem"),
+                                 .key = mg_unpacked("/certs/ss_client.pem")};
+      mg_tls_init(c, &opts);
+    }
+    *i = 1;  // do something
+  } else if (ev == MG_EV_READ) {
+    struct mg_iobuf *r = &c->recv;
+    MG_INFO(("CLIENT got data: %.*s", r->len, r->buf));
+    r->len = 0;  // Tell Mongoose we've consumed data
+  } else if (ev == MG_EV_CLOSE) {
+    MG_INFO(("CLIENT disconnected"));
+    // signal we are done
+    ((struct c_res_s *) c->fn_data)->c = NULL;
+  } else if (ev == MG_EV_ERROR) {
+    MG_INFO(("CLIENT error: %s", (char *) ev_data));
+  } else if (ev == MG_EV_POLL && *i != 0) {
+    switch ((*i)++) {
+      case 50:  // 50 x 100ms = 5s
+        mg_send(c, "Hi, there", 9);
+        MG_INFO(("CLIENT sent data"));
+        break;
+      case 100:  // another 5s
+        // send any possible outstanding data and close the connection
+        c->is_draining = 1;
+        break;
+    }
+  }
+}
 void QV::onIdle()
 { // called with interrupts DISABLED
 #ifdef NDEBUG
@@ -490,6 +508,8 @@ void QV::onIdle()
   QV_CPU_SLEEP();  // atomically go to sleep and enable interrupts
 #else
   QF_INT_ENABLE(); // simply re-enable interrupts
+
+  mg_connect(mgr, s_conn, cfn, &c_res);
 
   // transmit QS outgoing data (QS-TX)
   uint16_t len = qs_serial_stream.availableForWrite();
@@ -539,7 +559,27 @@ bool QP::QS::onStartup(void const * arg)
   static uint8_t qsRxBuf[1024];  // buffer for QS receive channel (QS-RX)
   initBuf  (qsTxBuf, sizeof(qsTxBuf));
   rxInitBuf(qsRxBuf, sizeof(qsRxBuf));
-  qs_serial_stream.begin(115200); // run serial port at 115200 baud rate
+  pinMode(constants::ethernet_spi_csn_pin, OUTPUT);
+
+  ethernet_spi.setRX(constants::ethernet_spi_rx_pin);
+  ethernet_spi.setSCK(constants::ethernet_spi_sck_pin);
+  ethernet_spi.setTX(constants::ethernet_spi_tx_pin);
+  ethernet_spi.begin();
+
+  mg_mgr_init(&mgr);
+
+  mg_log_set(MG_LL_NONE);
+
+  // Initialise built-in TCP/IP stack with W5500 driver
+  genmac(mif.mac);
+  mif.enable_dhcp_client = false;
+  mif.ip = MG_IPV4(192, 168, 10, readClusterAddress());
+  mif.gw = MG_IPV4(192, 168, 10, 1);
+  mif.mask = MG_IPV4(255, 255, 255, 0);
+  mif.driver = &mg_tcpip_driver_w5500;
+  mif.driver_data = &mongoose_spi;
+  mg_tcpip_init(&mgr, &mif);
+
   return true; // return success
 }
 //............................................................................
