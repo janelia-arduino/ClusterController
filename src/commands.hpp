@@ -11,8 +11,10 @@ enum ClusterControllerCommands
   CHECK_COMMUNICATION_CMD = 0x02,
   RESET_CMD = 0x03,
   BEEP_CMD = 0x04,
-  POWER_OFF_CMD = 0x05,
-  POWER_ON_CMD = 0x06
+  LED_OFF_CMD = 0x05,
+  LED_ON_CMD = 0x06,
+  POWER_OFF_CMD = 0x07,
+  POWER_ON_CMD = 0x08,
 };
 
 } // namespace AC

@@ -409,6 +409,18 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
         BSP::beep(duration_ms);
         break;
       }
+      case LED_OFF_CMD:
+      {
+        response[response_byte_count++] = LED_OFF_CMD;
+        BSP::ledOff();
+        break;
+      }
+      case LED_ON_CMD:
+      {
+        response[response_byte_count++] = LED_ON_CMD;
+        BSP::ledOn();
+        break;
+      }
       case POWER_OFF_CMD:
       {
         response[response_byte_count++] = POWER_OFF_CMD;

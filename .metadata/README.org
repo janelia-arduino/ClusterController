@@ -39,8 +39,10 @@ set parameters (param id, param value)
 | check-communication  | '<BB'          |             0x01 |           0x02 |             |       |       | 0x12345678 | '<L'            |
 | reset                | '<BB'          |             0x01 |           0x03 |             |       |       |       0x03 | '<B'            |
 | beep                 | '<BBH'         |             0x01 |           0x04 | duration-ms |       |       |       0x04 | '<B'            |
-| power-off            | '<BB'          |             0x01 |           0x05 |             |       |       |       0x05 | '<B'            |
-| power-on             | '<BB'          |             0x01 |           0x06 |             |       |       |       0x06 | '<B'            |
+| led-off              | '<BB'          |             0x01 |           0x05 |             |       |       |       0x05 | '<B'            |
+| led-on               | '<BB'          |             0x01 |           0x06 |             |       |       |       0x06 | '<B'            |
+| power-off            | '<BB'          |             0x01 |           0x07 |             |       |       |       0x07 | '<B'            |
+| power-on             | '<BB'          |             0x01 |           0x08 |             |       |       |       0x08 | '<B'            |
 |                      |                |                  |                |             |       |       |            |                 |
 
 * Host Computer Setup

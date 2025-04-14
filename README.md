@@ -1,11 +1,11 @@
-- [Library Information](#orgd3c2a13)
-- [Host Computer Setup](#orgfe20be4)
+- [Library Information](#org20b6c79)
+- [Host Computer Setup](#orgfc98e19)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="orgd3c2a13"></a>
+<a id="org20b6c79"></a>
 
 # Library Information
 
@@ -22,8 +22,22 @@
 
 Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 
+Commands would be like a few bytes, sent to one IP: one byte for command, one byte for prism id, two for arguments. Commands would be e.g. Beep (no arg, no arg), Calibrate to bottom position (prism, no arg), set target (prism, position), start move (prism, no arg), stop move (prism, no arg), report position (prism, no arg), set parameters (param id, param value)
 
-<a id="orgfe20be4"></a>
+| Command Name         | Command Format | Protocol Version | Command Number | Arg 0       | Arg 1 | Arg 2 | Response   | Response Format |
+|-------------------- |-------------- |---------------- |-------------- |----------- |----- |----- |---------- |--------------- |
+| read-cluster-address | '<BB'          | 0x01             | 0x01           |             |       |       | 0x00-0xFF  | '<B'            |
+| check-communication  | '<BB'          | 0x01             | 0x02           |             |       |       | 0x12345678 | '<L'            |
+| reset                | '<BB'          | 0x01             | 0x03           |             |       |       | 0x03       | '<B'            |
+| beep                 | '<BBH'         | 0x01             | 0x04           | duration-ms |       |       | 0x04       | '<B'            |
+| led-off              | '<BB'          | 0x01             | 0x05           |             |       |       | 0x05       | '<B'            |
+| led-on               | '<BB'          | 0x01             | 0x06           |             |       |       | 0x06       | '<B'            |
+| power-off            | '<BB'          | 0x01             | 0x07           |             |       |       | 0x07       | '<B'            |
+| power-on             | '<BB'          | 0x01             | 0x08           |             |       |       | 0x08       | '<B'            |
+|                      |                |                  |                |             |       |       |            |                 |
+
+
+<a id="orgfc98e19"></a>
 
 # Host Computer Setup
 
