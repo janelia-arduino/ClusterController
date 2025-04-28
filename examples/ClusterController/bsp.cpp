@@ -47,78 +47,59 @@ constexpr pin_size_t prism_spi_rx_pin = 12;
 constexpr pin_size_t prism_spi_csn_pins[prism_count] = {14, 8, 7, 6, 5, 4, 3};
 constexpr uint32_t prism_spi_clock_rate = 1000000;
 
-// const tmc51x0::ConverterParameters converter_parameters =
-// {
-//   16, // clock_frequency_mhz
-//   4881 // microsteps_per_real_unit
-// };
-// // external clock is 16MHz
-// // 200 fullsteps per revolution for many steppers * 256 microsteps per fullstep
-// // 10.49 millimeters per revolution leadscrew -> 51200 / 10.49 ~= 4881
-// // one "real unit" in this example is one millimeters of linear travel
+const tmc51x0::ConverterParameters converter_parameters =
+{
+  .clock_frequency_mhz = 16,
+  .microsteps_per_real_position_unit = 4881
+};
+// external clock is 16MHz
+// 200 fullsteps per revolution for many steppers * 256 microsteps per fullstep
+// 10.49 millimeters per revolution leadscrew -> 51200 / 10.49 ~= 4881
+// one "real unit" in this example is one millimeters of linear travel
 
-// const tmc51x0::DriverParameters driver_parameters_real =
-// {
-//   100, // global_current_scaler (percent)
-//   50, // run_current (percent)
-//   20, // hold_current (percent)
-//   0, // hold_delay (percent)
-//   15, // pwm_offset (percent)
-//   5, // pwm_gradient (percent)
-//   false, // automatic_current_control_enabled
-//   tmc51x0::REVERSE, // motor_direction
-//   tmc51x0::NORMAL, // standstill_mode
-//   tmc51x0::SPREAD_CYCLE, // chopper_mode
-//   10, // stealth_chop_threshold (millimeters/s)
-//   true, // stealth_chop_enabled
-//   50, // cool_step_threshold (millimeters/s)
-//   1, // cool_step_min
-//   0, // cool_step_max
-//   true, // cool_step_enabled
-//   90, // high_velocity_threshold (millimeters/s)
-//   false, // high_velocity_fullstep_enabled
-//   false, // high_velocity_chopper_switch_enabled
-//   1, // stall_guard_threshold
-//   false, // stall_guard_filter_enabled
-//   true, // short_to_ground_protection_enabled
-//   3, // enabled_toff
-//   tmc51x0::CLOCK_CYCLES_36, // comparator_blank_time
-//   37, // dc_time
-//   3 // dc_stall_guard_threshold
-// };
+const tmc51x0::DriverParameters driver_parameters_real =
+{
+  .global_current_scaler = 50, // (percent)
+  .run_current = 50, // (percent)
+  .hold_current = 20, // (percent)
+  .hold_delay = 0, // (percent)
+  .pwm_offset = 15, // (percent)
+  .pwm_gradient = 5, // (percent)
+  .motor_direction = tmc51x0::ReverseDirection,
+  .stealth_chop_threshold = 10, // (millimeters/s)
+  .cool_step_threshold = 50, // (millimeters/s)
+  .cool_step_enabled = true,
+  .stall_guard_threshold = 1,
+};
 
-// const tmc51x0::ControllerParameters controller_parameters_real =
-// {
-//   tmc51x0::POSITION, // ramp_mode
-//   tmc51x0::HARD, // stop_mode
-//   20, // max_velocity (millimeters/s)
-//   2, // max_acceleration ((millimeters/s)/s)
-//   1, // start_velocity (millimeters/s)
-//   5, // stop_velocity (millimeters/s)
-//   10, // first_velocity (millimeters/s)
-//   10, // first_acceleration ((millimeters/s)/s)
-//   20, // max_deceleration ((millimeters/s)/s)
-//   25, // first_deceleration ((millimeters/s)/s)
-//   0, // zero_wait_duration (milliseconds)
-//   false // stall_stop_enabled
-// };
+const tmc51x0::ControllerParameters controller_parameters_real =
+{
+  .ramp_mode = tmc51x0::PositionMode,
+  .max_velocity = 20, // (millimeters/s)
+  .max_acceleration = 2, // ((millimeters/s)/s)
+  .start_velocity = 1, // (millimeters/s)
+  .stop_velocity = 5, // (millimeters/s)
+  .first_velocity = 10, // (millimeters/s)
+  .first_acceleration = 10, // ((millimeters/s)/s)
+  .max_deceleration = 20, // ((millimeters/s)/s)
+  .first_deceleration = 25, // ((millimeters/s)/s)
+};
 
-// const tmc51x0::HomeParameters home_parameters_real =
-// {
-//   50, // run_current (percent)
-//   20, // hold_current (percent)
-//   -1000, // target_position (millimeters)
-//   20, // velocity (millimeters/s)
-//   2, // acceleration ((millimeters/s)/s)
-//   100 // zero_wait_duration (milliseconds)
-// };
+const tmc51x0::HomeParameters home_parameters_real =
+{
+  .run_current = 50, // (percent)
+  .hold_current = 20, // (percent)
+  .target_position = -1000, // (millimeters)
+  .velocity = 20, // (millimeters/s)
+  .acceleration = 2, // ((millimeters/s)/s)
+  .zero_wait_duration = 100 // (milliseconds)
+};
 
-// const tmc51x0::StallParameters stall_parameters_real =
-// {
-//   tmc51x0::COOL_STEP, // stall_mode
-//   10, // stall_guard_threshold
-//   15 // cool_step_threshold (millimeters/s)
-// };
+const tmc51x0::StallParameters stall_parameters_real =
+{
+  .stall_guard_threshold = 10,
+  .cool_step_threshold = 15 // (millimeters/s)
+};
 } // namespace constants
 } // namespace CC
 
@@ -150,6 +131,7 @@ static char log_str[constants::string_log_length_max];
 static uint16_t log_str_pos = 0;
 
 // Prism Settings
+SPIClassRP2040 & prism_spi = SPI1;
 TMC51X0 prisms[constants::prism_count];
 tmc51x0::DriverParameters driver_parameters_chip;
 tmc51x0::ControllerParameters controller_parameters_chip;

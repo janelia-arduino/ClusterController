@@ -29,7 +29,7 @@ This structure of the code is recommended for applications with only one active 
    <statechart properties="0x02">
     <initial target="../1">
      <action brief="initializeAndSubscribe()">FSP::Cluster_initializeAndSubscribe(this, e);</action>
-     <initial_glyph conn="49,10,4,0,4">
+     <initial_glyph conn="23,10,4,0,4">
       <action box="1,0,21,2"/>
      </initial_glyph>
     </initial>
@@ -37,43 +37,43 @@ This structure of the code is recommended for applications with only one active 
      <entry brief="activateCommandInterfaces()">FSP::Cluster_activateCommandInterfaces(this, e);</entry>
      <exit brief="deactivateCommandInterfaces()">FSP::Cluster_deactivateCommandInterfaces(this, e);</exit>
      <initial target="../4">
-      <initial_glyph conn="60,20,4,0,3">
+      <initial_glyph conn="34,20,4,0,3">
        <action box="0,-2,10,2"/>
       </initial_glyph>
      </initial>
      <tran trig="RESET" target="../4">
-      <tran_glyph conn="31,25,3,3,11">
+      <tran_glyph conn="5,25,3,3,11">
        <action box="0,-2,10,2"/>
       </tran_glyph>
      </tran>
      <tran trig="POWER_OFF" target="../4">
-      <tran_glyph conn="31,27,3,3,11">
+      <tran_glyph conn="5,27,3,3,11">
        <action box="0,-2,10,2"/>
       </tran_glyph>
      </tran>
      <state name="PowerOn">
       <entry brief="powerOn()">FSP::Cluster_powerOn(this, e);</entry>
-      <state_glyph node="42,32,25,6">
+      <state_glyph node="16,32,97,73">
        <entry box="1,2,20,2"/>
       </state_glyph>
      </state>
      <state name="PowerOff">
       <entry brief="PowerOff()">FSP::Cluster_powerOff(this, e);</entry>
       <tran trig="POWER_ON" target="../../3">
-       <tran_glyph conn="54,28,2,0,4">
+       <tran_glyph conn="28,28,2,0,4">
         <action box="2,1,10,2"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="42,23,25,5">
+      <state_glyph node="16,23,25,5">
        <entry box="1,2,17,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="31,14,67,44">
+     <state_glyph node="5,14,124,96">
       <entry box="1,2,23,2"/>
       <exit box="1,4,24,2"/>
      </state_glyph>
     </state>
-    <state_diagram size="131,68"/>
+    <state_diagram size="131,112"/>
    </statechart>
   </class>
   <class name="SerialCommandInterface" superclass="qpcpp::QActive">
