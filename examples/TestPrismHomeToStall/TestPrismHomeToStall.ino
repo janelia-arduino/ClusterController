@@ -12,15 +12,14 @@ SPIClass & spi = SPI;
 
 const tmc51x0::SpiParameters spi_parameters =
 {
-  spi,
-  1000000, // clock_rate
-  14 // chip_select_pin
+  .spi_ptr = &spi,
+  .chip_select_pin = 14
 };
 
 const tmc51x0::ConverterParameters converter_parameters =
 {
-  16, // clock_frequency_mhz
-  4881 // microsteps_per_real_unit
+  .clock_frequency_mhz = 16,
+  .microsteps_per_real_position_unit = 4881
 };
 // external clock is 16MHz
 // 200 fullsteps per revolution for many steppers * 256 microsteps per fullstep
@@ -29,77 +28,49 @@ const tmc51x0::ConverterParameters converter_parameters =
 
 const tmc51x0::DriverParameters driver_parameters_real =
 {
-  100, // global_current_scaler (percent)
-  50, // run_current (percent)
-  20, // hold_current (percent)
-  0, // hold_delay (percent)
-  15, // pwm_offset (percent)
-  5, // pwm_gradient (percent)
-  false, // automatic_current_control_enabled
-  tmc51x0::REVERSE, // motor_direction
-  tmc51x0::NORMAL, // standstill_mode
-  tmc51x0::SPREAD_CYCLE, // chopper_mode
-  10, // stealth_chop_threshold (millimeters/s)
-  true, // stealth_chop_enabled
-  50, // cool_step_threshold (millimeters/s)
-  1, // cool_step_min
-  0, // cool_step_max
-  true, // cool_step_enabled
-  90, // high_velocity_threshold (millimeters/s)
-  false, // high_velocity_fullstep_enabled
-  false, // high_velocity_chopper_switch_enabled
-  1, // stall_guard_threshold
-  false, // stall_guard_filter_enabled
-  true, // short_to_ground_protection_enabled
-  3, // enabled_toff
-  tmc51x0::CLOCK_CYCLES_36, // comparator_blank_time
-  37, // dc_time
-  3 // dc_stall_guard_threshold
+  .global_current_scaler = 50, // (percent)
+  .run_current = 50, // (percent)
+  .hold_current = 20, // (percent)
+  .hold_delay = 0, // (percent)
+  .pwm_offset = 15, // (percent)
+  .pwm_gradient = 5, // (percent)
+  .motor_direction = tmc51x0::ReverseDirection,
+  .stealth_chop_threshold = 10, // (millimeters/s)
+  .cool_step_threshold = 50, // (millimeters/s)
+  .cool_step_enabled = true,
+  .stall_guard_threshold = 1,
 };
 
 const tmc51x0::ControllerParameters controller_parameters_real =
 {
-  tmc51x0::POSITION, // ramp_mode
-  tmc51x0::HARD, // stop_mode
-  20, // max_velocity (millimeters/s)
-  2, // max_acceleration ((millimeters/s)/s)
-  1, // start_velocity (millimeters/s)
-  5, // stop_velocity (millimeters/s)
-  10, // first_velocity (millimeters/s)
-  10, // first_acceleration ((millimeters/s)/s)
-  20, // max_deceleration ((millimeters/s)/s)
-  25, // first_deceleration ((millimeters/s)/s)
-  0, // zero_wait_duration (milliseconds)
-  false // stall_stop_enabled
+  .ramp_mode = tmc51x0::PositionMode,
+  .max_velocity = 20, // (millimeters/s)
+  .max_acceleration = 2, // ((millimeters/s)/s)
+  .start_velocity = 1, // (millimeters/s)
+  .stop_velocity = 5, // (millimeters/s)
+  .first_velocity = 10, // (millimeters/s)
+  .first_acceleration = 10, // ((millimeters/s)/s)
+  .max_deceleration = 20, // ((millimeters/s)/s)
+  .first_deceleration = 25, // ((millimeters/s)/s)
 };
 
 const tmc51x0::HomeParameters home_parameters_real =
 {
-  50, // run_current (percent)
-  20, // hold_current (percent)
-  -1000, // target_position (millimeters)
-  20, // velocity (millimeters/s)
-  2, // acceleration ((millimeters/s)/s)
-  100 // zero_wait_duration (milliseconds)
+  .run_current = 50, // (percent)
+  .hold_current = 20, // (percent)
+  .target_position = -1000, // (millimeters)
+  .velocity = 20, // (millimeters/s)
+  .acceleration = 2, // ((millimeters/s)/s)
+  .zero_wait_duration = 100 // (milliseconds)
 };
 
-const tmc51x0::StallParameters stall_parameters_cool_step_real =
+const tmc51x0::StallParameters stall_parameters_real =
 {
-  tmc51x0::COOL_STEP, // stall_mode
-  10, // stall_guard_threshold
-  15 // cool_step_threshold (millimeters/s)
+  .stall_guard_threshold = 10,
+  .cool_step_threshold = 15 // (millimeters/s)
 };
 
-const tmc51x0::StallParameters stall_parameters_dc_step_real =
-{
-  tmc51x0::DC_STEP, // stall_mode
-  10, // stall_guard_threshold
-  5, // cool_step_threshold (millimeters/s)
-  4, // min_dc_step_velocity (millimeters/s)
-  3 // dc_stall_guard_threshold
-};
-
-const int32_t TARGET_POSITION = 100;  // millimeters
+const int32_t MOVE_POSITION = 100;  // millimeters
 
 const size_t ENABLE_POWER_PIN = 15;
 const uint8_t ENABLE_POWER_POLARITY = HIGH;
@@ -113,9 +84,7 @@ const uint16_t PAUSE_DELAY = 4000;
 TMC51X0 prism;
 tmc51x0::ControllerParameters controller_parameters_chip;
 tmc51x0::HomeParameters home_parameters_chip;
-tmc51x0::StallParameters stall_parameters_cool_step_chip;
-tmc51x0::StallParameters stall_parameters_dc_step_chip;
-bool stall_using_cool_step = true;
+tmc51x0::StallParameters stall_parameters_chip;
 
 void setup()
 {
@@ -145,8 +114,19 @@ void setup()
   prism.controller.setup(controller_parameters_chip);
 
   home_parameters_chip = prism.converter.homeParametersRealToChip(home_parameters_real);
-  stall_parameters_cool_step_chip = prism.converter.stallParametersRealToChip(stall_parameters_cool_step_real);
-  stall_parameters_dc_step_chip = prism.converter.stallParametersRealToChip(stall_parameters_dc_step_real);
+  stall_parameters_chip = prism.converter.stallParametersRealToChip(stall_parameters_real);
+
+  while (!prism.communicating())
+  {
+    Serial.println("No communication detected, check motor power and connections.");
+    delay(LOOP_DELAY);
+  }
+
+  while (prism.controller.stepAndDirectionMode())
+  {
+    Serial.println("Step and Direction mode enabled so SPI/UART motion commands will not work!");
+    delay(LOOP_DELAY);
+  }
 
   prism.driver.enable();
 
@@ -164,51 +144,38 @@ void loop()
   Serial.println("Waiting...");
   delay(PAUSE_DELAY);
 
-  if (stall_using_cool_step)
-  {
-    stall_using_cool_step = false;
-    Serial.println("Homing to stall using cool step...");
-    prism.beginHomeToStall(home_parameters_chip, stall_parameters_cool_step_chip);
-  }
-  else
-  {
-    stall_using_cool_step = true;
-    Serial.println("Homing to stall using dc step...");
-    prism.beginHomeToStall(home_parameters_chip, stall_parameters_dc_step_chip);
-  }
+  Serial.println("Homing to stall...");
+  prism.beginHomeToStall(home_parameters_chip, stall_parameters_chip);
+
+  int32_t actual_position_real;
   while (not prism.homed())
   {
-    prism.printer.readAndPrintDrvStatus();
+    // prism.printer.readAndPrintDrvStatus();
     int32_t actual_position_chip = prism.controller.readActualPosition();
-    int32_t actual_position_real = prism.converter.positionChipToReal(actual_position_chip);
+    actual_position_real = prism.converter.positionChipToReal(actual_position_chip);
+    Serial.print("homing...");
     Serial.print("actual position (millimeters): ");
     Serial.println(actual_position_real);
-    if (stall_using_cool_step)
-    {
-      Serial.println("stall mode: COOL_STEP");
-      Serial.print("stall guard result: ");
-      Serial.println(prism.driver.readStallGuardResult());
-      Serial.print("stall guard threshold: ");
-      Serial.println(stall_parameters_cool_step_real.stall_guard_threshold);
-    }
-    else
-    {
-      Serial.println("stall mode: DC_STEP");
-      Serial.print("dc stall guard threshold: ");
-      Serial.println(stall_parameters_dc_step_real.dc_stall_guard_threshold);
-    }
+    Serial.print("stall guard result: ");
+    Serial.println(prism.driver.readStallGuardResult());
+    Serial.print("stall guard threshold: ");
+    Serial.println(stall_parameters_real.stall_guard_threshold);
     delay(LOOP_DELAY);
   }
   prism.endHome();
   Serial.println("Homed!");
+  Serial.print("actual_position_real: ");
+  Serial.println(actual_position_real);
+  Serial.print("home target position: ");
+  Serial.println(home_parameters_real.target_position);
 
   Serial.println("Waiting...");
   delay(PAUSE_DELAY);
 
-  int32_t target_position_chip = prism.converter.positionRealToChip(TARGET_POSITION);
+  int32_t target_position_chip = prism.converter.positionRealToChip(MOVE_POSITION);
   prism.controller.writeTargetPosition(target_position_chip);
-  Serial.print("Moving to target position (millimeters): ");
-  Serial.print(TARGET_POSITION);
+  Serial.print("Moving to another position (millimeters): ");
+  Serial.print(MOVE_POSITION);
   Serial.println("...");
 
   while (not prism.controller.positionReached())
