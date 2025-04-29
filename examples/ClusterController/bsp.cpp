@@ -100,6 +100,7 @@ const tmc51x0::StallParameters stall_parameters_real =
   .stall_guard_threshold = 10,
   .cool_step_threshold = 15 // (millimeters/s)
 };
+
 } // namespace constants
 } // namespace CC
 
@@ -357,8 +358,7 @@ bool BSP::initializeEthernet()
   // Initialise built-in TCP/IP stack with W5500 driver
   genmac(mif.mac);
   mif.enable_dhcp_client = false;
-  // mif.ip = MG_IPV4(192, 168, 10, readClusterAddress());
-  mif.ip = MG_IPV4(192, 168, 10, 77);
+  mif.ip = MG_IPV4(192, 168, 10, readClusterAddress());
   mif.gw = MG_IPV4(192, 168, 10, 1);
   mif.mask = MG_IPV4(255, 255, 255, 0);
   mif.driver = &mg_tcpip_driver_w5500;

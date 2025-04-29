@@ -15,6 +15,8 @@ enum ClusterControllerCommands
   LED_ON_CMD = 0x06,
   POWER_OFF_CMD = 0x07,
   POWER_ON_CMD = 0x08,
+  HOME_PRISM_CMD = 0x09,
+  HOME_ALL_PRISMS_CMD = 0x0A,
 };
 
 } // namespace AC

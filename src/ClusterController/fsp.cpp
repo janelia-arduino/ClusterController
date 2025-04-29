@@ -120,6 +120,32 @@ void FSP::Cluster_powerOff(QActive * const ao, QEvt const * e)
   BSP::powerOff();
 }
 
+void FSP::Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  static bool dict_sent = false;
+  if (!dict_sent)
+  {
+    dict_sent = true;
+
+    // object dictionaries for Prism pool...
+    // QS_OBJ_DICTIONARY(&Prism::instance[0]);
+    // QS_OBJ_DICTIONARY(&Prism::instance[1]);
+    // QS_OBJ_DICTIONARY(&Prism::instance[2]);
+    // QS_OBJ_DICTIONARY(&Prism::instance[3]);
+    // QS_OBJ_DICTIONARY(&Prism::instance[4]);
+    // QS_OBJ_DICTIONARY(&Prism::instance[5]);
+    // QS_OBJ_DICTIONARY(&Prism::instance[6]);
+
+    // function dictionaries for Prism SM
+    // QS_FUN_DICTIONARY(&Prism::initial);
+    // QS_FUN_DICTIONARY(&Prism::unused);
+  }
+  // local signals
+  // QS_SIG_DICTIONARY(MINE_PLANT_SIG, hsm);
+
+  (void)e; // unused parameter
+}
+
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
   ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);

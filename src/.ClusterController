@@ -10,17 +10,17 @@
  </group>
  <group name="windows">
   <item id="./ClusterController::Watchdog.cpp">0,0,596,300</item>
-  <item id="./ClusterController::EthernetCommandInterface.cpp">596,0,596,300</item>
-  <item id="./ClusterController::Cluster.cpp">0,300,596,300</item>
-  <item id=".::Cluster.hpp">596,300,596,300</item>
-  <item id=".::SerialCommandInterface.hpp">0,600,596,300</item>
-  <item id="./ClusterController::SerialCommandInterface.cpp">596,600,596,300</item>
-  <item id=".::EthernetCommandInterface.hpp">666,657,596,300</item>
-  <item id=".::Watchdog.hpp">0,657,596,300</item>
-  <item id="AOs::Cluster::SM">328,0,934,625</item>
-  <item id="AOs::SerialCommandInterface::SM">0,33,872,924</item>
-  <item id="AOs::EthernetCommandInterface::SM">0,0,1262,924,*</item>
-  <item id="AOs::Watchdog::SM">328,0,934,924</item>
+  <item id="./ClusterController::EthernetCommandInterface.cpp">0,300,596,300</item>
+  <item id="./ClusterController::Cluster.cpp">0,600,596,300</item>
+  <item id=".::Cluster.hpp">444,657,596,300</item>
+  <item id=".::SerialCommandInterface.hpp">444,0,596,300</item>
+  <item id="./ClusterController::SerialCommandInterface.cpp">444,300,596,300</item>
+  <item id=".::EthernetCommandInterface.hpp">444,600,596,300</item>
+  <item id=".::Watchdog.hpp">0,0,596,300</item>
+  <item id="AOs::Cluster::SM">0,0,1040,924,*</item>
+  <item id="AOs::SerialCommandInterface::SM">168,33,872,924</item>
+  <item id="AOs::EthernetCommandInterface::SM">-222,0,1262,924</item>
+  <item id="AOs::Watchdog::SM">0,33,934,924</item>
  </group>
  <group name="search">
   <item name="options">2032128</item>

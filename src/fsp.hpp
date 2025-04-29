@@ -10,6 +10,7 @@
 
 #include "ClusterController.hpp"
 #include "Cluster.hpp"
+#include "Prism.hpp"
 #include "SerialCommandInterface.hpp"
 #include "EthernetCommandInterface.hpp"
 #include "Watchdog.hpp"
@@ -25,6 +26,8 @@ struct FSP
   static void Cluster_deactivateCommandInterfaces(QP::QActive * const ao, QP::QEvt const * e);
   static void Cluster_powerOn(QP::QActive * const ao, QP::QEvt const * e);
   static void Cluster_powerOff(QP::QActive * const ao, QP::QEvt const * e);
+
+  static void Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e);
 
   static void SerialCommandInterface_initializeAndSubscribe(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_armSerialTimer(QP::QActive * const ao, QP::QEvt const * e);

@@ -364,6 +364,24 @@ This structure of the code is recommended for applications with only one active 
     <state_diagram size="90,73"/>
    </statechart>
   </class>
+  <class name="Prism" superclass="qpcpp::QHsm">
+   <attribute name="instances[constants::prism_count_max]" type="Prism" visibility="0x00" properties="0x01"/>
+   <operation name="Prism" type="" visibility="0x00" properties="0x02">
+    <code>  : QHsm(&amp;initial)</code>
+   </operation>
+   <statechart properties="0x02">
+    <initial target="../1">
+     <action brief="initialize()">FSP::Prism_initialize(this, e);</action>
+     <initial_glyph conn="15,6,4,0,4">
+      <action box="1,1,13,3"/>
+     </initial_glyph>
+    </initial>
+    <state name="UnHomed">
+     <state_glyph node="6,10,29,13"/>
+    </state>
+    <state_diagram size="107,106"/>
+   </statechart>
+  </class>
  </package>
  <package name="Shared" stereotype="0x00" namespace="CC::">
   <class name="CommandEvt" superclass="qpcpp::QEvt"/>
@@ -384,6 +402,11 @@ This structure of the code is recommended for applications with only one active 
   <attribute name="AO_Watchdog" type="QP::QActive * const" visibility="0x00" properties="0x00">
    <code>= &amp;Watchdog::instance;</code>
   </attribute>
+  <operation name="Prism_getInstance" type="QP::QHsm *" visibility="0x00" properties="0x00">
+   <parameter name="prism_address" type="std::uint8_t"/>
+   <code>Q_REQUIRE(prism_address &lt; Q_DIM(Prism::instances));
+return &amp;Prism::instances[prism_address];</code>
+  </operation>
  </package>
  <directory name=".">
   <file name="ClusterController.hpp">
@@ -453,6 +476,19 @@ $declare${AOs::EthernetCommandInterface}
 //============================================================================
 // generate declaration of the active object
 $declare${AOs::Watchdog}
+
+#endif</text>
+  </file>
+  <file name="Prism.hpp">
+   <text>#ifndef PRISM_HPP
+#define PRISM_HPP
+
+#include &quot;ClusterController.hpp&quot;
+
+
+//============================================================================
+// generate declaration of the active object
+$declare${AOs::Prism}
 
 #endif</text>
   </file>
@@ -531,6 +567,28 @@ $define${Shared::AO_Watchdog}
 //============================================================================
 // generate definition of the AO
 $define${AOs::Watchdog}</text>
+  </file>
+  <file name="Prism.cpp">
+   <text>#include &quot;Prism.hpp&quot;
+
+Q_DEFINE_THIS_FILE
+
+using namespace QP;
+
+namespace CC
+{
+// helper function to provide the address of this prism ............................
+static inline uint8_t PRISM_ADDRESS(Prism const * const me)
+{
+  return static_cast&lt;uint8_t&gt;(me - &amp;Prism::instances[0]);
+}
+
+} // namespace CC
+
+//============================================================================
+// generate definition of the class
+$define${Shared::Prism_getInstance}
+$define${AOs::Prism}</text>
   </file>
  </directory>
 </model>

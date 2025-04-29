@@ -45,6 +45,11 @@ constexpr uint8_t cluster_address_max = 255;
 // Beep
 constexpr uint16_t beep_frequency_min = 1000;
 constexpr uint16_t beep_frequency_max = 10000;
+
+
+// Prisms
+constexpr uint8_t prism_count_max = 7;
+
 }
 }
 #endif

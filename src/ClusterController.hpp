@@ -45,6 +45,8 @@ extern QP::QActive * const AO_Cluster;
 extern QP::QActive * const AO_SerialCommandInterface;
 extern QP::QActive * const AO_EthernetCommandInterface;
 extern QP::QActive * const AO_Watchdog;
+//.${Shared::Prism_getInstance} ..............................................
+QP::QHsm * Prism_getInstance(std::uint8_t prism_address) ;
 
 } // namespace CC
 //.$enddecl${Shared} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
