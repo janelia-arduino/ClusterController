@@ -38,8 +38,8 @@ public:
 protected:
     Q_STATE_DECL(initial);
     Q_STATE_DECL(ClusterOn);
-    Q_STATE_DECL(PowerOn);
-    Q_STATE_DECL(PowerOff);
+    Q_STATE_DECL(AllPrismsPoweredOn);
+    Q_STATE_DECL(AllPrismsPoweredOff);
 };
 
 } // namespace CC

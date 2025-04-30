@@ -56,8 +56,8 @@ Q_STATE_DEF(Cluster, initial) {
     FSP::Cluster_initializeAndSubscribe(this, e);
 
     QS_FUN_DICTIONARY(&Cluster::ClusterOn);
-    QS_FUN_DICTIONARY(&Cluster::PowerOn);
-    QS_FUN_DICTIONARY(&Cluster::PowerOff);
+    QS_FUN_DICTIONARY(&Cluster::AllPrismsPoweredOn);
+    QS_FUN_DICTIONARY(&Cluster::AllPrismsPoweredOff);
 
     return tran(&ClusterOn);
 }
@@ -79,17 +79,17 @@ Q_STATE_DEF(Cluster, ClusterOn) {
         }
         //.${AOs::Cluster::SM::ClusterOn::initial}
         case Q_INIT_SIG: {
-            status_ = tran(&PowerOff);
+            status_ = tran(&AllPrismsPoweredOff);
             break;
         }
         //.${AOs::Cluster::SM::ClusterOn::RESET}
         case RESET_SIG: {
-            status_ = tran(&PowerOff);
+            status_ = tran(&AllPrismsPoweredOff);
             break;
         }
-        //.${AOs::Cluster::SM::ClusterOn::POWER_OFF}
-        case POWER_OFF_SIG: {
-            status_ = tran(&PowerOff);
+        //.${AOs::Cluster::SM::ClusterOn::POWER_OFF_ALL_PRISMS}
+        case POWER_OFF_ALL_PRISMS_SIG: {
+            status_ = tran(&AllPrismsPoweredOff);
             break;
         }
         default: {
@@ -99,13 +99,13 @@ Q_STATE_DEF(Cluster, ClusterOn) {
     }
     return status_;
 }
-//.${AOs::Cluster::SM::ClusterOn::PowerOn} ...................................
-Q_STATE_DEF(Cluster, PowerOn) {
+//.${AOs::Cluster::SM::ClusterOn::AllPrismsPoweredOn} ........................
+Q_STATE_DEF(Cluster, AllPrismsPoweredOn) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Cluster::SM::ClusterOn::PowerOn}
+        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPoweredOn}
         case Q_ENTRY_SIG: {
-            FSP::Cluster_powerOn(this, e);
+            FSP::Cluster_powerOnAllPrisms(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -116,19 +116,19 @@ Q_STATE_DEF(Cluster, PowerOn) {
     }
     return status_;
 }
-//.${AOs::Cluster::SM::ClusterOn::PowerOff} ..................................
-Q_STATE_DEF(Cluster, PowerOff) {
+//.${AOs::Cluster::SM::ClusterOn::AllPrismsPoweredOff} .......................
+Q_STATE_DEF(Cluster, AllPrismsPoweredOff) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Cluster::SM::ClusterOn::PowerOff}
+        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPoweredOff}
         case Q_ENTRY_SIG: {
-            FSP::Cluster_powerOff(this, e);
+            FSP::Cluster_powerOffAllPrisms(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
-        //.${AOs::Cluster::SM::ClusterOn::PowerOff::POWER_ON}
-        case POWER_ON_SIG: {
-            status_ = tran(&PowerOn);
+        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPowered~::POWER_ON_ALL_PRISMS}
+        case POWER_ON_ALL_PRISMS_SIG: {
+            status_ = tran(&AllPrismsPoweredOn);
             break;
         }
         default: {

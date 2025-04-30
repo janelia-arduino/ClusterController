@@ -9,8 +9,8 @@ using namespace CC;
 static QSpyId const l_FSP_ID = {0U}; // QSpy source ID
 
 static CommandEvt const resetEvt = {RESET_SIG, 0U, 0U};
-static CommandEvt const powerOnEvt = {POWER_ON_SIG, 0U, 0U};
-static CommandEvt const powerOffEvt = {POWER_OFF_SIG, 0U, 0U};
+static CommandEvt const powerOnAllPrismsEvt = {POWER_ON_ALL_PRISMS_SIG, 0U, 0U};
+static CommandEvt const powerOffAllPrismsEvt = {POWER_OFF_ALL_PRISMS_SIG, 0U, 0U};
 
 static QEvt const processBinaryCommandEvt = {PROCESS_BINARY_COMMAND_SIG, 0U, 0U};
 static QEvt const processStringCommandEvt = {PROCESS_STRING_COMMAND_SIG, 0U, 0U};
@@ -47,8 +47,8 @@ void FSP::ClusterController_setup()
 
   // signal dictionaries for globally published events...
   QS_SIG_DICTIONARY(CC::RESET_SIG, nullptr);
-  QS_SIG_DICTIONARY(CC::POWER_ON_SIG, nullptr);
-  QS_SIG_DICTIONARY(CC::POWER_OFF_SIG, nullptr);
+  QS_SIG_DICTIONARY(CC::POWER_ON_ALL_PRISMS_SIG, nullptr);
+  QS_SIG_DICTIONARY(CC::POWER_OFF_ALL_PRISMS_SIG, nullptr);
   QS_SIG_DICTIONARY(CC::SERIAL_COMMAND_AVAILABLE_SIG, nullptr);
   QS_SIG_DICTIONARY(CC::ETHERNET_COMMAND_AVAILABLE_SIG, nullptr);
   QS_SIG_DICTIONARY(CC::COMMAND_PROCESSED_SIG, nullptr);
@@ -94,8 +94,8 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
   BSP::initializeCluster();
   ao->subscribe(RESET_SIG);
-  ao->subscribe(POWER_ON_SIG);
-  ao->subscribe(POWER_OFF_SIG);
+  ao->subscribe(POWER_ON_ALL_PRISMS_SIG);
+  ao->subscribe(POWER_OFF_ALL_PRISMS_SIG);
 }
 
 void FSP::Cluster_activateCommandInterfaces(QActive * const ao, QEvt const * e)
@@ -110,14 +110,14 @@ void FSP::Cluster_deactivateCommandInterfaces(QActive * const ao, QEvt const * e
   AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
-void FSP::Cluster_powerOn(QActive * const ao, QEvt const * e)
+void FSP::Cluster_powerOnAllPrisms(QActive * const ao, QEvt const * e)
 {
-  BSP::powerOn();
+  BSP::powerOnAllPrisms();
 }
 
-void FSP::Cluster_powerOff(QActive * const ao, QEvt const * e)
+void FSP::Cluster_powerOffAllPrisms(QActive * const ao, QEvt const * e)
 {
-  BSP::powerOff();
+  BSP::powerOffAllPrisms();
 }
 
 void FSP::Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e)
@@ -357,13 +357,13 @@ void FSP::processStringCommand(const char * command, char * response)
   {
     BSP::ledOff();
   }
-  else if (strcmp(command, "POWER_ON") == 0)
+  else if (strcmp(command, "POWER_ON_ALL_PRISMS") == 0)
   {
-    QF::PUBLISH(&powerOnEvt, &l_FSP_ID);
+    QF::PUBLISH(&powerOnAllPrismsEvt, &l_FSP_ID);
   }
-  else if (strcmp(command, "POWER_OFF") == 0)
+  else if (strcmp(command, "POWER_OFF_ALL_PRISMS") == 0)
   {
-    QF::PUBLISH(&powerOffEvt, &l_FSP_ID);
+    QF::PUBLISH(&powerOffAllPrismsEvt, &l_FSP_ID);
   }
   else if (strcmp(command, "RCA") == 0)
   {
@@ -414,7 +414,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case RESET_CMD:
       {
-        response[response_byte_count++] = RESET_CMD;
+        response[response_byte_count++] = command_number;
         QF::PUBLISH(&resetEvt, &l_FSP_ID);
         break;
       }
@@ -425,7 +425,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
           response[response_byte_count++] = constants::error_response;
           return response_byte_count;
         }
-        response[response_byte_count++] = BEEP_CMD;
+        response[response_byte_count++] = command_number;
         uint16_t duration_ms;
         memcpy(&duration_ms, command_buffer + 2, sizeof(duration_ms));
         // QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
@@ -437,26 +437,26 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case LED_OFF_CMD:
       {
-        response[response_byte_count++] = LED_OFF_CMD;
+        response[response_byte_count++] = command_number;
         BSP::ledOff();
         break;
       }
       case LED_ON_CMD:
       {
-        response[response_byte_count++] = LED_ON_CMD;
+        response[response_byte_count++] = command_number;
         BSP::ledOn();
         break;
       }
-      case POWER_OFF_CMD:
+      case POWER_OFF_ALL_PRISMS_CMD:
       {
-        response[response_byte_count++] = POWER_OFF_CMD;
-        BSP::powerOff();
+        response[response_byte_count++] = command_number;
+        QF::PUBLISH(&powerOffAllPrismsEvt, &l_FSP_ID);
         break;
       }
-      case POWER_ON_CMD:
+      case POWER_ON_ALL_PRISMS_CMD:
       {
-        response[response_byte_count++] = POWER_ON_CMD;
-        BSP::powerOn();
+        response[response_byte_count++] = command_number;
+        QF::PUBLISH(&powerOnAllPrismsEvt, &l_FSP_ID);
         break;
       }
       default:

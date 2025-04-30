@@ -18,8 +18,8 @@ public:
 
   static void beep(uint16_t duration_ms);
 
-  static void powerOff();
-  static void powerOn();
+  static void powerOffAllPrisms();
+  static void powerOnAllPrisms();
 
   static bool beginSerial();
   static bool pollSerialCommand();

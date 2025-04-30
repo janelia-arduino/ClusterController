@@ -228,7 +228,7 @@ void BSP::feedWatchdog()
 void BSP::initializeCluster()
 {
   pinMode(CC::constants::power_pin, OUTPUT);
-  powerOff();
+  powerOffAllPrisms();
 
   pinMode(CC::constants::tone_pin, OUTPUT);
 
@@ -262,12 +262,12 @@ void BSP::beep(uint16_t duration_ms)
   tone(constants::tone_pin, frequency, duration_ms);
 }
 
-void BSP::powerOff()
+void BSP::powerOffAllPrisms()
 {
   digitalWriteFast(CC::constants::power_pin, LOW);
 }
 
-void BSP::powerOn()
+void BSP::powerOnAllPrisms()
 {
   digitalWriteFast(CC::constants::power_pin, HIGH);
 }

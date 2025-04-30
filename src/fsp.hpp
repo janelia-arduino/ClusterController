@@ -24,8 +24,8 @@ struct FSP
   static void Cluster_initializeAndSubscribe(QP::QActive * const ao, QP::QEvt const * e);
   static void Cluster_activateCommandInterfaces(QP::QActive * const ao, QP::QEvt const * e);
   static void Cluster_deactivateCommandInterfaces(QP::QActive * const ao, QP::QEvt const * e);
-  static void Cluster_powerOn(QP::QActive * const ao, QP::QEvt const * e);
-  static void Cluster_powerOff(QP::QActive * const ao, QP::QEvt const * e);
+  static void Cluster_powerOnAllPrisms(QP::QActive * const ao, QP::QEvt const * e);
+  static void Cluster_powerOffAllPrisms(QP::QActive * const ao, QP::QEvt const * e);
 
   static void Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e);
 

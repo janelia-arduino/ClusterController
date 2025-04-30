@@ -41,8 +41,8 @@ set parameters (param id, param value)
 | beep                 | '<BBH'         |             0x01 |           0x04 | duration-ms   |       |       |       0x04 | '<B'            |
 | led-off              | '<BB'          |             0x01 |           0x05 |               |       |       |       0x05 | '<B'            |
 | led-on               | '<BB'          |             0x01 |           0x06 |               |       |       |       0x06 | '<B'            |
-| power-off            | '<BB'          |             0x01 |           0x07 |               |       |       |       0x07 | '<B'            |
-| power-on             | '<BB'          |             0x01 |           0x08 |               |       |       |       0x08 | '<B'            |
+| power-off-all-prisms | '<BB'          |             0x01 |           0x07 |               |       |       |       0x07 | '<B'            |
+| power-on-all-prisms  | '<BB'          |             0x01 |           0x08 |               |       |       |       0x08 | '<B'            |
 | home-prism           | '<BBB'         |             0x01 |           0x09 | prism-address |       |       |       0x09 | '<B'            |
 | home-all-prisms      | '<BB'          |             0x01 |           0x0A |               |       |       |       0x0A | '<B'            |
 
