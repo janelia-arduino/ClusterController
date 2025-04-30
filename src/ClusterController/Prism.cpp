@@ -24,6 +24,7 @@ using namespace QP;
 
 namespace CC
 {
+
 // helper function to provide the address of this prism ............................
 static inline uint8_t PRISM_ADDRESS(Prism const * const me)
 {
@@ -60,15 +61,45 @@ Prism Prism::instances[constants::prism_count_max];
 Q_STATE_DEF(Prism, initial) {
     //.${AOs::Prism::SM::initial}
     FSP::Prism_initialize(this, e);
+    prism_address_ = PRISM_ADDRESS(this);
 
-    QS_FUN_DICTIONARY(&Prism::UnHomed);
+    QS_FUN_DICTIONARY(&Prism::PoweredOff);
+    QS_FUN_DICTIONARY(&Prism::PoweredOn);
 
-    return tran(&UnHomed);
+    return tran(&PoweredOff);
 }
-//.${AOs::Prism::SM::UnHomed} ................................................
-Q_STATE_DEF(Prism, UnHomed) {
+//.${AOs::Prism::SM::PoweredOff} .............................................
+Q_STATE_DEF(Prism, PoweredOff) {
     QP::QState status_;
     switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOff}
+        case Q_ENTRY_SIG: {
+            FSP::Prism_poweredOff(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOff::POWER_ON}
+        case POWER_ON_SIG: {
+            status_ = tran(&PoweredOn);
+            break;
+        }
+        default: {
+            status_ = super(&top);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::Prism::SM::PoweredOn} ..............................................
+Q_STATE_DEF(Prism, PoweredOn) {
+    QP::QState status_;
+    switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn}
+        case Q_ENTRY_SIG: {
+            FSP::Prism_poweredOn(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         default: {
             status_ = super(&top);
             break;

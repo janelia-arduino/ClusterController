@@ -11,8 +11,8 @@ enum ClusterControllerSignals
 {
   // commands from serial or ethernet interface
   RESET_SIG = QP::Q_USER_SIG,
-  POWER_ON_ALL_PRISMS_SIG,
-  POWER_OFF_ALL_PRISMS_SIG,
+  POWER_ON_SIG,
+  POWER_OFF_SIG,
   HOME_PRISM_SIG,
   HOME_ALL_PRISMS_SIG,
 

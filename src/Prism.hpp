@@ -31,6 +31,7 @@ namespace CC {
 class Prism : public QP::QHsm {
 public:
     static Prism instances[constants::prism_count_max];
+    std::uint8_t prism_address_;
 
 public:
     Prism()
@@ -39,7 +40,8 @@ public:
 
 protected:
     Q_STATE_DECL(initial);
-    Q_STATE_DECL(UnHomed);
+    Q_STATE_DECL(PoweredOff);
+    Q_STATE_DECL(PoweredOn);
 };
 
 } // namespace CC

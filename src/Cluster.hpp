@@ -32,8 +32,14 @@ class Cluster : public QP::QActive {
 public:
     static Cluster instance;
 
+private:
+    QP::QHsm * prisms_[constants::prism_count_max];
+
 public:
     Cluster();
+
+private:
+    void dispatchToAllPrisms(QP::QEvt const * e);
 
 protected:
     Q_STATE_DECL(initial);

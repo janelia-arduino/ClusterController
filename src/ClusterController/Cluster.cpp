@@ -48,7 +48,23 @@ Cluster Cluster::instance;
 //.${AOs::Cluster::Cluster} ..................................................
 Cluster::Cluster()
 : QActive(Q_STATE_CAST(&Cluster::initial))
-{}
+{
+    for (uint8_t n = 0U; n < constants::prism_count_max; ++n)
+    {
+      prisms_[n] = Prism_getInstance(n);
+    }
+}
+
+//.${AOs::Cluster::dispatchToAllPrisms} ......................................
+void Cluster::dispatchToAllPrisms(QP::QEvt const * e) {
+    for (uint8_t n = 0U; n < constants::prism_count_max; ++n)
+    {
+      if (prisms_[n] != nullptr)
+      {
+        prisms_[n]->dispatch(e, m_prio);
+      }
+    }
+}
 
 //.${AOs::Cluster::SM} .......................................................
 Q_STATE_DEF(Cluster, initial) {
@@ -87,8 +103,8 @@ Q_STATE_DEF(Cluster, ClusterOn) {
             status_ = tran(&AllPrismsPoweredOff);
             break;
         }
-        //.${AOs::Cluster::SM::ClusterOn::POWER_OFF_ALL_PRISMS}
-        case POWER_OFF_ALL_PRISMS_SIG: {
+        //.${AOs::Cluster::SM::ClusterOn::POWER_OFF}
+        case POWER_OFF_SIG: {
             status_ = tran(&AllPrismsPoweredOff);
             break;
         }
@@ -103,12 +119,6 @@ Q_STATE_DEF(Cluster, ClusterOn) {
 Q_STATE_DEF(Cluster, AllPrismsPoweredOn) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPoweredOn}
-        case Q_ENTRY_SIG: {
-            FSP::Cluster_powerOnAllPrisms(this, e);
-            status_ = Q_RET_HANDLED;
-            break;
-        }
         default: {
             status_ = super(&ClusterOn);
             break;
@@ -126,8 +136,10 @@ Q_STATE_DEF(Cluster, AllPrismsPoweredOff) {
             status_ = Q_RET_HANDLED;
             break;
         }
-        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPowered~::POWER_ON_ALL_PRISMS}
-        case POWER_ON_ALL_PRISMS_SIG: {
+        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPowered~::POWER_ON}
+        case POWER_ON_SIG: {
+            FSP::Cluster_powerOnAllPrisms(this, e);
+            dispatchToAllPrisms(e);
             status_ = tran(&AllPrismsPoweredOn);
             break;
         }
