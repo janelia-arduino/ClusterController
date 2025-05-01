@@ -42,6 +42,8 @@ protected:
     Q_STATE_DECL(initial);
     Q_STATE_DECL(PoweredOff);
     Q_STATE_DECL(PoweredOn);
+    Q_STATE_DECL(NotSetup);
+    Q_STATE_DECL(Setup);
 };
 
 } // namespace CC

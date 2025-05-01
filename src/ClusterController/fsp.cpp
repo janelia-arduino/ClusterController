@@ -117,10 +117,23 @@ void FSP::Cluster_deactivateCommandInterfaces(QActive * const ao, QEvt const * e
   AO_EthernetCommandInterface->POST(&deactivateEthernetCommandInterfaceEvt, &l_FSP_ID);
 }
 
+void FSP::Cluster_armClusterTimer(QActive * const ao, QEvt const * e)
+{
+  Cluster * const cluster = static_cast<Cluster * const>(ao);
+  cluster->cluster_time_evt_.armX(constants::ticks_per_second * constants::cluster_timer_delay_s, constants::ticks_per_second/constants::cluster_timer_frequency_hz);
+}
+
+void FSP::Cluster_disarmClusterTimer(QActive * const ao, QEvt const * e)
+{
+  Cluster * const cluster = static_cast<Cluster * const>(ao);
+  cluster->cluster_time_evt_.disarm();
+}
+
 void FSP::Cluster_powerOnAllPrisms(QActive * const ao, QEvt const * e)
 {
   BSP::powerOnAllPrisms();
-  QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+  Cluster * const cluster = static_cast<Cluster * const>(ao);
+  QS_BEGIN_ID(USER_COMMENT, cluster->m_prio)
     QS_STR("all prisms powered on");
   QS_END()
 }
@@ -128,7 +141,8 @@ void FSP::Cluster_powerOnAllPrisms(QActive * const ao, QEvt const * e)
 void FSP::Cluster_powerOffAllPrisms(QActive * const ao, QEvt const * e)
 {
   BSP::powerOffAllPrisms();
-  QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+  Cluster * const cluster = static_cast<Cluster * const>(ao);
+  QS_BEGIN_ID(USER_COMMENT, cluster->m_prio)
     QS_STR("all prisms powered off");
   QS_END()
 }
@@ -155,22 +169,10 @@ void FSP::Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e)
   (void)e; // unused parameter
 }
 
-void FSP::Prism_poweredOff(QP::QHsm * const hsm, QP::QEvt const * e)
+void FSP::Prism_setup(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
-  QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
-    QS_STR("prism powered off");
-    QS_U8(0, prism->prism_address_);
-  QS_END()
-}
-
-void FSP::Prism_poweredOn(QP::QHsm * const hsm, QP::QEvt const * e)
-{
-  Prism * const prism = static_cast<Prism * const>(hsm);
-  QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
-    QS_STR("prism powered on");
-    QS_U8(0, prism->prism_address_);
-  QS_END()
+  BSP::setupPrism(prism->prism_address_);
 }
 
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
@@ -190,7 +192,7 @@ void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt
 void FSP::SerialCommandInterface_armSerialTimer(QActive * const ao, QEvt const * e)
 {
   SerialCommandInterface * const sci = static_cast<SerialCommandInterface * const>(ao);
-  sci->serial_time_evt_.armX(constants::ticks_per_second/2, constants::ticks_per_second/50);
+  sci->serial_time_evt_.armX(constants::ticks_per_second * constants::serial_timer_delay_s, constants::ticks_per_second/constants::serial_timer_frequency_hz);
 }
 
 void FSP::SerialCommandInterface_disarmSerialTimer(QActive * const ao, QEvt const * e)
@@ -271,7 +273,7 @@ void FSP::EthernetCommandInterface_initializeAndSubscribe(QActive * const ao, QE
 void FSP::EthernetCommandInterface_armEthernetTimer(QActive * const ao, QEvt const * e)
 {
   EthernetCommandInterface * const eci = static_cast<EthernetCommandInterface * const>(ao);
-  eci->ethernet_time_evt_.armX(constants::ticks_per_second, constants::ticks_per_second/100);
+  eci->ethernet_time_evt_.armX(constants::ticks_per_second * constants::ethernet_timer_delay_s, constants::ticks_per_second/constants::ethernet_timer_frequency_hz);
 }
 
 void FSP::EthernetCommandInterface_disarmEthernetTimer(QActive * const ao, QEvt const * e)
@@ -314,14 +316,14 @@ void FSP::EthernetCommandInterface_analyzeCommand(QActive * const ao, QEvt const
   uint8_t first_command_byte = (uint8_t)(eci->binary_command_[0]);
   if (first_command_byte > constants::first_command_byte_max_value_binary)
   {
-    QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+    QS_BEGIN_ID(USER_COMMENT, eci->m_prio)
       QS_STR("string command");
     QS_END()
     QF::PUBLISH(&processStringCommandEvt, &l_FSP_ID);
   }
   else
   {
-    QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+    QS_BEGIN_ID(USER_COMMENT, eci->m_prio)
       QS_STR("binary command");
     QS_END()
     QF::PUBLISH(&processBinaryCommandEvt, &l_FSP_ID);

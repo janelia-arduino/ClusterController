@@ -10,11 +10,19 @@ constexpr uint32_t ticks_per_second = 1000;
 
 constexpr uint32_t watchdog_delay_ms = 2000;
 
+// Cluster
+constexpr uint32_t cluster_timer_delay_s = 4;
+constexpr uint32_t cluster_timer_frequency_hz = 10;
+
 // Serial Communication Interface
+constexpr uint32_t serial_timer_delay_s = 1;
+constexpr uint32_t serial_timer_frequency_hz = 50;
 constexpr uint32_t serial_baud_rate = 115200;
 constexpr uint16_t serial_timeout = 100;
 
 // Ethernet Communication Interface
+constexpr uint32_t ethernet_timer_delay_s = 1;
+constexpr uint32_t ethernet_timer_frequency_hz = 100;
 constexpr uint8_t mac_address_size = 6;
 constexpr uint32_t ethernet_server_port = 7777;
 

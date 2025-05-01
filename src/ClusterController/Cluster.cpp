@@ -47,7 +47,8 @@ namespace CC {
 Cluster Cluster::instance;
 //.${AOs::Cluster::Cluster} ..................................................
 Cluster::Cluster()
-: QActive(Q_STATE_CAST(&Cluster::initial))
+: QActive(Q_STATE_CAST(&Cluster::initial)),
+    cluster_time_evt_(this, CLUSTER_TIMEOUT_SIG, 0U)
 {
     for (uint8_t n = 0U; n < constants::prism_count_max; ++n)
     {
@@ -102,6 +103,7 @@ Q_STATE_DEF(Cluster, ClusterOn) {
         }
         //.${AOs::Cluster::SM::ClusterOn::RESET}
         case RESET_SIG: {
+            dispatchToAllPrisms(e);
             status_ = tran(&AllPrismsPoweredOff);
             break;
         }
@@ -122,6 +124,24 @@ Q_STATE_DEF(Cluster, ClusterOn) {
 Q_STATE_DEF(Cluster, AllPrismsPoweredOn) {
     QP::QState status_;
     switch (e->sig) {
+        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPoweredOn}
+        case Q_ENTRY_SIG: {
+            FSP::Cluster_armClusterTimer(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPoweredOn}
+        case Q_EXIT_SIG: {
+            FSP::Cluster_disarmClusterTimer(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPowered~::CLUSTER_TIMEOUT}
+        case CLUSTER_TIMEOUT_SIG: {
+            dispatchToAllPrisms(e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         default: {
             status_ = super(&ClusterOn);
             break;

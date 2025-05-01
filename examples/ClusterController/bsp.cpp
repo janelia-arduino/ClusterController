@@ -101,6 +101,22 @@ const tmc51x0::StallParameters stall_parameters_real =
   .cool_step_threshold = 15 // (millimeters/s)
 };
 
+const tmc51x0::SwitchParameters switch_parameters_running =
+{
+  .left_stop_enabled = false,
+  .right_stop_enabled = false,
+  .invert_left_polarity = false, // left switch permanently tied to ground
+  .invert_right_polarity = false, // right switch permanently tied to ground
+};
+
+const tmc51x0::SwitchParameters switch_parameters_paused =
+{
+  .left_stop_enabled = true,
+  .right_stop_enabled = true,
+  .invert_left_polarity = true, // left switch permanently tied to ground
+  .invert_right_polarity = true, // right switch permanently tied to ground
+};
+
 } // namespace constants
 } // namespace CC
 
@@ -188,7 +204,7 @@ int getConst() {
 
 void addressInterruptCallback()
 {
-  // CC::AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_BSP_ID);
+  // AO_SerialCommandInterface->POST(&activateSerialCommandInterfaceEvt, &l_BSP_ID);
 }
 
 //----------------------------------------------------------------------------
@@ -199,7 +215,7 @@ void BSP::init()
   // initialize the hardware used in this sketch...
   // NOTE: interrupts are configured and started later in QF::onStartup()
 
-  pinMode(CC::constants::led_pin, OUTPUT);
+  pinMode(constants::led_pin, OUTPUT);
   ledOff();
 
   QS_OBJ_DICTIONARY(&l_BSP_ID);
@@ -207,17 +223,17 @@ void BSP::init()
 
 void BSP::ledOff()
 {
-  digitalWriteFast(CC::constants::led_pin, LOW);
+  digitalWriteFast(constants::led_pin, LOW);
 }
 
 void BSP::ledOn()
 {
-  digitalWriteFast(CC::constants::led_pin, HIGH);
+  digitalWriteFast(constants::led_pin, HIGH);
 }
 
 void BSP::initializeWatchdog()
 {
-  rp2040.wdt_begin(CC::constants::watchdog_delay_ms);
+  rp2040.wdt_begin(constants::watchdog_delay_ms);
 }
 
 void BSP::feedWatchdog()
@@ -227,18 +243,23 @@ void BSP::feedWatchdog()
 
 void BSP::initializeCluster()
 {
-  pinMode(CC::constants::power_pin, OUTPUT);
+  pinMode(constants::power_pin, OUTPUT);
   powerOffAllPrisms();
 
-  pinMode(CC::constants::tone_pin, OUTPUT);
+  prism_spi.setSCK(constants::prism_spi_sck_pin);
+  prism_spi.setTX(constants::prism_spi_tx_pin);
+  prism_spi.setRX(constants::prism_spi_rx_pin);
+  prism_spi.begin();
 
-  wire.setSDA(CC::constants::sda_pin);
-  wire.setSCL(CC::constants::scl_pin);
+  pinMode(constants::tone_pin, OUTPUT);
 
-  tca6408.setup(wire, CC::constants::cluster_address_device_address);
-  tca6408.setResetPin(CC::constants::cluster_address_reset_pin);
+  wire.setSDA(constants::sda_pin);
+  wire.setSCL(constants::scl_pin);
 
-  tca6408.attachInterrupt(CC::constants::cluster_address_interrupt_pin, addressInterruptCallback);
+  tca6408.setup(wire, constants::cluster_address_device_address);
+  tca6408.setResetPin(constants::cluster_address_reset_pin);
+
+  tca6408.attachInterrupt(constants::cluster_address_interrupt_pin, addressInterruptCallback);
 }
 
 uint8_t BSP::readClusterAddress()
@@ -264,20 +285,45 @@ void BSP::beep(uint16_t duration_ms)
 
 void BSP::powerOffAllPrisms()
 {
-  digitalWriteFast(CC::constants::power_pin, LOW);
+  digitalWriteFast(constants::power_pin, LOW);
 }
 
 void BSP::powerOnAllPrisms()
 {
-  digitalWriteFast(CC::constants::power_pin, HIGH);
+  digitalWriteFast(constants::power_pin, HIGH);
+}
+
+void BSP::setupPrism(uint8_t prism_address)
+{
+  TMC51X0 & prism = prisms[prism_address];
+  tmc51x0::SpiParameters spi_parameters =
+    {
+      .spi_ptr = &prism_spi,
+      .chip_select_pin = constants::prism_spi_csn_pins[prism_address],
+    };
+  prism.setupSpi(spi_parameters);
+  if (prism.communicating())
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+      QS_STR("prism communicating");
+      QS_U8(0, prism_address);
+    QS_END()
+  }
+  else
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+      QS_STR("prism not communicating");
+      QS_U8(0, prism_address);
+    QS_END()
+  }
 }
 
 bool BSP::beginSerial()
 {
-  // serial_communication_interface_stream.setRX(CC::constants::serial_rx_pin);
-  // serial_communication_interface_stream.setTX(CC::constants::serial_tx_pin);
-  // serial_communication_interface_stream.begin(CC::constants::serial_baud_rate);
-  // serial_communication_interface_stream.setTimeout(CC::constants::serial_timeout);
+  // serial_communication_interface_stream.setRX(constants::serial_rx_pin);
+  // serial_communication_interface_stream.setTX(constants::serial_tx_pin);
+  // serial_communication_interface_stream.begin(constants::serial_baud_rate);
+  // serial_communication_interface_stream.setTimeout(constants::serial_timeout);
   return true;
 }
 
@@ -295,9 +341,9 @@ uint8_t BSP::readSerialByte()
 
 void BSP::readSerialStringCommand(char * command_str, char first_char)
 {
-  char command_tail[CC::constants::string_command_length_max];
-  size_t chars_read = serial_communication_interface_stream.readBytesUntil(CC::constants::command_termination_character,
-    command_tail, CC::constants::string_command_length_max - 1);
+  char command_tail[constants::string_command_length_max];
+  size_t chars_read = serial_communication_interface_stream.readBytesUntil(constants::command_termination_character,
+    command_tail, constants::string_command_length_max - 1);
   command_tail[chars_read] = '\0';
   command_str[0] = first_char;
   command_str[1] = '\0';
@@ -459,7 +505,7 @@ void TIMER_HANDLER()
 void QF::onStartup()
 {
   // configure the timer-counter channel........
-  system_clock.attach_ms(CC::constants::milliseconds_per_second / CC::constants::ticks_per_second,
+  system_clock.attach_ms(constants::milliseconds_per_second / constants::ticks_per_second,
     TIMER_HANDLER);
   // ...
 }

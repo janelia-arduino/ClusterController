@@ -24,6 +24,9 @@ enum ClusterControllerSignals
 
   MAX_PUB_SIG,
 
+  // bsp POST to Cluster
+  CLUSTER_TIMEOUT_SIG,
+
   // bsp POST to SerialCommandInterface
   SERIAL_TIMEOUT_SIG,
   ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,

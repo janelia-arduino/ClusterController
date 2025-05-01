@@ -32,6 +32,7 @@ class Cluster : public QP::QActive {
 public:
     static Cluster instance;
     QP::QHsm * prisms_[constants::prism_count_max];
+    QP::QTimeEvt cluster_time_evt_;
 
 public:
     Cluster();

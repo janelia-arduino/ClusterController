@@ -24,8 +24,10 @@ This structure of the code is recommended for applications with only one active 
     <documentation>static class instance (Singleton)</documentation>
    </attribute>
    <attribute name="prisms_[constants::prism_count_max]" type="QP::QHsm *" visibility="0x00" properties="0x00"/>
+   <attribute name="cluster_time_evt_" type="QP::QTimeEvt" visibility="0x00" properties="0x00"/>
    <operation name="Cluster" type="" visibility="0x00" properties="0x00">
-    <code>: QActive(Q_STATE_CAST(&amp;Cluster::initial))
+    <code>: QActive(Q_STATE_CAST(&amp;Cluster::initial)),
+    cluster_time_evt_(this, CLUSTER_TIMEOUT_SIG, 0U)
 
 for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
 {
@@ -60,33 +62,45 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
       </initial_glyph>
      </initial>
      <tran trig="RESET" target="../4">
-      <tran_glyph conn="5,25,3,3,18">
-       <action box="0,-2,10,2"/>
+      <action brief="dispatchToAllPrisms()">dispatchToAllPrisms(e);</action>
+      <tran_glyph conn="5,25,3,3,28">
+       <action box="0,-2,24,2"/>
       </tran_glyph>
      </tran>
      <tran trig="POWER_OFF" target="../4">
       <action brief="dispatchToAllPrisms()">dispatchToAllPrisms(e);</action>
-      <tran_glyph conn="5,27,3,3,18">
-       <action box="0,-2,20,5"/>
+      <tran_glyph conn="5,27,3,3,28">
+       <action box="0,-2,27,3"/>
       </tran_glyph>
      </tran>
      <state name="AllPrismsPoweredOn">
-      <state_glyph node="16,32,70,73"/>
+      <entry brief="armClusterTimer()">FSP::Cluster_armClusterTimer(this, e);</entry>
+      <exit brief="disarmClusterTimer()">FSP::Cluster_disarmClusterTimer(this, e);</exit>
+      <tran trig="CLUSTER_TIMEOUT">
+       <action brief="dispatchToAllPrisms()">dispatchToAllPrisms(e);</action>
+       <tran_glyph conn="16,42,3,-1,20">
+        <action box="0,-2,19,4"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="16,32,70,31">
+       <entry box="1,2,22,2"/>
+       <exit box="1,4,22,2"/>
+      </state_glyph>
      </state>
      <state name="AllPrismsPoweredOff">
       <entry brief="PowerOffAllPrisms()">FSP::Cluster_powerOffAllPrisms(this, e);</entry>
       <tran trig="POWER_ON" target="../../3">
-       <action brief="powerOnAllPrisms()">FSP::Cluster_powerOnAllPrisms(this, e);
+       <action brief="powerOnAllPrisms(); dispatchToAllPrisms()">FSP::Cluster_powerOnAllPrisms(this, e);
 dispatchToAllPrisms(e);</action>
-       <tran_glyph conn="35,28,2,0,4">
-        <action box="1,1,30,2"/>
+       <tran_glyph conn="41,28,2,0,4">
+        <action box="1,1,43,2"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="23,23,25,5">
+      <state_glyph node="33,23,25,5">
        <entry box="1,2,17,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="5,14,89,96">
+     <state_glyph node="5,14,89,57">
       <entry box="1,2,23,2"/>
       <exit box="1,4,24,2"/>
      </state_glyph>
@@ -396,26 +410,47 @@ dispatchToAllPrisms(e);</action>
      </initial_glyph>
     </initial>
     <state name="PoweredOff">
-     <entry brief="poweredOff()">FSP::Prism_poweredOff(this, e);</entry>
      <tran trig="POWER_ON" target="../../2">
       <tran_glyph conn="18,17,2,0,6">
        <action box="0,2,14,2"/>
       </tran_glyph>
      </tran>
-     <state_glyph node="12,10,16,7">
-      <entry box="1,2,14,2"/>
-     </state_glyph>
+     <state_glyph node="12,10,16,7"/>
     </state>
     <state name="PoweredOn">
-     <entry brief="poweredOn()">FSP::Prism_poweredOn(this, e);</entry>
+     <initial target="../4">
+      <initial_glyph conn="20,30,4,0,3">
+       <action box="0,-2,10,2"/>
+      </initial_glyph>
+     </initial>
      <tran trig="POWER_OFF" target="../../1">
       <tran_glyph conn="43,23,0,1,-9,-15">
        <action box="0,-4,12,2"/>
       </tran_glyph>
      </tran>
-     <state_glyph node="12,23,51,41">
-      <entry box="1,2,21,2"/>
-     </state_glyph>
+     <tran trig="RESET" target="../../1">
+      <tran_glyph conn="55,23,0,1,-11,-27">
+       <action box="1,-4,10,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="CLUSTER_TIMEOUT">
+      <tran_glyph conn="12,27,3,-1,19">
+       <action box="0,-2,16,2"/>
+      </tran_glyph>
+     </tran>
+     <state name="NotSetup">
+      <tran trig="CLUSTER_TIMEOUT" target="../../5">
+       <action brief="setup()">FSP::Prism_setup(this, e);</action>
+       <tran_glyph conn="20,39,2,0,4">
+        <action box="1,1,26,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="13,33,13,6"/>
+     </state>
+     <state name="Setup">
+      <state_glyph node="13,43,22,11"/>
+     </state>
+     <state_glyph node="12,23,69,54"/>
     </state>
     <state_diagram size="107,106"/>
    </statechart>

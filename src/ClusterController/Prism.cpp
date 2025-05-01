@@ -53,6 +53,8 @@ Q_STATE_DEF(Prism, initial) {
 
     QS_FUN_DICTIONARY(&Prism::PoweredOff);
     QS_FUN_DICTIONARY(&Prism::PoweredOn);
+    QS_FUN_DICTIONARY(&Prism::NotSetup);
+    QS_FUN_DICTIONARY(&Prism::Setup);
 
     return tran(&PoweredOff);
 }
@@ -60,12 +62,6 @@ Q_STATE_DEF(Prism, initial) {
 Q_STATE_DEF(Prism, PoweredOff) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Prism::SM::PoweredOff}
-        case Q_ENTRY_SIG: {
-            FSP::Prism_poweredOff(this, e);
-            status_ = Q_RET_HANDLED;
-            break;
-        }
         //.${AOs::Prism::SM::PoweredOff::POWER_ON}
         case POWER_ON_SIG: {
             status_ = tran(&PoweredOn);
@@ -82,10 +78,9 @@ Q_STATE_DEF(Prism, PoweredOff) {
 Q_STATE_DEF(Prism, PoweredOn) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Prism::SM::PoweredOn}
-        case Q_ENTRY_SIG: {
-            FSP::Prism_poweredOn(this, e);
-            status_ = Q_RET_HANDLED;
+        //.${AOs::Prism::SM::PoweredOn::initial}
+        case Q_INIT_SIG: {
+            status_ = tran(&NotSetup);
             break;
         }
         //.${AOs::Prism::SM::PoweredOn::POWER_OFF}
@@ -93,8 +88,46 @@ Q_STATE_DEF(Prism, PoweredOn) {
             status_ = tran(&PoweredOff);
             break;
         }
+        //.${AOs::Prism::SM::PoweredOn::RESET}
+        case RESET_SIG: {
+            status_ = tran(&PoweredOff);
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOn::CLUSTER_TIMEOUT}
+        case CLUSTER_TIMEOUT_SIG: {
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         default: {
             status_ = super(&top);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::Prism::SM::PoweredOn::NotSetup} ....................................
+Q_STATE_DEF(Prism, NotSetup) {
+    QP::QState status_;
+    switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::NotSetup::CLUSTER_TIMEOUT}
+        case CLUSTER_TIMEOUT_SIG: {
+            FSP::Prism_setup(this, e);
+            status_ = tran(&Setup);
+            break;
+        }
+        default: {
+            status_ = super(&PoweredOn);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::Prism::SM::PoweredOn::Setup} .......................................
+Q_STATE_DEF(Prism, Setup) {
+    QP::QState status_;
+    switch (e->sig) {
+        default: {
+            status_ = super(&PoweredOn);
             break;
         }
     }

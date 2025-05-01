@@ -20,6 +20,7 @@ public:
 
   static void powerOffAllPrisms();
   static void powerOnAllPrisms();
+  static void setupPrism(uint8_t prism_address);
 
   static bool beginSerial();
   static bool pollSerialCommand();
