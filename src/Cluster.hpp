@@ -31,8 +31,6 @@ namespace CC {
 class Cluster : public QP::QActive {
 public:
     static Cluster instance;
-
-private:
     QP::QHsm * prisms_[constants::prism_count_max];
 
 public:

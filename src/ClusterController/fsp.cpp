@@ -82,7 +82,7 @@ void FSP::ClusterController_setup()
     ethernet_command_interface_queueSto, Q_DIM(ethernet_command_interface_queueSto),
     (void *)0, 0U); // no stack
 
-  static QEvt const *cluster_queueSto[10];
+  static QEvt const *cluster_queueSto[20];
   AO_Cluster->start(4U, // priority
     cluster_queueSto, Q_DIM(cluster_queueSto),
     (void *)0, 0U); // no stack
@@ -93,6 +93,13 @@ void FSP::ClusterController_setup()
 void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
   BSP::initializeCluster();
+
+  Cluster * const cluster = static_cast<Cluster * const>(ao);
+  for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+  {
+    cluster->prisms_[n]->init(ao->m_prio); // take the initial tran. for Prism
+  }
+
   ao->subscribe(RESET_SIG);
   ao->subscribe(POWER_ON_SIG);
   ao->subscribe(POWER_OFF_SIG);
@@ -122,7 +129,7 @@ void FSP::Cluster_powerOffAllPrisms(QActive * const ao, QEvt const * e)
 {
   BSP::powerOffAllPrisms();
   QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
-    QS_STR("all prisms powered on");
+    QS_STR("all prisms powered off");
   QS_END()
 }
 
@@ -150,20 +157,20 @@ void FSP::Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e)
 
 void FSP::Prism_poweredOff(QP::QHsm * const hsm, QP::QEvt const * e)
 {
-  // Prism * const prism = static_cast<Prism * const>(hsm);
-  // QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
-  //   QS_STR("prism powered off");
-  // //    QS_U16(5, prism->prism_address_);
-  // QS_END()
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+    QS_STR("prism powered off");
+    QS_U8(0, prism->prism_address_);
+  QS_END()
 }
 
 void FSP::Prism_poweredOn(QP::QHsm * const hsm, QP::QEvt const * e)
 {
-  // Prism * const prism = static_cast<Prism * const>(hsm);
-  // QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
-  //   QS_STR("prism powered on");
-  // //    QS_U16(5, prism->prism_address_);
-  // QS_END()
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
+    QS_STR("prism powered on");
+    QS_U8(0, prism->prism_address_);
+  QS_END()
 }
 
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)

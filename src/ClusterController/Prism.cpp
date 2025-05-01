@@ -22,17 +22,6 @@ Q_DEFINE_THIS_FILE
 
 using namespace QP;
 
-namespace CC
-{
-
-// helper function to provide the address of this prism ............................
-static inline uint8_t PRISM_ADDRESS(Prism const * const me)
-{
-  return static_cast<uint8_t>(me - &Prism::instances[0]);
-}
-
-} // namespace CC
-
 //============================================================================
 // generate definition of the class
 //.$skip${QP_VERSION} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -61,7 +50,6 @@ Prism Prism::instances[constants::prism_count_max];
 Q_STATE_DEF(Prism, initial) {
     //.${AOs::Prism::SM::initial}
     FSP::Prism_initialize(this, e);
-    prism_address_ = PRISM_ADDRESS(this);
 
     QS_FUN_DICTIONARY(&Prism::PoweredOff);
     QS_FUN_DICTIONARY(&Prism::PoweredOn);
@@ -98,6 +86,11 @@ Q_STATE_DEF(Prism, PoweredOn) {
         case Q_ENTRY_SIG: {
             FSP::Prism_poweredOn(this, e);
             status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOn::POWER_OFF}
+        case POWER_OFF_SIG: {
+            status_ = tran(&PoweredOff);
             break;
         }
         default: {

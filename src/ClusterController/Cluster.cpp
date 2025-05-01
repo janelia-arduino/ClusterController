@@ -52,6 +52,8 @@ Cluster::Cluster()
     for (uint8_t n = 0U; n < constants::prism_count_max; ++n)
     {
       prisms_[n] = Prism_getInstance(n);
+      Prism * const prism = static_cast<Prism * const>(prisms_[n]);
+      prism->prism_address_ = n;
     }
 }
 
@@ -105,6 +107,7 @@ Q_STATE_DEF(Cluster, ClusterOn) {
         }
         //.${AOs::Cluster::SM::ClusterOn::POWER_OFF}
         case POWER_OFF_SIG: {
+            dispatchToAllPrisms(e);
             status_ = tran(&AllPrismsPoweredOff);
             break;
         }

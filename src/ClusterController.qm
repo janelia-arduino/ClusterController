@@ -23,13 +23,15 @@ This structure of the code is recommended for applications with only one active 
    <attribute name="instance" type="Cluster" visibility="0x00" properties="0x01">
     <documentation>static class instance (Singleton)</documentation>
    </attribute>
-   <attribute name="prisms_[constants::prism_count_max]" type="QP::QHsm *" visibility="0x02" properties="0x00"/>
+   <attribute name="prisms_[constants::prism_count_max]" type="QP::QHsm *" visibility="0x00" properties="0x00"/>
    <operation name="Cluster" type="" visibility="0x00" properties="0x00">
     <code>: QActive(Q_STATE_CAST(&amp;Cluster::initial))
 
 for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
 {
   prisms_[n] = Prism_getInstance(n);
+  Prism * const prism = static_cast&lt;Prism * const&gt;(prisms_[n]);
+  prism-&gt;prism_address_ = n;
 }</code>
    </operation>
    <operation name="dispatchToAllPrisms" type="void" visibility="0x02" properties="0x00">
@@ -53,18 +55,19 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
      <entry brief="activateCommandInterfaces()">FSP::Cluster_activateCommandInterfaces(this, e);</entry>
      <exit brief="deactivateCommandInterfaces()">FSP::Cluster_deactivateCommandInterfaces(this, e);</exit>
      <initial target="../4">
-      <initial_glyph conn="36,20,4,0,3">
+      <initial_glyph conn="41,20,4,0,3">
        <action box="0,-2,10,2"/>
       </initial_glyph>
      </initial>
      <tran trig="RESET" target="../4">
-      <tran_glyph conn="5,25,3,3,13">
+      <tran_glyph conn="5,25,3,3,18">
        <action box="0,-2,10,2"/>
       </tran_glyph>
      </tran>
      <tran trig="POWER_OFF" target="../4">
-      <tran_glyph conn="5,27,3,3,13">
-       <action box="0,-2,21,2"/>
+      <action brief="dispatchToAllPrisms()">dispatchToAllPrisms(e);</action>
+      <tran_glyph conn="5,27,3,3,18">
+       <action box="0,-2,20,5"/>
       </tran_glyph>
      </tran>
      <state name="AllPrismsPoweredOn">
@@ -74,12 +77,12 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
       <entry brief="PowerOffAllPrisms()">FSP::Cluster_powerOffAllPrisms(this, e);</entry>
       <tran trig="POWER_ON" target="../../3">
        <action brief="powerOnAllPrisms()">FSP::Cluster_powerOnAllPrisms(this, e);
-//dispatchToAllPrisms(e);</action>
-       <tran_glyph conn="30,28,2,0,4">
+dispatchToAllPrisms(e);</action>
+       <tran_glyph conn="35,28,2,0,4">
         <action box="1,1,30,2"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="18,23,25,5">
+      <state_glyph node="23,23,25,5">
        <entry box="1,2,17,2"/>
       </state_glyph>
      </state>
@@ -387,8 +390,7 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
    </operation>
    <statechart properties="0x02">
     <initial target="../1">
-     <action brief="initialize()">FSP::Prism_initialize(this, e);
-prism_address_ = PRISM_ADDRESS(this);</action>
+     <action brief="initialize()">FSP::Prism_initialize(this, e);</action>
      <initial_glyph conn="18,6,4,0,4">
       <action box="1,1,13,3"/>
      </initial_glyph>
@@ -406,6 +408,11 @@ prism_address_ = PRISM_ADDRESS(this);</action>
     </state>
     <state name="PoweredOn">
      <entry brief="poweredOn()">FSP::Prism_poweredOn(this, e);</entry>
+     <tran trig="POWER_OFF" target="../../1">
+      <tran_glyph conn="43,23,0,1,-9,-15">
+       <action box="0,-4,12,2"/>
+      </tran_glyph>
+     </tran>
      <state_glyph node="12,23,51,41">
       <entry box="1,2,21,2"/>
      </state_glyph>
@@ -605,17 +612,6 @@ $define${AOs::Watchdog}</text>
 Q_DEFINE_THIS_FILE
 
 using namespace QP;
-
-namespace CC
-{
-
-// helper function to provide the address of this prism ............................
-static inline uint8_t PRISM_ADDRESS(Prism const * const me)
-{
-  return static_cast&lt;uint8_t&gt;(me - &amp;Prism::instances[0]);
-}
-
-} // namespace CC
 
 //============================================================================
 // generate definition of the class
