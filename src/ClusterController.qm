@@ -46,6 +46,14 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
   }
 }</code>
    </operation>
+   <operation name="dispatchToPrism" type="void" visibility="0x02" properties="0x00">
+    <parameter name="e" type="QP::QEvt const *"/>
+    <parameter name="prism_address" type="std::uint8_t"/>
+    <code>if (prisms_[prism_address] != nullptr)
+{
+  prisms_[prism_address]-&gt;dispatch(e, m_prio);
+}</code>
+   </operation>
    <statechart properties="0x02">
     <initial target="../1">
      <action brief="initializeAndSubscribe()">FSP::Cluster_initializeAndSubscribe(this, e);</action>
@@ -419,7 +427,7 @@ dispatchToAllPrisms(e);</action>
     </state>
     <state name="PoweredOn">
      <initial target="../4">
-      <initial_glyph conn="20,30,4,0,3">
+      <initial_glyph conn="21,30,4,0,2">
        <action box="0,-2,10,2"/>
       </initial_glyph>
      </initial>
@@ -434,23 +442,46 @@ dispatchToAllPrisms(e);</action>
       </tran_glyph>
      </tran>
      <tran trig="CLUSTER_TIMEOUT">
-      <tran_glyph conn="12,27,3,-1,19">
+      <tran_glyph conn="6,27,3,-1,25">
        <action box="0,-2,16,2"/>
       </tran_glyph>
      </tran>
      <state name="NotSetup">
-      <tran trig="CLUSTER_TIMEOUT" target="../../5">
+      <tran trig="CLUSTER_TIMEOUT">
        <action brief="setup()">FSP::Prism_setup(this, e);</action>
-       <tran_glyph conn="20,39,2,0,4">
-        <action box="1,1,26,2"/>
+       <choice target="../../../5">
+        <guard brief="communicating()">FSP::Prism_communicating(this, e)</guard>
+        <choice_glyph conn="16,46,5,3,14">
+         <action box="1,0,14,2"/>
+        </choice_glyph>
+       </choice>
+       <choice target="../../../6">
+        <guard brief="else"/>
+        <choice_glyph conn="16,46,4,0,5">
+         <action box="-5,1,10,2"/>
+        </choice_glyph>
+       </choice>
+       <tran_glyph conn="16,38,2,-1,8">
+        <action box="0,1,26,2"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="13,33,13,6"/>
+      <state_glyph node="14,32,13,6"/>
      </state>
-     <state name="Setup">
-      <state_glyph node="13,43,22,11"/>
+     <state name="SetupAndCommunicating">
+      <initial target="../1">
+       <initial_glyph conn="44,49,4,0,3">
+        <action box="0,-2,10,2"/>
+       </initial_glyph>
+      </initial>
+      <state name="NotHomed">
+       <state_glyph node="39,52,10,6"/>
+      </state>
+      <state_glyph node="30,43,73,58"/>
      </state>
-     <state_glyph node="12,23,69,54"/>
+     <state name="Disconnected">
+      <state_glyph node="7,51,13,9"/>
+     </state>
+     <state_glyph node="6,23,99,80"/>
     </state>
     <state_diagram size="107,106"/>
    </statechart>

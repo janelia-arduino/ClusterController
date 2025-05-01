@@ -69,6 +69,14 @@ void Cluster::dispatchToAllPrisms(QP::QEvt const * e) {
     }
 }
 
+//.${AOs::Cluster::dispatchToPrism} ..........................................
+void Cluster::dispatchToPrism(QP::QEvt const * e, std::uint8_t prism_address) {
+    if (prisms_[prism_address] != nullptr)
+    {
+      prisms_[prism_address]->dispatch(e, m_prio);
+    }
+}
+
 //.${AOs::Cluster::SM} .......................................................
 Q_STATE_DEF(Cluster, initial) {
     //.${AOs::Cluster::SM::initial}

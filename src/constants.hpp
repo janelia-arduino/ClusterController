@@ -11,7 +11,7 @@ constexpr uint32_t ticks_per_second = 1000;
 constexpr uint32_t watchdog_delay_ms = 2000;
 
 // Cluster
-constexpr uint32_t cluster_timer_delay_s = 4;
+constexpr uint32_t cluster_timer_delay_s = 2;
 constexpr uint32_t cluster_timer_frequency_hz = 10;
 
 // Serial Communication Interface

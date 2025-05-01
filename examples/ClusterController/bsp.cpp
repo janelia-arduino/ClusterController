@@ -295,27 +295,19 @@ void BSP::powerOnAllPrisms()
 
 void BSP::setupPrism(uint8_t prism_address)
 {
-  TMC51X0 & prism = prisms[prism_address];
   tmc51x0::SpiParameters spi_parameters =
     {
       .spi_ptr = &prism_spi,
       .chip_select_pin = constants::prism_spi_csn_pins[prism_address],
     };
+  TMC51X0 & prism = prisms[prism_address];
   prism.setupSpi(spi_parameters);
-  if (prism.communicating())
-  {
-    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
-      QS_STR("prism communicating");
-      QS_U8(0, prism_address);
-    QS_END()
-  }
-  else
-  {
-    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
-      QS_STR("prism not communicating");
-      QS_U8(0, prism_address);
-    QS_END()
-  }
+}
+
+bool BSP::prismCommunicating(uint8_t prism_address)
+{
+  TMC51X0 & prism = prisms[prism_address];
+  return prism.communicating();
 }
 
 bool BSP::beginSerial()

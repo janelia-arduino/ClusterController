@@ -54,7 +54,9 @@ Q_STATE_DEF(Prism, initial) {
     QS_FUN_DICTIONARY(&Prism::PoweredOff);
     QS_FUN_DICTIONARY(&Prism::PoweredOn);
     QS_FUN_DICTIONARY(&Prism::NotSetup);
-    QS_FUN_DICTIONARY(&Prism::Setup);
+    QS_FUN_DICTIONARY(&Prism::SetupAndCommunicating);
+    QS_FUN_DICTIONARY(&Prism::NotHomed);
+    QS_FUN_DICTIONARY(&Prism::Disconnected);
 
     return tran(&PoweredOff);
 }
@@ -112,7 +114,14 @@ Q_STATE_DEF(Prism, NotSetup) {
         //.${AOs::Prism::SM::PoweredOn::NotSetup::CLUSTER_TIMEOUT}
         case CLUSTER_TIMEOUT_SIG: {
             FSP::Prism_setup(this, e);
-            status_ = tran(&Setup);
+            //.${AOs::Prism::SM::PoweredOn::NotSetup::CLUSTER_TIMEOUT::[communicating()]}
+            if (FSP::Prism_communicating(this, e)) {
+                status_ = tran(&SetupAndCommunicating);
+            }
+            //.${AOs::Prism::SM::PoweredOn::NotSetup::CLUSTER_TIMEOUT::[else]}
+            else {
+                status_ = tran(&Disconnected);
+            }
             break;
         }
         default: {
@@ -122,8 +131,35 @@ Q_STATE_DEF(Prism, NotSetup) {
     }
     return status_;
 }
-//.${AOs::Prism::SM::PoweredOn::Setup} .......................................
-Q_STATE_DEF(Prism, Setup) {
+//.${AOs::Prism::SM::PoweredOn::SetupAndCommunicating} .......................
+Q_STATE_DEF(Prism, SetupAndCommunicating) {
+    QP::QState status_;
+    switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::initial}
+        case Q_INIT_SIG: {
+            status_ = tran(&NotHomed);
+            break;
+        }
+        default: {
+            status_ = super(&PoweredOn);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::NotHomed} .................
+Q_STATE_DEF(Prism, NotHomed) {
+    QP::QState status_;
+    switch (e->sig) {
+        default: {
+            status_ = super(&SetupAndCommunicating);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::Prism::SM::PoweredOn::Disconnected} ................................
+Q_STATE_DEF(Prism, Disconnected) {
     QP::QState status_;
     switch (e->sig) {
         default: {

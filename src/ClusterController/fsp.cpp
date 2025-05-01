@@ -175,6 +175,12 @@ void FSP::Prism_setup(QP::QHsm * const hsm, QP::QEvt const * e)
   BSP::setupPrism(prism->prism_address_);
 }
 
+bool FSP::Prism_communicating(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  return BSP::prismCommunicating(prism->prism_address_);
+}
+
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
   ao->subscribe(SERIAL_COMMAND_AVAILABLE_SIG);
