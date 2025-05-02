@@ -41,6 +41,11 @@ public:
     std::uint8_t const * binary_command;
     std::uint32_t binary_command_byte_count;
 };
+//.${Shared::PrismCommandEvt} ................................................
+class PrismCommandEvt : public QP::QEvt {
+public:
+    std::uint8_t prism_address_;
+};
 extern QP::QActive * const AO_Cluster;
 extern QP::QActive * const AO_SerialCommandInterface;
 extern QP::QActive * const AO_EthernetCommandInterface;

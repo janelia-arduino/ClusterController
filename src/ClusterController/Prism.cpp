@@ -56,6 +56,7 @@ Q_STATE_DEF(Prism, initial) {
     QS_FUN_DICTIONARY(&Prism::NotSetup);
     QS_FUN_DICTIONARY(&Prism::SetupAndCommunicating);
     QS_FUN_DICTIONARY(&Prism::NotHomed);
+    QS_FUN_DICTIONARY(&Prism::Homing);
     QS_FUN_DICTIONARY(&Prism::Disconnected);
 
     return tran(&PoweredOff);
@@ -155,6 +156,22 @@ Q_STATE_DEF(Prism, SetupAndCommunicating) {
 }
 //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::NotHomed} .................
 Q_STATE_DEF(Prism, NotHomed) {
+    QP::QState status_;
+    switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::NotHomed::HOME_PRISM}
+        case HOME_PRISM_SIG: {
+            status_ = tran(&Homing);
+            break;
+        }
+        default: {
+            status_ = super(&SetupAndCommunicating);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing} ...................
+Q_STATE_DEF(Prism, Homing) {
     QP::QState status_;
     switch (e->sig) {
         default: {

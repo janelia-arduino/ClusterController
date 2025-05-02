@@ -12,6 +12,7 @@ static CommandEvt const resetEvt = {RESET_SIG, 0U, 0U};
 
 static CommandEvt const powerOnEvt = {POWER_ON_SIG, 0U, 0U};
 static CommandEvt const powerOffEvt = {POWER_OFF_SIG, 0U, 0U};
+static CommandEvt const homeAllPrismsEvt = {HOME_ALL_PRISMS_SIG, 0U, 0U};
 
 static QEvt const processBinaryCommandEvt = {PROCESS_BINARY_COMMAND_SIG, 0U, 0U};
 static QEvt const processStringCommandEvt = {PROCESS_STRING_COMMAND_SIG, 0U, 0U};
@@ -206,6 +207,15 @@ void FSP::Prism_recordSetupAndCommunicating(QP::QHsm * const hsm, QP::QEvt const
   Prism * const prism = static_cast<Prism * const>(hsm);
   QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
     QS_STR("prism setup and communicating");
+    QS_U8(0, prism->prism_address_);
+  QS_END()
+}
+
+void FSP::Prism_recordHoming(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+    QS_STR("prism homing");
     QS_U8(0, prism->prism_address_);
   QS_END()
 }
@@ -521,6 +531,18 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       {
         response[response_byte_count++] = command_number;
         AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
+        break;
+      }
+      case HOME_PRISM_CMD:
+      {
+        response[response_byte_count++] = command_number;
+        AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
+        break;
+      }
+      case HOME_ALL_PRISMS_CMD:
+      {
+        response[response_byte_count++] = command_number;
+        AO_Cluster->POST(&homeAllPrismsEvt, &l_FSP_ID);
         break;
       }
       default:
