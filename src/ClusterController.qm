@@ -468,6 +468,7 @@ dispatchToAllPrisms(e);</action>
       <state_glyph node="14,32,13,6"/>
      </state>
      <state name="SetupAndCommunicating">
+      <entry brief="recordSetupAndCommunicating()">FSP::Prism_recordSetupAndCommunicating(this, e);</entry>
       <initial target="../1">
        <initial_glyph conn="44,49,4,0,3">
         <action box="0,-2,10,2"/>
@@ -476,10 +477,15 @@ dispatchToAllPrisms(e);</action>
       <state name="NotHomed">
        <state_glyph node="39,52,10,6"/>
       </state>
-      <state_glyph node="30,43,73,58"/>
+      <state_glyph node="30,43,73,58">
+       <entry box="1,2,28,2"/>
+      </state_glyph>
      </state>
      <state name="Disconnected">
-      <state_glyph node="7,51,13,9"/>
+      <entry brief="recordDisconnected()">FSP::Prism_recordDisconnected(this, e);</entry>
+      <state_glyph node="7,51,21,9">
+       <entry box="1,2,19,2"/>
+      </state_glyph>
      </state>
      <state_glyph node="6,23,99,80"/>
     </state>

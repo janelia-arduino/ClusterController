@@ -11,10 +11,6 @@ enum ClusterControllerSignals
 {
   // commands from serial or ethernet interface
   RESET_SIG = QP::Q_USER_SIG,
-  POWER_ON_SIG,
-  POWER_OFF_SIG,
-  HOME_PRISM_SIG,
-  HOME_ALL_PRISMS_SIG,
 
   SERIAL_COMMAND_AVAILABLE_SIG,
   ETHERNET_COMMAND_AVAILABLE_SIG,
@@ -24,23 +20,27 @@ enum ClusterControllerSignals
 
   MAX_PUB_SIG,
 
-  // bsp POST to Cluster
+  // POST to Cluster
   CLUSTER_TIMEOUT_SIG,
+  POWER_ON_SIG,
+  POWER_OFF_SIG,
+  HOME_PRISM_SIG,
+  HOME_ALL_PRISMS_SIG,
 
-  // bsp POST to SerialCommandInterface
+  // POST to SerialCommandInterface
   SERIAL_TIMEOUT_SIG,
   ACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
   DEACTIVATE_SERIAL_COMMAND_INTERFACE_SIG,
   SERIAL_READY_SIG,
 
-  // bsp POST to EthernetCommandInterface
+  // POST to EthernetCommandInterface
   ETHERNET_TIMEOUT_SIG,
   ACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG,
   DEACTIVATE_ETHERNET_COMMAND_INTERFACE_SIG,
   ETHERNET_INITIALIZED_SIG,
   ETHERNET_SERVER_CONNECTED_SIG,
 
-  // bsp POST to Watchdog
+  // POST to Watchdog
   WATCHDOG_TIMEOUT_SIG,
 
   MAX_SIG

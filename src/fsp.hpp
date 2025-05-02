@@ -32,6 +32,8 @@ struct FSP
   static void Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_setup(QP::QHsm * const hsm, QP::QEvt const * e);
   static bool Prism_communicating(QP::QHsm * const hsm, QP::QEvt const * e);
+  static void Prism_recordDisconnected(QP::QHsm * const hsm, QP::QEvt const * e);
+  static void Prism_recordSetupAndCommunicating(QP::QHsm * const hsm, QP::QEvt const * e);
 
   static void SerialCommandInterface_initializeAndSubscribe(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_armSerialTimer(QP::QActive * const ao, QP::QEvt const * e);

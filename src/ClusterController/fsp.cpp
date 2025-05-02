@@ -9,6 +9,7 @@ using namespace CC;
 static QSpyId const l_FSP_ID = {0U}; // QSpy source ID
 
 static CommandEvt const resetEvt = {RESET_SIG, 0U, 0U};
+
 static CommandEvt const powerOnEvt = {POWER_ON_SIG, 0U, 0U};
 static CommandEvt const powerOffEvt = {POWER_OFF_SIG, 0U, 0U};
 
@@ -31,11 +32,16 @@ static QEvt const ethernetServerConnectedEvt = {ETHERNET_SERVER_CONNECTED_SIG, 0
 
 void FSP::ClusterController_setup()
 {
+  static QF_MPOOL_EL(QP::QEvt) smlPoolSto[10];
+
   QF::init(); // initialize the framework
 
   QS_INIT(nullptr);
 
   BSP::init(); // initialize the BSP
+
+  // initialize the event pools...
+  QP::QF::poolInit(smlPoolSto, sizeof(smlPoolSto), sizeof(smlPoolSto[0]));
 
   // object dictionaries for AOs...
   QS_OBJ_DICTIONARY(CC::AO_Cluster);
@@ -92,17 +98,22 @@ void FSP::ClusterController_setup()
 
 void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
 {
+  Cluster * const cluster = static_cast<Cluster * const>(ao);
+  QS_OBJ_DICTIONARY(&(cluster->cluster_time_evt_));
+  QS_SIG_DICTIONARY(CLUSTER_TIMEOUT_SIG, ao);
+  QS_SIG_DICTIONARY(POWER_ON_SIG, ao);
+  QS_SIG_DICTIONARY(POWER_OFF_SIG, ao);
+  QS_SIG_DICTIONARY(HOME_PRISM_SIG, ao);
+  QS_SIG_DICTIONARY(HOME_ALL_PRISMS_SIG, ao);
+
   BSP::initializeCluster();
 
-  Cluster * const cluster = static_cast<Cluster * const>(ao);
   for (uint8_t n = 0; n < constants::prism_count_max; ++n)
   {
     cluster->prisms_[n]->init(ao->m_prio); // take the initial tran. for Prism
   }
 
   ao->subscribe(RESET_SIG);
-  ao->subscribe(POWER_ON_SIG);
-  ao->subscribe(POWER_OFF_SIG);
 }
 
 void FSP::Cluster_activateCommandInterfaces(QActive * const ao, QEvt const * e)
@@ -179,6 +190,24 @@ bool FSP::Prism_communicating(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
   return BSP::prismCommunicating(prism->prism_address_);
+}
+
+void FSP::Prism_recordDisconnected(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+    QS_STR("prism disconnected");
+    QS_U8(0, prism->prism_address_);
+  QS_END()
+}
+
+void FSP::Prism_recordSetupAndCommunicating(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+    QS_STR("prism setup and communicating");
+    QS_U8(0, prism->prism_address_);
+  QS_END()
 }
 
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
@@ -394,11 +423,11 @@ void FSP::processStringCommand(const char * command, char * response)
   }
   else if (strcmp(command, "POWER_ON_ALL_PRISMS") == 0)
   {
-    QF::PUBLISH(&powerOnEvt, &l_FSP_ID);
+    AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
   }
   else if (strcmp(command, "POWER_OFF_ALL_PRISMS") == 0)
   {
-    QF::PUBLISH(&powerOffEvt, &l_FSP_ID);
+    AO_Cluster->POST(&powerOffEvt, &l_FSP_ID);
   }
   else if (strcmp(command, "RCA") == 0)
   {
@@ -485,13 +514,13 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       case POWER_OFF_ALL_PRISMS_CMD:
       {
         response[response_byte_count++] = command_number;
-        QF::PUBLISH(&powerOffEvt, &l_FSP_ID);
+        AO_Cluster->POST(&powerOffEvt, &l_FSP_ID);
         break;
       }
       case POWER_ON_ALL_PRISMS_CMD:
       {
         response[response_byte_count++] = command_number;
-        QF::PUBLISH(&powerOnEvt, &l_FSP_ID);
+        AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
         break;
       }
       default:

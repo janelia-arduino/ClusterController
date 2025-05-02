@@ -135,6 +135,12 @@ Q_STATE_DEF(Prism, NotSetup) {
 Q_STATE_DEF(Prism, SetupAndCommunicating) {
     QP::QState status_;
     switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunicating}
+        case Q_ENTRY_SIG: {
+            FSP::Prism_recordSetupAndCommunicating(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::initial}
         case Q_INIT_SIG: {
             status_ = tran(&NotHomed);
@@ -162,6 +168,12 @@ Q_STATE_DEF(Prism, NotHomed) {
 Q_STATE_DEF(Prism, Disconnected) {
     QP::QState status_;
     switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::Disconnected}
+        case Q_ENTRY_SIG: {
+            FSP::Prism_recordDisconnected(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         default: {
             status_ = super(&PoweredOn);
             break;
