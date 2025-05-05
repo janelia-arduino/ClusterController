@@ -149,12 +149,6 @@ Q_STATE_DEF(Prism, SetupAndCommunicating) {
             status_ = tran(&Enabled);
             break;
         }
-        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::HOME_PRISM}
-        case HOME_PRISM_SIG: {
-            FSP::Prism_beginHome(this, e);
-            status_ = tran(&Homing);
-            break;
-        }
         default: {
             status_ = super(&PoweredOn);
             break;
@@ -166,6 +160,11 @@ Q_STATE_DEF(Prism, SetupAndCommunicating) {
 Q_STATE_DEF(Prism, Enabled) {
     QP::QState status_;
     switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Enabled::HOME_PRISM}
+        case HOME_PRISM_SIG: {
+            status_ = tran(&Homing);
+            break;
+        }
         default: {
             status_ = super(&SetupAndCommunicating);
             break;
@@ -177,10 +176,29 @@ Q_STATE_DEF(Prism, Enabled) {
 Q_STATE_DEF(Prism, Homing) {
     QP::QState status_;
     switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing}
+        case Q_ENTRY_SIG: {
+            FSP::Prism_beginHome(this, e);
+            delay_count_ = 0;
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing}
+        case Q_EXIT_SIG: {
+            FSP::Prism_endHome(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::CLUSTER_TIMEOUT}
         case CLUSTER_TIMEOUT_SIG: {
-            FSP::Prism_homed(this, e);
-            status_ = Q_RET_HANDLED;
+            //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::CLUSTER_TIMEOUT::[delay]}
+            if ((delay_count_++ >= constants::home_delay_count)) {
+                FSP::Prism_homed(this, e);
+                status_ = Q_RET_HANDLED;
+            }
+            else {
+                status_ = Q_RET_UNHANDLED;
+            }
             break;
         }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::PRISM_HOMED}
@@ -203,6 +221,11 @@ Q_STATE_DEF(Prism, Homed) {
         case Q_ENTRY_SIG: {
             FSP::Prism_recordHomed(this, e);
             status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::HOME_PRISM}
+        case HOME_PRISM_SIG: {
+            status_ = tran(&Homing);
             break;
         }
         default: {

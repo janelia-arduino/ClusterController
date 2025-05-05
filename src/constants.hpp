@@ -14,6 +14,10 @@ constexpr uint32_t watchdog_delay_ms = 2000;
 constexpr uint32_t cluster_timer_delay_s = 2;
 constexpr uint32_t cluster_timer_frequency_hz = 10;
 
+// Prism
+constexpr uint32_t home_delay_s = 2;
+constexpr uint32_t home_delay_count = cluster_timer_frequency_hz * home_delay_s;
+
 // Serial Communication Interface
 constexpr uint32_t serial_timer_delay_s = 1;
 constexpr uint32_t serial_timer_frequency_hz = 50;

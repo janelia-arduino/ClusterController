@@ -425,6 +425,7 @@ dispatchToAllPrisms(e);</action>
   <class name="Prism" superclass="qpcpp::QHsm">
    <attribute name="instances[constants::prism_count_max]" type="Prism" visibility="0x00" properties="0x01"/>
    <attribute name="prism_address_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="delay_count_" type="std::uint32_t" visibility="0x02" properties="0x00"/>
    <operation name="Prism" type="" visibility="0x00" properties="0x02">
     <code>  : QHsm(&amp;initial)</code>
    </operation>
@@ -487,38 +488,54 @@ dispatchToAllPrisms(e);</action>
      </state>
      <state name="SetupAndCommunicating">
       <entry brief="recordSetupAndCommunicating()">FSP::Prism_recordSetupAndCommunicating(this, e);</entry>
-      <initial target="../2">
+      <initial target="../1">
        <action brief="setupParametersAndEnable()">FSP::Prism_setupParametersAndEnable(this, e);</action>
        <initial_glyph conn="36,48,4,0,3">
         <action box="1,0,23,2"/>
        </initial_glyph>
       </initial>
-      <tran trig="HOME_PRISM" target="../3">
-       <action brief="beginHome()">FSP::Prism_beginHome(this, e);</action>
-       <tran_glyph conn="30,62,3,3,13">
-        <action box="0,-2,12,4"/>
-       </tran_glyph>
-      </tran>
       <state name="Enabled">
+       <tran trig="HOME_PRISM" target="../../2">
+        <tran_glyph conn="35,57,2,0,3">
+         <action box="1,0,12,2"/>
+        </tran_glyph>
+       </tran>
        <state_glyph node="31,51,9,6"/>
       </state>
       <state name="Homing">
+       <entry brief="beginHome()">FSP::Prism_beginHome(this, e);
+delay_count_ = 0;</entry>
+       <exit brief="endHome()">FSP::Prism_endHome(this, e);</exit>
        <tran trig="CLUSTER_TIMEOUT">
-        <action brief="homed()">FSP::Prism_homed(this, e);</action>
-        <tran_glyph conn="43,64,3,-1,17">
-         <action box="0,-2,18,4"/>
+        <choice>
+         <guard brief="delay">(delay_count_++ &gt;= constants::home_delay_count)</guard>
+         <action brief="homed()">FSP::Prism_homed(this, e);</action>
+         <choice_glyph conn="49,68,5,-1,9">
+          <action box="1,-2,11,5"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="31,68,3,-1,18">
+         <action box="1,-2,18,4"/>
         </tran_glyph>
        </tran>
-       <tran trig="PRISM_HOMED" target="../../4">
-        <tran_glyph conn="46,67,2,0,4">
+       <tran trig="PRISM_HOMED" target="../../3">
+        <tran_glyph conn="35,74,2,0,4">
          <action box="1,1,13,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="43,60,29,7"/>
+       <state_glyph node="31,60,47,14">
+        <entry box="1,2,14,2"/>
+        <exit box="1,4,15,2"/>
+       </state_glyph>
       </state>
       <state name="Homed">
        <entry brief="recordHomed()">FSP::Prism_recordHomed(this, e);</entry>
-       <state_glyph node="35,71,47,29">
+       <tran trig="HOME_PRISM" target="../../2">
+        <tran_glyph conn="52,78,0,2,-4">
+         <action box="1,-3,12,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="31,78,47,25">
         <entry box="1,2,15,2"/>
        </state_glyph>
       </state>

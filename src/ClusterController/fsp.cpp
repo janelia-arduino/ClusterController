@@ -255,6 +255,12 @@ void FSP::Prism_beginHome(QP::QHsm * const hsm, QP::QEvt const * e)
   QS_END()
 }
 
+void FSP::Prism_endHome(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  BSP::endHome(prism->prism_address_);
+}
+
 bool FSP::Prism_homed(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);

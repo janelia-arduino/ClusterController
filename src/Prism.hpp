@@ -33,6 +33,9 @@ public:
     static Prism instances[constants::prism_count_max];
     std::uint8_t prism_address_;
 
+private:
+    std::uint32_t delay_count_;
+
 public:
     Prism()
       : QHsm(&initial)

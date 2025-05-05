@@ -335,6 +335,12 @@ void BSP::beginHome(uint8_t prism_address)
   prism.beginHomeToStall(home_parameters_chip, stall_parameters_chip);
 }
 
+void BSP::endHome(uint8_t prism_address)
+{
+  TMC51X0 & prism = prisms[prism_address];
+  prism.endHome();
+}
+
 bool BSP::prismHomed(uint8_t prism_address)
 {
   TMC51X0 & prism = prisms[prism_address];

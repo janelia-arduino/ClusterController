@@ -24,6 +24,7 @@ public:
   static bool prismCommunicating(uint8_t prism_address);
   static void setupPrismParametersAndEnable(uint8_t prism_address);
   static void beginHome(uint8_t prism_address);
+  static void endHome(uint8_t prism_address);
   static bool prismHomed(uint8_t prism_address);
 
   static bool beginSerial();
