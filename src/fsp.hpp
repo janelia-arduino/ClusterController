@@ -28,13 +28,18 @@ struct FSP
   static void Cluster_disarmClusterTimer(QP::QActive * const ao, QP::QEvt const * e);
   static void Cluster_powerOnAllPrisms(QP::QActive * const ao, QP::QEvt const * e);
   static void Cluster_powerOffAllPrisms(QP::QActive * const ao, QP::QEvt const * e);
+  static void Cluster_dispatchHomeToPrism(QP::QActive * const ao, QP::QEvt const * e);
+  static void Cluster_dispatchHomeToAllPrisms(QP::QActive * const ao, QP::QEvt const * e);
 
   static void Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_setup(QP::QHsm * const hsm, QP::QEvt const * e);
   static bool Prism_communicating(QP::QHsm * const hsm, QP::QEvt const * e);
+  static void Prism_setupParametersAndEnable(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_recordDisconnected(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_recordSetupAndCommunicating(QP::QHsm * const hsm, QP::QEvt const * e);
-  static void Prism_recordHoming(QP::QHsm * const hsm, QP::QEvt const * e);
+  static void Prism_beginHome(QP::QHsm * const hsm, QP::QEvt const * e);
+  static bool Prism_homed(QP::QHsm * const hsm, QP::QEvt const * e);
+  static void Prism_recordHomed(QP::QHsm * const hsm, QP::QEvt const * e);
 
   static void SerialCommandInterface_initializeAndSubscribe(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_armSerialTimer(QP::QActive * const ao, QP::QEvt const * e);

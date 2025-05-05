@@ -44,8 +44,9 @@ protected:
     Q_STATE_DECL(PoweredOn);
     Q_STATE_DECL(NotSetup);
     Q_STATE_DECL(SetupAndCommunicating);
-    Q_STATE_DECL(NotHomed);
+    Q_STATE_DECL(Enabled);
     Q_STATE_DECL(Homing);
+    Q_STATE_DECL(Homed);
     Q_STATE_DECL(Disconnected);
 };
 

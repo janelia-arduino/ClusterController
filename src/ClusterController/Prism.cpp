@@ -55,8 +55,9 @@ Q_STATE_DEF(Prism, initial) {
     QS_FUN_DICTIONARY(&Prism::PoweredOn);
     QS_FUN_DICTIONARY(&Prism::NotSetup);
     QS_FUN_DICTIONARY(&Prism::SetupAndCommunicating);
-    QS_FUN_DICTIONARY(&Prism::NotHomed);
+    QS_FUN_DICTIONARY(&Prism::Enabled);
     QS_FUN_DICTIONARY(&Prism::Homing);
+    QS_FUN_DICTIONARY(&Prism::Homed);
     QS_FUN_DICTIONARY(&Prism::Disconnected);
 
     return tran(&PoweredOff);
@@ -144,7 +145,14 @@ Q_STATE_DEF(Prism, SetupAndCommunicating) {
         }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::initial}
         case Q_INIT_SIG: {
-            status_ = tran(&NotHomed);
+            FSP::Prism_setupParametersAndEnable(this, e);
+            status_ = tran(&Enabled);
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::HOME_PRISM}
+        case HOME_PRISM_SIG: {
+            FSP::Prism_beginHome(this, e);
+            status_ = tran(&Homing);
             break;
         }
         default: {
@@ -154,15 +162,10 @@ Q_STATE_DEF(Prism, SetupAndCommunicating) {
     }
     return status_;
 }
-//.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::NotHomed} .................
-Q_STATE_DEF(Prism, NotHomed) {
+//.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Enabled} ..................
+Q_STATE_DEF(Prism, Enabled) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::NotHomed::HOME_PRISM}
-        case HOME_PRISM_SIG: {
-            status_ = tran(&Homing);
-            break;
-        }
         default: {
             status_ = super(&SetupAndCommunicating);
             break;
@@ -174,6 +177,34 @@ Q_STATE_DEF(Prism, NotHomed) {
 Q_STATE_DEF(Prism, Homing) {
     QP::QState status_;
     switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::CLUSTER_TIMEOUT}
+        case CLUSTER_TIMEOUT_SIG: {
+            FSP::Prism_homed(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::PRISM_HOMED}
+        case PRISM_HOMED_SIG: {
+            status_ = tran(&Homed);
+            break;
+        }
+        default: {
+            status_ = super(&SetupAndCommunicating);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed} ....................
+Q_STATE_DEF(Prism, Homed) {
+    QP::QState status_;
+    switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed}
+        case Q_ENTRY_SIG: {
+            FSP::Prism_recordHomed(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         default: {
             status_ = super(&SetupAndCommunicating);
             break;

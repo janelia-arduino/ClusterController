@@ -34,6 +34,7 @@ static QEvt const ethernetServerConnectedEvt = {ETHERNET_SERVER_CONNECTED_SIG, 0
 void FSP::ClusterController_setup()
 {
   static QF_MPOOL_EL(QP::QEvt) smlPoolSto[10];
+  static QF_MPOOL_EL(CC::PrismCommandEvt) medPoolSto[2*constants::prism_count_max + 10];
 
   QF::init(); // initialize the framework
 
@@ -43,6 +44,7 @@ void FSP::ClusterController_setup()
 
   // initialize the event pools...
   QP::QF::poolInit(smlPoolSto, sizeof(smlPoolSto), sizeof(smlPoolSto[0]));
+  QP::QF::poolInit(medPoolSto, sizeof(medPoolSto), sizeof(medPoolSto[0]));
 
   // object dictionaries for AOs...
   QS_OBJ_DICTIONARY(CC::AO_Cluster);
@@ -159,6 +161,32 @@ void FSP::Cluster_powerOffAllPrisms(QActive * const ao, QEvt const * e)
   QS_END()
 }
 
+void FSP::Cluster_dispatchHomeToPrism(QP::QActive * const ao, QP::QEvt const * e)
+{
+  Cluster * const cluster = static_cast<Cluster * const>(ao);
+  uint8_t prism_address = Q_EVT_CAST(PrismCommandEvt)->prism_address;
+  if ((prism_address < Q_DIM(Prism::instances)) && (cluster->prisms_[prism_address] != nullptr))
+  {
+    PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_PRISM_SIG);
+    pcev->prism_address = prism_address;
+    cluster->prisms_[prism_address]->dispatch(pcev, ao->m_prio);
+  }
+}
+
+void FSP::Cluster_dispatchHomeToAllPrisms(QP::QActive * const ao, QP::QEvt const * e)
+{
+  Cluster * const cluster = static_cast<Cluster * const>(ao);
+  for (uint8_t n = 0U; n < constants::prism_count_max; ++n)
+  {
+    if (cluster->prisms_[n] != nullptr)
+    {
+      PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_PRISM_SIG);
+      pcev->prism_address = n;
+      cluster->prisms_[n]->dispatch(pcev, ao->m_prio);
+    }
+  }
+}
+
 void FSP::Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   static bool dict_sent = false;
@@ -193,6 +221,12 @@ bool FSP::Prism_communicating(QP::QHsm * const hsm, QP::QEvt const * e)
   return BSP::prismCommunicating(prism->prism_address_);
 }
 
+void FSP::Prism_setupParametersAndEnable(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  BSP::setupPrismParametersAndEnable(prism->prism_address_);
+}
+
 void FSP::Prism_recordDisconnected(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
@@ -211,11 +245,31 @@ void FSP::Prism_recordSetupAndCommunicating(QP::QHsm * const hsm, QP::QEvt const
   QS_END()
 }
 
-void FSP::Prism_recordHoming(QP::QHsm * const hsm, QP::QEvt const * e)
+void FSP::Prism_beginHome(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  BSP::beginHome(prism->prism_address_);
+  QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+    QS_STR("prism homing");
+    QS_U8(0, prism->prism_address_);
+  QS_END()
+}
+
+bool FSP::Prism_homed(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  bool homed = BSP::prismHomed(prism->prism_address_);
+  PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PRISM_HOMED_SIG);
+  pcev->prism_address = prism->prism_address_;
+  AO_Cluster->POST(pcev, &l_FSP_ID);
+  return homed;
+}
+
+void FSP::Prism_recordHomed(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
   QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
-    QS_STR("prism homing");
+    QS_STR("prism homed");
     QS_U8(0, prism->prism_address_);
   QS_END()
 }

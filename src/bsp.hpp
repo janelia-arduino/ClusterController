@@ -22,6 +22,9 @@ public:
   static void powerOnAllPrisms();
   static void setupPrism(uint8_t prism_address);
   static bool prismCommunicating(uint8_t prism_address);
+  static void setupPrismParametersAndEnable(uint8_t prism_address);
+  static void beginHome(uint8_t prism_address);
+  static bool prismHomed(uint8_t prism_address);
 
   static bool beginSerial();
   static bool pollSerialCommand();

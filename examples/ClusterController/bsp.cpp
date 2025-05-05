@@ -66,6 +66,7 @@ const tmc51x0::DriverParameters driver_parameters_real =
   .pwm_offset = 15, // (percent)
   .pwm_gradient = 5, // (percent)
   .motor_direction = tmc51x0::ReverseDirection,
+  .standstill_mode = tmc51x0::PassiveBrakingLsMode,
   .stealth_chop_threshold = 10, // (millimeters/s)
   .cool_step_threshold = 50, // (millimeters/s)
   .cool_step_enabled = true,
@@ -308,6 +309,36 @@ bool BSP::prismCommunicating(uint8_t prism_address)
 {
   TMC51X0 & prism = prisms[prism_address];
   return prism.communicating();
+}
+
+void BSP::setupPrismParametersAndEnable(uint8_t prism_address)
+{
+  TMC51X0 & prism = prisms[prism_address];
+
+  prism.converter.setup(constants::converter_parameters);
+
+  driver_parameters_chip = prism.converter.driverParametersRealToChip(constants::driver_parameters_real);
+  prism.driver.setup(driver_parameters_chip);
+
+  controller_parameters_chip = prism.converter.controllerParametersRealToChip(constants::controller_parameters_real);
+  prism.controller.setup(controller_parameters_chip);
+
+  home_parameters_chip = prism.converter.homeParametersRealToChip(constants::home_parameters_real);
+  stall_parameters_chip = prism.converter.stallParametersRealToChip(constants::stall_parameters_real);
+
+  prism.driver.enable();
+}
+
+void BSP::beginHome(uint8_t prism_address)
+{
+  TMC51X0 & prism = prisms[prism_address];
+  prism.beginHomeToStall(home_parameters_chip, stall_parameters_chip);
+}
+
+bool BSP::prismHomed(uint8_t prism_address)
+{
+  TMC51X0 & prism = prisms[prism_address];
+  return prism.homed();
 }
 
 bool BSP::beginSerial()

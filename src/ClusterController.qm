@@ -48,8 +48,8 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
    </operation>
    <operation name="dispatchToPrism" type="void" visibility="0x02" properties="0x00">
     <parameter name="e" type="QP::QEvt const *"/>
-    <parameter name="prism_address" type="std::uint8_t"/>
-    <code>if ((prism_address &lt; Q_DIM(Prism::instances)) &amp;&amp; (prisms_[prism_address] != nullptr))
+    <code>uint8_t prism_address = Q_EVT_CAST(PrismCommandEvt)-&gt;prism_address;
+if ((prism_address &lt; Q_DIM(Prism::instances)) &amp;&amp; (prisms_[prism_address] != nullptr))
 {
   prisms_[prism_address]-&gt;dispatch(e, m_prio);
 }</code>
@@ -91,27 +91,24 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
        </tran_glyph>
       </tran>
       <tran trig="HOME_PRISM">
-       <action brief="dispatchToPrism()"/>
+       <action brief="dispatchHomeToPrism()">FSP::Cluster_dispatchHomeToPrism(this, e);</action>
        <tran_glyph conn="16,46,3,-1,20">
-        <action box="0,-2,15,4"/>
-       </tran_glyph>
-      </tran>
-      <tran trig="HOME_ALL_PRISMS">
-       <action brief="dispatchToAllPrisms()">for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
-{
-  if (prisms_[n] != nullptr)
-  {
-    PrismCommandEvt *pev = Q_NEW(PrismCommandEvt, MINE_DISABLED_SIG);
-  mev-&gt;id = MINE_ID(this);
-  AO_Tunnel-&gt;POST(mev, this);
-    prisms_[n]-&gt;dispatch(e, m_prio);
-  }
-}</action>
-       <tran_glyph conn="16,50,3,-1,20">
         <action box="0,-2,18,4"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="16,32,70,31">
+      <tran trig="HOME_ALL_PRISMS">
+       <action brief="dispatchHomeToAllPrisms()">FSP::Cluster_dispatchHomeToAllPrisms(this, e);</action>
+       <tran_glyph conn="16,50,3,-1,20">
+        <action box="0,-2,20,4"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="PRISM_HOMED">
+       <action brief="dispatchToPrism()">dispatchToPrism(e);</action>
+       <tran_glyph conn="16,54,3,-1,20">
+        <action box="0,-2,16,4"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="16,32,70,43">
        <entry box="1,2,22,2"/>
        <exit box="1,4,22,2"/>
       </state_glyph>
@@ -129,7 +126,7 @@ dispatchToAllPrisms(e);</action>
        <entry box="1,2,17,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="5,14,89,57">
+     <state_glyph node="5,14,89,76">
       <entry box="1,2,23,2"/>
       <exit box="1,4,24,2"/>
      </state_glyph>
@@ -463,7 +460,7 @@ dispatchToAllPrisms(e);</action>
       </tran_glyph>
      </tran>
      <tran trig="CLUSTER_TIMEOUT">
-      <tran_glyph conn="6,27,3,-1,25">
+      <tran_glyph conn="6,27,3,-1,17">
        <action box="0,-2,16,2"/>
       </tran_glyph>
      </tran>
@@ -490,26 +487,42 @@ dispatchToAllPrisms(e);</action>
      </state>
      <state name="SetupAndCommunicating">
       <entry brief="recordSetupAndCommunicating()">FSP::Prism_recordSetupAndCommunicating(this, e);</entry>
-      <initial target="../1">
-       <initial_glyph conn="36,48,4,0,2">
-        <action box="0,-2,10,2"/>
+      <initial target="../2">
+       <action brief="setupParametersAndEnable()">FSP::Prism_setupParametersAndEnable(this, e);</action>
+       <initial_glyph conn="36,48,4,0,3">
+        <action box="1,0,23,2"/>
        </initial_glyph>
       </initial>
-      <state name="NotHomed">
-       <tran trig="HOME_PRISM" target="../../2">
-        <tran_glyph conn="36,56,2,0,3">
-         <action box="1,0,12,2"/>
-        </tran_glyph>
-       </tran>
-       <state_glyph node="31,50,10,6"/>
+      <tran trig="HOME_PRISM" target="../3">
+       <action brief="beginHome()">FSP::Prism_beginHome(this, e);</action>
+       <tran_glyph conn="30,62,3,3,13">
+        <action box="0,-2,12,4"/>
+       </tran_glyph>
+      </tran>
+      <state name="Enabled">
+       <state_glyph node="31,51,9,6"/>
       </state>
       <state name="Homing">
-       <entry brief="recordHoming()"/>
-       <state_glyph node="31,59,29,15">
-        <entry box="1,2,14,2"/>
+       <tran trig="CLUSTER_TIMEOUT">
+        <action brief="homed()">FSP::Prism_homed(this, e);</action>
+        <tran_glyph conn="43,64,3,-1,17">
+         <action box="0,-2,18,4"/>
+        </tran_glyph>
+       </tran>
+       <tran trig="PRISM_HOMED" target="../../4">
+        <tran_glyph conn="46,67,2,0,4">
+         <action box="1,1,13,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="43,60,29,7"/>
+      </state>
+      <state name="Homed">
+       <entry brief="recordHomed()">FSP::Prism_recordHomed(this, e);</entry>
+       <state_glyph node="35,71,47,29">
+        <entry box="1,2,15,2"/>
        </state_glyph>
       </state>
-      <state_glyph node="30,43,73,58">
+      <state_glyph node="30,43,73,69">
        <entry box="1,2,28,2"/>
       </state_glyph>
      </state>
@@ -519,9 +532,9 @@ dispatchToAllPrisms(e);</action>
        <entry box="1,2,19,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="6,23,99,80"/>
+     <state_glyph node="6,23,99,90"/>
     </state>
-    <state_diagram size="107,106"/>
+    <state_diagram size="107,115"/>
    </statechart>
   </class>
  </package>
@@ -533,7 +546,7 @@ dispatchToAllPrisms(e);</action>
    <attribute name="binary_command_byte_count" type="std::uint32_t" visibility="0x00" properties="0x00"/>
   </class>
   <class name="PrismCommandEvt" superclass="qpcpp::QEvt">
-   <attribute name="prism_address_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="prism_address" type="std::uint8_t" visibility="0x00" properties="0x00"/>
   </class>
   <attribute name="AO_Cluster" type="QP::QActive * const" visibility="0x00" properties="0x00">
    <code>= &amp;Cluster::instance;</code>

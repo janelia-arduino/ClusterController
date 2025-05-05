@@ -70,7 +70,8 @@ void Cluster::dispatchToAllPrisms(QP::QEvt const * e) {
 }
 
 //.${AOs::Cluster::dispatchToPrism} ..........................................
-void Cluster::dispatchToPrism(QP::QEvt const * e, std::uint8_t prism_address) {
+void Cluster::dispatchToPrism(QP::QEvt const * e) {
+    uint8_t prism_address = Q_EVT_CAST(PrismCommandEvt)->prism_address;
     if ((prism_address < Q_DIM(Prism::instances)) && (prisms_[prism_address] != nullptr))
     {
       prisms_[prism_address]->dispatch(e, m_prio);
@@ -152,21 +153,19 @@ Q_STATE_DEF(Cluster, AllPrismsPoweredOn) {
         }
         //.${AOs::Cluster::SM::ClusterOn::AllPrismsPowered~::HOME_PRISM}
         case HOME_PRISM_SIG: {
+            FSP::Cluster_dispatchHomeToPrism(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::Cluster::SM::ClusterOn::AllPrismsPowered~::HOME_ALL_PRISMS}
         case HOME_ALL_PRISMS_SIG: {
-            for (uint8_t n = 0U; n < constants::prism_count_max; ++n)
-            {
-              if (prisms_[n] != nullptr)
-              {
-                PrismCommandEvt *pev = Q_NEW(PrismCommandEvt, MINE_DISABLED_SIG);
-              mev->id = MINE_ID(this);
-              AO_Tunnel->POST(mev, this);
-                prisms_[n]->dispatch(e, m_prio);
-              }
-            }
+            FSP::Cluster_dispatchHomeToAllPrisms(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Cluster::SM::ClusterOn::AllPrismsPowered~::PRISM_HOMED}
+        case PRISM_HOMED_SIG: {
+            dispatchToPrism(e);
             status_ = Q_RET_HANDLED;
             break;
         }

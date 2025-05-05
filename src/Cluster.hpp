@@ -39,7 +39,7 @@ public:
 
 private:
     void dispatchToAllPrisms(QP::QEvt const * e);
-    void dispatchToPrism(QP::QEvt const * e, std::uint8_t prism_address);
+    void dispatchToPrism(QP::QEvt const * e);
 
 protected:
     Q_STATE_DECL(initial);
