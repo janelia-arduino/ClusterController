@@ -17,6 +17,7 @@ enum ClusterControllerCommands
   POWER_ON_ALL_CMD = 0x08,
   HOME_CMD = 0x09,
   HOME_ALL_CMD = 0x0A,
+  WRITE_TARGET_POSITION_CMD = 0x0B,
 };
 
 } // namespace AC

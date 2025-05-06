@@ -34,7 +34,7 @@ static QEvt const ethernetServerConnectedEvt = {ETHERNET_SERVER_CONNECTED_SIG, 0
 void FSP::ClusterController_setup()
 {
   static QF_MPOOL_EL(QP::QEvt) smlPoolSto[10];
-  static QF_MPOOL_EL(CC::PrismCommandEvt) medPoolSto[2*constants::prism_count_max + 10];
+  static QF_MPOOL_EL(CC::PrismCommandEvt) medPoolSto[4*constants::prism_count_max + 10];
 
   QF::init(); // initialize the framework
 
@@ -532,10 +532,11 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
     response[response_byte_count++] = constants::error_response;
     return response_byte_count;
   }
-  uint8_t protocol_version = command_buffer[0];
+  uint8_t command_buffer_position = 0;
+  uint8_t protocol_version = command_buffer[command_buffer_position++];
   if (protocol_version == 0x01)
   {
-    uint8_t command_number = command_buffer[1];
+    uint8_t command_number = command_buffer[command_buffer_position++];
     switch (command_number)
     {
       case READ_CLUSTER_ADDRESS_CMD:
@@ -564,7 +565,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
         }
         response[response_byte_count++] = command_number;
         uint16_t duration_ms;
-        memcpy(&duration_ms, command_buffer + 2, sizeof(duration_ms));
+        memcpy(&duration_ms, command_buffer + command_buffer_position, sizeof(duration_ms));
         // QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
         //   QS_U16(5, duration_ms_1);
         //   QS_U16(5, duration_ms);
@@ -600,7 +601,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       {
         response[response_byte_count++] = command_number;
         uint8_t prism_address;
-        memcpy(&prism_address, command_buffer + 2, sizeof(prism_address));
+        memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
 
         PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
         pcev->prism_address = prism_address;
@@ -611,6 +612,21 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       {
         response[response_byte_count++] = command_number;
         AO_Cluster->POST(&homeAllEvt, &l_FSP_ID);
+        break;
+      }
+      case WRITE_TARGET_POSITION_CMD:
+      {
+        response[response_byte_count++] = command_number;
+        uint8_t prism_address;
+        memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
+        command_buffer_position += sizeof(prism_address);
+        uint16_t position_mm;
+        memcpy(&position_mm, command_buffer + command_buffer_position, sizeof(position_mm));
+
+        PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
+        pcev->prism_address = prism_address;
+        pcev->position_mm = position_mm;
+        AO_Cluster->POST(pcev, &l_FSP_ID);
         break;
       }
       default:

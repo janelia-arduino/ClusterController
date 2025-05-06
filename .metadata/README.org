@@ -33,18 +33,19 @@ stop move (prism, no arg),
 report position (prism, no arg),
 set parameters (param id, param value)
 
-| Command Name         | Command Format | Protocol Version | Command Number | Arg 0         | Arg 1 | Arg 2 |   Response | Response Format |
-|----------------------+----------------+------------------+----------------+---------------+-------+-------+------------+-----------------|
-| read-cluster-address | '<BB'          |             0x01 |           0x01 |               |       |       |  0x00-0xFF | '<B'            |
-| check-communication  | '<BB'          |             0x01 |           0x02 |               |       |       | 0x12345678 | '<L'            |
-| reset                | '<BB'          |             0x01 |           0x03 |               |       |       |       0x03 | '<B'            |
-| beep                 | '<BBH'         |             0x01 |           0x04 | duration-ms   |       |       |       0x04 | '<B'            |
-| led-off              | '<BB'          |             0x01 |           0x05 |               |       |       |       0x05 | '<B'            |
-| led-on               | '<BB'          |             0x01 |           0x06 |               |       |       |       0x06 | '<B'            |
-| power-off-all        | '<BB'          |             0x01 |           0x07 |               |       |       |       0x07 | '<B'            |
-| power-on-all         | '<BB'          |             0x01 |           0x08 |               |       |       |       0x08 | '<B'            |
-| home                 | '<BBB'         |             0x01 |           0x09 | prism-address |       |       |       0x09 | '<B'            |
-| home-all             | '<BB'          |             0x01 |           0x0A |               |       |       |       0x0A | '<B'            |
+| Command Name          | Command Format | Protocol Version | Command Number | Args                      |   Response | Response Format |
+|-----------------------+----------------+------------------+----------------+---------------------------+------------+-----------------|
+| read-cluster-address  | '<BB'          |             0x01 |           0x01 |                           |  0x00-0xFF | '<B'            |
+| check-communication   | '<BB'          |             0x01 |           0x02 |                           | 0x12345678 | '<L'            |
+| reset                 | '<BB'          |             0x01 |           0x03 |                           |       0x03 | '<B'            |
+| beep                  | '<BBH'         |             0x01 |           0x04 | duration-ms               |       0x04 | '<B'            |
+| led-off               | '<BB'          |             0x01 |           0x05 |                           |       0x05 | '<B'            |
+| led-on                | '<BB'          |             0x01 |           0x06 |                           |       0x06 | '<B'            |
+| power-off-all         | '<BB'          |             0x01 |           0x07 |                           |       0x07 | '<B'            |
+| power-on-all          | '<BB'          |             0x01 |           0x08 |                           |       0x08 | '<B'            |
+| home                  | '<BBB'         |             0x01 |           0x09 | prism-address             |       0x09 | '<B'            |
+| home-all              | '<BB'          |             0x01 |           0x0A |                           |       0x0A | '<B'            |
+| write-target-position | '<BBBH'        |             0x01 |           0x0B | prism-address position-mm |       0x0B | '<B'            |
 
 * Host Computer Setup
 

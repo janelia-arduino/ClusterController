@@ -27,6 +27,7 @@ enum ClusterControllerSignals
   HOME_SIG,
   HOME_ALL_SIG,
   HOMED_SIG,
+  WRITE_TARGET_POSITION_SIG,
 
   // POST to SerialCommandInterface
   SERIAL_TIMEOUT_SIG,

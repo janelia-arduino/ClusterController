@@ -45,6 +45,7 @@ public:
 class PrismCommandEvt : public QP::QEvt {
 public:
     std::uint8_t prism_address;
+    std::uint16_t position_mm;
 };
 extern QP::QActive * const AO_Cluster;
 extern QP::QActive * const AO_SerialCommandInterface;
