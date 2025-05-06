@@ -265,9 +265,12 @@ bool FSP::Prism_homed(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
   bool homed = BSP::prismHomed(prism->prism_address_);
-  PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PRISM_HOMED_SIG);
-  pcev->prism_address = prism->prism_address_;
-  AO_Cluster->POST(pcev, &l_FSP_ID);
+  if (homed)
+  {
+    PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PRISM_HOMED_SIG);
+    pcev->prism_address = prism->prism_address_;
+    AO_Cluster->POST(pcev, &l_FSP_ID);
+  }
   return homed;
 }
 
@@ -596,7 +599,12 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       case HOME_PRISM_CMD:
       {
         response[response_byte_count++] = command_number;
-        AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
+        uint8_t prism_address;
+        memcpy(&prism_address, command_buffer + 2, sizeof(prism_address));
+
+        PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_PRISM_SIG);
+        pcev->prism_address = prism_address;
+        AO_Cluster->POST(pcev, &l_FSP_ID);
         break;
       }
       case HOME_ALL_PRISMS_CMD:

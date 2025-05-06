@@ -61,7 +61,7 @@ const tmc51x0::DriverParameters driver_parameters_real =
 {
   .global_current_scaler = 50, // (percent)
   .run_current = 50, // (percent)
-  .hold_current = 20, // (percent)
+  .hold_current = 0, // (percent)
   .hold_delay = 0, // (percent)
   .pwm_offset = 15, // (percent)
   .pwm_gradient = 5, // (percent)
