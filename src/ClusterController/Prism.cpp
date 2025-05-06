@@ -238,6 +238,12 @@ Q_STATE_DEF(Prism, Homed) {
             status_ = tran(&Homing);
             break;
         }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::WRITE_TARGET_POSITION}
+        case WRITE_TARGET_POSITION_SIG: {
+            FSP::Prism_writeTargetPosition(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         default: {
             status_ = super(&SetupAndCommunicating);
             break;

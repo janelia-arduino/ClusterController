@@ -26,6 +26,7 @@ public:
   static void beginHome(uint8_t prism_address);
   static void endHome(uint8_t prism_address);
   static bool homed(uint8_t prism_address);
+  static void writeTargetPosition(uint8_t prism_address, uint16_t position_mm);
 
   static bool beginSerial();
   static bool pollSerialCommand();

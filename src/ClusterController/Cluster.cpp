@@ -149,6 +149,12 @@ Q_STATE_DEF(Cluster, AllPoweredOn) {
             status_ = Q_RET_HANDLED;
             break;
         }
+        //.${AOs::Cluster::SM::ClusterOn::AllPoweredOn::WRITE_TARGET_POSITION}
+        case WRITE_TARGET_POSITION_SIG: {
+            FSP::Cluster_dispatch(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         default: {
             status_ = super(&ClusterOn);
             break;

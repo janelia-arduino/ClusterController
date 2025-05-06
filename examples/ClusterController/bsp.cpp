@@ -296,6 +296,10 @@ void BSP::powerOnAll()
 
 void BSP::setupPrism(uint8_t prism_address)
 {
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
   tmc51x0::SpiParameters spi_parameters =
     {
       .spi_ptr = &prism_spi,
@@ -307,12 +311,20 @@ void BSP::setupPrism(uint8_t prism_address)
 
 bool BSP::communicating(uint8_t prism_address)
 {
+  if (prism_address >= constants::prism_count)
+  {
+    return false;
+  }
   TMC51X0 & prism = prisms[prism_address];
   return prism.communicating();
 }
 
 void BSP::setupParametersAndEnable(uint8_t prism_address)
 {
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
   TMC51X0 & prism = prisms[prism_address];
 
   prism.converter.setup(constants::converter_parameters);
@@ -331,20 +343,42 @@ void BSP::setupParametersAndEnable(uint8_t prism_address)
 
 void BSP::beginHome(uint8_t prism_address)
 {
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
   TMC51X0 & prism = prisms[prism_address];
   prism.beginHomeToStall(home_parameters_chip, stall_parameters_chip);
 }
 
 void BSP::endHome(uint8_t prism_address)
 {
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
   TMC51X0 & prism = prisms[prism_address];
   prism.endHome();
 }
 
 bool BSP::homed(uint8_t prism_address)
 {
+  if (prism_address >= constants::prism_count)
+  {
+    return false;
+  }
   TMC51X0 & prism = prisms[prism_address];
   return prism.homed();
+}
+
+void BSP::writeTargetPosition(uint8_t prism_address, uint16_t position_mm)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.writeTargetPosition(prism.converter.positionRealToChip(position_mm));
 }
 
 bool BSP::beginSerial()

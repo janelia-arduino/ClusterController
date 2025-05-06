@@ -164,10 +164,10 @@ void FSP::Cluster_powerOnAllAndDispatch(QActive * const ao, QEvt const * e)
 void FSP::Cluster_dispatch(QP::QActive * const ao, QP::QEvt const * e)
 {
   Cluster * const cluster = static_cast<Cluster * const>(ao);
-  uint8_t prism_address = Q_EVT_CAST(PrismCommandEvt)->prism_address;
-  if ((prism_address < Q_DIM(Prism::instances)) && (cluster->prisms_[prism_address] != nullptr))
+  PrismCommandEvt const * pce = static_cast<PrismCommandEvt const *>(e);
+  if ((pce->prism_address < Q_DIM(Prism::instances)) && (cluster->prisms_[pce->prism_address] != nullptr))
   {
-    cluster->prisms_[prism_address]->dispatch(e, ao->m_prio);
+    cluster->prisms_[pce->prism_address]->dispatch(e, ao->m_prio);
   }
 }
 
@@ -277,6 +277,13 @@ void FSP::Prism_recordHomed(QP::QHsm * const hsm, QP::QEvt const * e)
     QS_STR("prism homed");
     QS_U8(0, prism->prism_address_);
   QS_END()
+}
+
+void FSP::Prism_writeTargetPosition(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  PrismCommandEvt const * pce = static_cast<PrismCommandEvt const *>(e);
+  BSP::writeTargetPosition(pce->prism_address, pce->position_mm);
 }
 
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)

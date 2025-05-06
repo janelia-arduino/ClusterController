@@ -42,6 +42,7 @@ struct FSP
   static void Prism_endHome(QP::QHsm * const hsm, QP::QEvt const * e);
   static bool Prism_homed(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_recordHomed(QP::QHsm * const hsm, QP::QEvt const * e);
+  static void Prism_writeTargetPosition(QP::QHsm * const hsm, QP::QEvt const * e);
 
   static void SerialCommandInterface_initializeAndSubscribe(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_armSerialTimer(QP::QActive * const ao, QP::QEvt const * e);
