@@ -13,10 +13,10 @@ enum ClusterControllerCommands
   BEEP_CMD = 0x04,
   LED_OFF_CMD = 0x05,
   LED_ON_CMD = 0x06,
-  POWER_OFF_ALL_PRISMS_CMD = 0x07,
-  POWER_ON_ALL_PRISMS_CMD = 0x08,
-  HOME_PRISM_CMD = 0x09,
-  HOME_ALL_PRISMS_CMD = 0x0A,
+  POWER_OFF_ALL_CMD = 0x07,
+  POWER_ON_ALL_CMD = 0x08,
+  HOME_CMD = 0x09,
+  HOME_ALL_CMD = 0x0A,
 };
 
 } // namespace AC

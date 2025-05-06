@@ -245,7 +245,7 @@ void BSP::feedWatchdog()
 void BSP::initializeCluster()
 {
   pinMode(constants::power_pin, OUTPUT);
-  powerOffAllPrisms();
+  powerOffAll();
 
   prism_spi.setSCK(constants::prism_spi_sck_pin);
   prism_spi.setTX(constants::prism_spi_tx_pin);
@@ -284,12 +284,12 @@ void BSP::beep(uint16_t duration_ms)
   tone(constants::tone_pin, frequency, duration_ms);
 }
 
-void BSP::powerOffAllPrisms()
+void BSP::powerOffAll()
 {
   digitalWriteFast(constants::power_pin, LOW);
 }
 
-void BSP::powerOnAllPrisms()
+void BSP::powerOnAll()
 {
   digitalWriteFast(constants::power_pin, HIGH);
 }
@@ -305,13 +305,13 @@ void BSP::setupPrism(uint8_t prism_address)
   prism.setupSpi(spi_parameters);
 }
 
-bool BSP::prismCommunicating(uint8_t prism_address)
+bool BSP::communicating(uint8_t prism_address)
 {
   TMC51X0 & prism = prisms[prism_address];
   return prism.communicating();
 }
 
-void BSP::setupPrismParametersAndEnable(uint8_t prism_address)
+void BSP::setupParametersAndEnable(uint8_t prism_address)
 {
   TMC51X0 & prism = prisms[prism_address];
 
@@ -341,7 +341,7 @@ void BSP::endHome(uint8_t prism_address)
   prism.endHome();
 }
 
-bool BSP::prismHomed(uint8_t prism_address)
+bool BSP::homed(uint8_t prism_address)
 {
   TMC51X0 & prism = prisms[prism_address];
   return prism.homed();

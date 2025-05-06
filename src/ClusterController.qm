@@ -81,7 +81,7 @@ if ((prism_address &lt; Q_DIM(Prism::instances)) &amp;&amp; (prisms_[prism_addre
        <action box="0,-2,27,3"/>
       </tran_glyph>
      </tran>
-     <state name="AllPrismsPoweredOn">
+     <state name="AllPoweredOn">
       <entry brief="armClusterTimer()">FSP::Cluster_armClusterTimer(this, e);</entry>
       <exit brief="disarmClusterTimer()">FSP::Cluster_disarmClusterTimer(this, e);</exit>
       <tran trig="CLUSTER_TIMEOUT">
@@ -90,19 +90,19 @@ if ((prism_address &lt; Q_DIM(Prism::instances)) &amp;&amp; (prisms_[prism_addre
         <action box="0,-2,19,4"/>
        </tran_glyph>
       </tran>
-      <tran trig="HOME_PRISM">
+      <tran trig="HOME">
        <action brief="dispatchHomeToPrism()">FSP::Cluster_dispatchHomeToPrism(this, e);</action>
        <tran_glyph conn="16,46,3,-1,20">
         <action box="0,-2,18,4"/>
        </tran_glyph>
       </tran>
-      <tran trig="HOME_ALL_PRISMS">
+      <tran trig="HOME_ALL">
        <action brief="dispatchHomeToAllPrisms()">FSP::Cluster_dispatchHomeToAllPrisms(this, e);</action>
        <tran_glyph conn="16,50,3,-1,20">
         <action box="0,-2,20,4"/>
        </tran_glyph>
       </tran>
-      <tran trig="PRISM_HOMED">
+      <tran trig="HOMED">
        <action brief="dispatchToPrism()">dispatchToPrism(e);</action>
        <tran_glyph conn="16,54,3,-1,20">
         <action box="0,-2,16,4"/>
@@ -113,10 +113,10 @@ if ((prism_address &lt; Q_DIM(Prism::instances)) &amp;&amp; (prisms_[prism_addre
        <exit box="1,4,22,2"/>
       </state_glyph>
      </state>
-     <state name="AllPrismsPoweredOff">
-      <entry brief="PowerOffAllPrisms()">FSP::Cluster_powerOffAllPrisms(this, e);</entry>
+     <state name="AllPoweredOff">
+      <entry brief="PowerOffAll()">FSP::Cluster_powerOffAll(this, e);</entry>
       <tran trig="POWER_ON" target="../../3">
-       <action brief="powerOnAllPrisms(); dispatchToAllPrisms()">FSP::Cluster_powerOnAllPrisms(this, e);
+       <action brief="powerOnAll(); dispatchToAllPrisms()">FSP::Cluster_powerOnAll(this, e);
 dispatchToAllPrisms(e);</action>
        <tran_glyph conn="41,28,2,0,4">
         <action box="1,1,43,2"/>
@@ -495,7 +495,7 @@ dispatchToAllPrisms(e);</action>
        </initial_glyph>
       </initial>
       <state name="Enabled">
-       <tran trig="HOME_PRISM" target="../../2">
+       <tran trig="HOME" target="../../2">
         <tran_glyph conn="35,57,2,0,3">
          <action box="1,0,12,2"/>
         </tran_glyph>
@@ -518,7 +518,7 @@ delay_count_ = 0;</entry>
          <action box="1,-2,18,4"/>
         </tran_glyph>
        </tran>
-       <tran trig="PRISM_HOMED" target="../../3">
+       <tran trig="HOMED" target="../../3">
         <tran_glyph conn="35,74,2,0,4">
          <action box="1,1,13,2"/>
         </tran_glyph>
@@ -530,7 +530,7 @@ delay_count_ = 0;</entry>
       </state>
       <state name="Homed">
        <entry brief="recordHomed()">FSP::Prism_recordHomed(this, e);</entry>
-       <tran trig="HOME_PRISM" target="../../2">
+       <tran trig="HOME" target="../../2">
         <tran_glyph conn="52,78,0,2,-4">
          <action box="1,-3,12,2"/>
         </tran_glyph>

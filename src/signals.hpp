@@ -24,9 +24,9 @@ enum ClusterControllerSignals
   CLUSTER_TIMEOUT_SIG,
   POWER_ON_SIG,
   POWER_OFF_SIG,
-  HOME_PRISM_SIG,
-  HOME_ALL_PRISMS_SIG,
-  PRISM_HOMED_SIG,
+  HOME_SIG,
+  HOME_ALL_SIG,
+  HOMED_SIG,
 
   // POST to SerialCommandInterface
   SERIAL_TIMEOUT_SIG,

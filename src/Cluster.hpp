@@ -44,8 +44,8 @@ private:
 protected:
     Q_STATE_DECL(initial);
     Q_STATE_DECL(ClusterOn);
-    Q_STATE_DECL(AllPrismsPoweredOn);
-    Q_STATE_DECL(AllPrismsPoweredOff);
+    Q_STATE_DECL(AllPoweredOn);
+    Q_STATE_DECL(AllPoweredOff);
 };
 
 } // namespace CC

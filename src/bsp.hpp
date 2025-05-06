@@ -18,14 +18,14 @@ public:
 
   static void beep(uint16_t duration_ms);
 
-  static void powerOffAllPrisms();
-  static void powerOnAllPrisms();
+  static void powerOffAll();
+  static void powerOnAll();
   static void setupPrism(uint8_t prism_address);
-  static bool prismCommunicating(uint8_t prism_address);
-  static void setupPrismParametersAndEnable(uint8_t prism_address);
+  static bool communicating(uint8_t prism_address);
+  static void setupParametersAndEnable(uint8_t prism_address);
   static void beginHome(uint8_t prism_address);
   static void endHome(uint8_t prism_address);
-  static bool prismHomed(uint8_t prism_address);
+  static bool homed(uint8_t prism_address);
 
   static bool beginSerial();
   static bool pollSerialCommand();

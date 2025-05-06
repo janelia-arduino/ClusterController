@@ -160,8 +160,8 @@ Q_STATE_DEF(Prism, SetupAndCommunicating) {
 Q_STATE_DEF(Prism, Enabled) {
     QP::QState status_;
     switch (e->sig) {
-        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Enabled::HOME_PRISM}
-        case HOME_PRISM_SIG: {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Enabled::HOME}
+        case HOME_SIG: {
             status_ = tran(&Homing);
             break;
         }
@@ -201,8 +201,8 @@ Q_STATE_DEF(Prism, Homing) {
             }
             break;
         }
-        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::PRISM_HOMED}
-        case PRISM_HOMED_SIG: {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::HOMED}
+        case HOMED_SIG: {
             status_ = tran(&Homed);
             break;
         }
@@ -223,8 +223,8 @@ Q_STATE_DEF(Prism, Homed) {
             status_ = Q_RET_HANDLED;
             break;
         }
-        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::HOME_PRISM}
-        case HOME_PRISM_SIG: {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::HOME}
+        case HOME_SIG: {
             status_ = tran(&Homing);
             break;
         }

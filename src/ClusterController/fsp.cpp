@@ -12,7 +12,7 @@ static CommandEvt const resetEvt = {RESET_SIG, 0U, 0U};
 
 static CommandEvt const powerOnEvt = {POWER_ON_SIG, 0U, 0U};
 static CommandEvt const powerOffEvt = {POWER_OFF_SIG, 0U, 0U};
-static CommandEvt const homeAllPrismsEvt = {HOME_ALL_PRISMS_SIG, 0U, 0U};
+static CommandEvt const homeAllEvt = {HOME_ALL_SIG, 0U, 0U};
 
 static QEvt const processBinaryCommandEvt = {PROCESS_BINARY_COMMAND_SIG, 0U, 0U};
 static QEvt const processStringCommandEvt = {PROCESS_STRING_COMMAND_SIG, 0U, 0U};
@@ -106,8 +106,8 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
   QS_SIG_DICTIONARY(CLUSTER_TIMEOUT_SIG, ao);
   QS_SIG_DICTIONARY(POWER_ON_SIG, ao);
   QS_SIG_DICTIONARY(POWER_OFF_SIG, ao);
-  QS_SIG_DICTIONARY(HOME_PRISM_SIG, ao);
-  QS_SIG_DICTIONARY(HOME_ALL_PRISMS_SIG, ao);
+  QS_SIG_DICTIONARY(HOME_SIG, ao);
+  QS_SIG_DICTIONARY(HOME_ALL_SIG, ao);
 
   BSP::initializeCluster();
 
@@ -143,18 +143,18 @@ void FSP::Cluster_disarmClusterTimer(QActive * const ao, QEvt const * e)
   cluster->cluster_time_evt_.disarm();
 }
 
-void FSP::Cluster_powerOnAllPrisms(QActive * const ao, QEvt const * e)
+void FSP::Cluster_powerOnAll(QActive * const ao, QEvt const * e)
 {
-  BSP::powerOnAllPrisms();
+  BSP::powerOnAll();
   Cluster * const cluster = static_cast<Cluster * const>(ao);
   QS_BEGIN_ID(USER_COMMENT, cluster->m_prio)
     QS_STR("all prisms powered on");
   QS_END()
 }
 
-void FSP::Cluster_powerOffAllPrisms(QActive * const ao, QEvt const * e)
+void FSP::Cluster_powerOffAll(QActive * const ao, QEvt const * e)
 {
-  BSP::powerOffAllPrisms();
+  BSP::powerOffAll();
   Cluster * const cluster = static_cast<Cluster * const>(ao);
   QS_BEGIN_ID(USER_COMMENT, cluster->m_prio)
     QS_STR("all prisms powered off");
@@ -167,7 +167,7 @@ void FSP::Cluster_dispatchHomeToPrism(QP::QActive * const ao, QP::QEvt const * e
   uint8_t prism_address = Q_EVT_CAST(PrismCommandEvt)->prism_address;
   if ((prism_address < Q_DIM(Prism::instances)) && (cluster->prisms_[prism_address] != nullptr))
   {
-    PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_PRISM_SIG);
+    PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
     pcev->prism_address = prism_address;
     cluster->prisms_[prism_address]->dispatch(pcev, ao->m_prio);
   }
@@ -180,7 +180,7 @@ void FSP::Cluster_dispatchHomeToAllPrisms(QP::QActive * const ao, QP::QEvt const
   {
     if (cluster->prisms_[n] != nullptr)
     {
-      PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_PRISM_SIG);
+      PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
       pcev->prism_address = n;
       cluster->prisms_[n]->dispatch(pcev, ao->m_prio);
     }
@@ -218,13 +218,13 @@ void FSP::Prism_setup(QP::QHsm * const hsm, QP::QEvt const * e)
 bool FSP::Prism_communicating(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
-  return BSP::prismCommunicating(prism->prism_address_);
+  return BSP::communicating(prism->prism_address_);
 }
 
 void FSP::Prism_setupParametersAndEnable(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
-  BSP::setupPrismParametersAndEnable(prism->prism_address_);
+  BSP::setupParametersAndEnable(prism->prism_address_);
 }
 
 void FSP::Prism_recordDisconnected(QP::QHsm * const hsm, QP::QEvt const * e)
@@ -264,10 +264,10 @@ void FSP::Prism_endHome(QP::QHsm * const hsm, QP::QEvt const * e)
 bool FSP::Prism_homed(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
-  bool homed = BSP::prismHomed(prism->prism_address_);
+  bool homed = BSP::homed(prism->prism_address_);
   if (homed)
   {
-    PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PRISM_HOMED_SIG);
+    PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOMED_SIG);
     pcev->prism_address = prism->prism_address_;
     AO_Cluster->POST(pcev, &l_FSP_ID);
   }
@@ -494,11 +494,11 @@ void FSP::processStringCommand(const char * command, char * response)
   {
     BSP::ledOff();
   }
-  else if (strcmp(command, "POWER_ON_ALL_PRISMS") == 0)
+  else if (strcmp(command, "POWER_ON_ALL") == 0)
   {
     AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
   }
-  else if (strcmp(command, "POWER_OFF_ALL_PRISMS") == 0)
+  else if (strcmp(command, "POWER_OFF_ALL") == 0)
   {
     AO_Cluster->POST(&powerOffEvt, &l_FSP_ID);
   }
@@ -584,33 +584,33 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
         BSP::ledOn();
         break;
       }
-      case POWER_OFF_ALL_PRISMS_CMD:
+      case POWER_OFF_ALL_CMD:
       {
         response[response_byte_count++] = command_number;
         AO_Cluster->POST(&powerOffEvt, &l_FSP_ID);
         break;
       }
-      case POWER_ON_ALL_PRISMS_CMD:
+      case POWER_ON_ALL_CMD:
       {
         response[response_byte_count++] = command_number;
         AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
         break;
       }
-      case HOME_PRISM_CMD:
+      case HOME_CMD:
       {
         response[response_byte_count++] = command_number;
         uint8_t prism_address;
         memcpy(&prism_address, command_buffer + 2, sizeof(prism_address));
 
-        PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_PRISM_SIG);
+        PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
         pcev->prism_address = prism_address;
         AO_Cluster->POST(pcev, &l_FSP_ID);
         break;
       }
-      case HOME_ALL_PRISMS_CMD:
+      case HOME_ALL_CMD:
       {
         response[response_byte_count++] = command_number;
-        AO_Cluster->POST(&homeAllPrismsEvt, &l_FSP_ID);
+        AO_Cluster->POST(&homeAllEvt, &l_FSP_ID);
         break;
       }
       default:
