@@ -58,26 +58,6 @@ Cluster::Cluster()
     }
 }
 
-//.${AOs::Cluster::dispatchToAllPrisms} ......................................
-void Cluster::dispatchToAllPrisms(QP::QEvt const * e) {
-    for (uint8_t n = 0U; n < constants::prism_count_max; ++n)
-    {
-      if (prisms_[n] != nullptr)
-      {
-        prisms_[n]->dispatch(e, m_prio);
-      }
-    }
-}
-
-//.${AOs::Cluster::dispatchToPrism} ..........................................
-void Cluster::dispatchToPrism(QP::QEvt const * e) {
-    uint8_t prism_address = Q_EVT_CAST(PrismCommandEvt)->prism_address;
-    if ((prism_address < Q_DIM(Prism::instances)) && (prisms_[prism_address] != nullptr))
-    {
-      prisms_[prism_address]->dispatch(e, m_prio);
-    }
-}
-
 //.${AOs::Cluster::SM} .......................................................
 Q_STATE_DEF(Cluster, initial) {
     //.${AOs::Cluster::SM::initial}
@@ -112,13 +92,13 @@ Q_STATE_DEF(Cluster, ClusterOn) {
         }
         //.${AOs::Cluster::SM::ClusterOn::RESET}
         case RESET_SIG: {
-            dispatchToAllPrisms(e);
+            FSP::Cluster_dispatchToAll(this, e);
             status_ = tran(&AllPoweredOff);
             break;
         }
         //.${AOs::Cluster::SM::ClusterOn::POWER_OFF}
         case POWER_OFF_SIG: {
-            dispatchToAllPrisms(e);
+            FSP::Cluster_dispatchToAll(this, e);
             status_ = tran(&AllPoweredOff);
             break;
         }
@@ -147,25 +127,25 @@ Q_STATE_DEF(Cluster, AllPoweredOn) {
         }
         //.${AOs::Cluster::SM::ClusterOn::AllPoweredOn::CLUSTER_TIMEOUT}
         case CLUSTER_TIMEOUT_SIG: {
-            dispatchToAllPrisms(e);
+            FSP::Cluster_dispatchToAll(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::Cluster::SM::ClusterOn::AllPoweredOn::HOME}
         case HOME_SIG: {
-            FSP::Cluster_dispatchHomeToPrism(this, e);
+            FSP::Cluster_dispatch(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::Cluster::SM::ClusterOn::AllPoweredOn::HOME_ALL}
         case HOME_ALL_SIG: {
-            FSP::Cluster_dispatchHomeToAllPrisms(this, e);
+            FSP::Cluster_dispatchToAll(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::Cluster::SM::ClusterOn::AllPoweredOn::HOMED}
         case HOMED_SIG: {
-            dispatchToPrism(e);
+            FSP::Cluster_dispatch(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -188,8 +168,7 @@ Q_STATE_DEF(Cluster, AllPoweredOff) {
         }
         //.${AOs::Cluster::SM::ClusterOn::AllPoweredOff::POWER_ON}
         case POWER_ON_SIG: {
-            FSP::Cluster_powerOnAll(this, e);
-            dispatchToAllPrisms(e);
+            FSP::Cluster_powerOnAllAndDispatch(this, e);
             status_ = tran(&AllPoweredOn);
             break;
         }

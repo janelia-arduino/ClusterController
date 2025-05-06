@@ -8,12 +8,6 @@ using namespace CC;
 
 static QSpyId const l_FSP_ID = {0U}; // QSpy source ID
 
-static CommandEvt const resetEvt = {RESET_SIG, 0U, 0U};
-
-static CommandEvt const powerOnEvt = {POWER_ON_SIG, 0U, 0U};
-static CommandEvt const powerOffEvt = {POWER_OFF_SIG, 0U, 0U};
-static CommandEvt const homeAllEvt = {HOME_ALL_SIG, 0U, 0U};
-
 static QEvt const processBinaryCommandEvt = {PROCESS_BINARY_COMMAND_SIG, 0U, 0U};
 static QEvt const processStringCommandEvt = {PROCESS_STRING_COMMAND_SIG, 0U, 0U};
 static QEvt const commandProcessedEvt = {COMMAND_PROCESSED_SIG, 0U, 0U};
@@ -33,7 +27,7 @@ static QEvt const ethernetServerConnectedEvt = {ETHERNET_SERVER_CONNECTED_SIG, 0
 
 void FSP::ClusterController_setup()
 {
-  static QF_MPOOL_EL(QP::QEvt) smlPoolSto[10];
+  static QF_MPOOL_EL(QP::QEvt) smlPoolSto[4*constants::prism_count_max + 10];
   static QF_MPOOL_EL(CC::PrismCommandEvt) medPoolSto[4*constants::prism_count_max + 10];
 
   QF::init(); // initialize the framework
@@ -161,28 +155,30 @@ void FSP::Cluster_powerOffAll(QActive * const ao, QEvt const * e)
   QS_END()
 }
 
-void FSP::Cluster_dispatchHomeToPrism(QP::QActive * const ao, QP::QEvt const * e)
+void FSP::Cluster_powerOnAllAndDispatch(QActive * const ao, QEvt const * e)
+{
+  Cluster_powerOnAll(ao, e);
+  Cluster_dispatchToAll(ao, e);
+}
+
+void FSP::Cluster_dispatch(QP::QActive * const ao, QP::QEvt const * e)
 {
   Cluster * const cluster = static_cast<Cluster * const>(ao);
   uint8_t prism_address = Q_EVT_CAST(PrismCommandEvt)->prism_address;
   if ((prism_address < Q_DIM(Prism::instances)) && (cluster->prisms_[prism_address] != nullptr))
   {
-    PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
-    pcev->prism_address = prism_address;
-    cluster->prisms_[prism_address]->dispatch(pcev, ao->m_prio);
+    cluster->prisms_[prism_address]->dispatch(e, ao->m_prio);
   }
 }
 
-void FSP::Cluster_dispatchHomeToAllPrisms(QP::QActive * const ao, QP::QEvt const * e)
+void FSP::Cluster_dispatchToAll(QP::QActive * const ao, QP::QEvt const * e)
 {
   Cluster * const cluster = static_cast<Cluster * const>(ao);
   for (uint8_t n = 0U; n < constants::prism_count_max; ++n)
   {
     if (cluster->prisms_[n] != nullptr)
     {
-      PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
-      pcev->prism_address = n;
-      cluster->prisms_[n]->dispatch(pcev, ao->m_prio);
+      cluster->prisms_[n]->dispatch(e, ao->m_prio);
     }
   }
 }
@@ -481,32 +477,32 @@ void FSP::Watchdog_feedWatchdog(QActive * const ao, QEvt const * e)
 
 void FSP::processStringCommand(const char * command, char * response)
 {
-  strcpy(response, command);
-  if (strcmp(command, "RESET") == 0)
-  {
-    QF::PUBLISH(&resetEvt, &l_FSP_ID);
-  }
-  if (strcmp(command, "LED_ON") == 0)
-  {
-    BSP::ledOn();
-  }
-  else if (strcmp(command, "LED_OFF") == 0)
-  {
-    BSP::ledOff();
-  }
-  else if (strcmp(command, "POWER_ON_ALL") == 0)
-  {
-    AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
-  }
-  else if (strcmp(command, "POWER_OFF_ALL") == 0)
-  {
-    AO_Cluster->POST(&powerOffEvt, &l_FSP_ID);
-  }
-  else if (strcmp(command, "RCA") == 0)
-  {
-    uint8_t cluster_address = BSP::readClusterAddress();
-    sprintf(response, "%d", cluster_address);
-  }
+  // strcpy(response, command);
+  // if (strcmp(command, "RESET") == 0)
+  // {
+  //   QF::PUBLISH(&resetEvt, &l_FSP_ID);
+  // }
+  // if (strcmp(command, "LED_ON") == 0)
+  // {
+  //   BSP::ledOn();
+  // }
+  // else if (strcmp(command, "LED_OFF") == 0)
+  // {
+  //   BSP::ledOff();
+  // }
+  // else if (strcmp(command, "POWER_ON_ALL") == 0)
+  // {
+  //   AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
+  // }
+  // else if (strcmp(command, "POWER_OFF_ALL") == 0)
+  // {
+  //   AO_Cluster->POST(&powerOffEvt, &l_FSP_ID);
+  // }
+  // else if (strcmp(command, "RCA") == 0)
+  // {
+  //   uint8_t cluster_address = BSP::readClusterAddress();
+  //   sprintf(response, "%d", cluster_address);
+  // }
   // else if (strcmp(command, "EHS") == 0)
   // {
   //   BSP::getEthernetHardwareStatusString(response);
@@ -519,7 +515,7 @@ void FSP::processStringCommand(const char * command, char * response)
   // {
   //   BSP::getServerIpAddressString(response);
   // }
-  QF::PUBLISH(&commandProcessedEvt, &l_FSP_ID);
+  // QF::PUBLISH(&commandProcessedEvt, &l_FSP_ID);
 }
 
 uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
@@ -553,7 +549,8 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       case RESET_CMD:
       {
         response[response_byte_count++] = command_number;
-        QF::PUBLISH(&resetEvt, &l_FSP_ID);
+        CommandEvt *cev = Q_NEW(CommandEvt, RESET_SIG);
+        QF::PUBLISH(cev, &l_FSP_ID);
         break;
       }
       case BEEP_CMD:
@@ -588,13 +585,15 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       case POWER_OFF_ALL_CMD:
       {
         response[response_byte_count++] = command_number;
-        AO_Cluster->POST(&powerOffEvt, &l_FSP_ID);
+        CommandEvt *cev = Q_NEW(CommandEvt, POWER_OFF_SIG);
+        AO_Cluster->POST(cev, &l_FSP_ID);
         break;
       }
       case POWER_ON_ALL_CMD:
       {
         response[response_byte_count++] = command_number;
-        AO_Cluster->POST(&powerOnEvt, &l_FSP_ID);
+        CommandEvt *cev = Q_NEW(CommandEvt, POWER_ON_SIG);
+        AO_Cluster->POST(cev, &l_FSP_ID);
         break;
       }
       case HOME_CMD:
@@ -611,7 +610,8 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       case HOME_ALL_CMD:
       {
         response[response_byte_count++] = command_number;
-        AO_Cluster->POST(&homeAllEvt, &l_FSP_ID);
+        CommandEvt *cev = Q_NEW(CommandEvt, HOME_ALL_SIG);
+        AO_Cluster->POST(cev, &l_FSP_ID);
         break;
       }
       case WRITE_TARGET_POSITION_CMD:

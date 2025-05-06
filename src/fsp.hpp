@@ -28,8 +28,9 @@ struct FSP
   static void Cluster_disarmClusterTimer(QP::QActive * const ao, QP::QEvt const * e);
   static void Cluster_powerOnAll(QP::QActive * const ao, QP::QEvt const * e);
   static void Cluster_powerOffAll(QP::QActive * const ao, QP::QEvt const * e);
-  static void Cluster_dispatchHomeToPrism(QP::QActive * const ao, QP::QEvt const * e);
-  static void Cluster_dispatchHomeToAllPrisms(QP::QActive * const ao, QP::QEvt const * e);
+  static void Cluster_powerOnAllAndDispatch(QP::QActive * const ao, QP::QEvt const * e);
+  static void Cluster_dispatch(QP::QActive * const ao, QP::QEvt const * e);
+  static void Cluster_dispatchToAll(QP::QActive * const ao, QP::QEvt const * e);
 
   static void Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_setup(QP::QHsm * const hsm, QP::QEvt const * e);

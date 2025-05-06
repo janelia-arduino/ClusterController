@@ -37,10 +37,6 @@ public:
 public:
     Cluster();
 
-private:
-    void dispatchToAllPrisms(QP::QEvt const * e);
-    void dispatchToPrism(QP::QEvt const * e);
-
 protected:
     Q_STATE_DECL(initial);
     Q_STATE_DECL(ClusterOn);
