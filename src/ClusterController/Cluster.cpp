@@ -137,12 +137,6 @@ Q_STATE_DEF(Cluster, AllPoweredOn) {
             status_ = Q_RET_HANDLED;
             break;
         }
-        //.${AOs::Cluster::SM::ClusterOn::AllPoweredOn::HOME_ALL}
-        case HOME_ALL_SIG: {
-            FSP::Cluster_dispatchToAll(this, e);
-            status_ = Q_RET_HANDLED;
-            break;
-        }
         //.${AOs::Cluster::SM::ClusterOn::AllPoweredOn::HOMED}
         case HOMED_SIG: {
             FSP::Cluster_dispatch(this, e);

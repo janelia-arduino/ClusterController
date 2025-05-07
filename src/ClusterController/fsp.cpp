@@ -85,7 +85,7 @@ void FSP::ClusterController_setup()
     ethernet_command_interface_queueSto, Q_DIM(ethernet_command_interface_queueSto),
     (void *)0, 0U); // no stack
 
-  static QEvt const *cluster_queueSto[20];
+  static QEvt const *cluster_queueSto[4*constants::prism_count_max + 10];
   AO_Cluster->start(4U, // priority
     cluster_queueSto, Q_DIM(cluster_queueSto),
     (void *)0, 0U); // no stack
@@ -101,7 +101,8 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
   QS_SIG_DICTIONARY(POWER_ON_SIG, ao);
   QS_SIG_DICTIONARY(POWER_OFF_SIG, ao);
   QS_SIG_DICTIONARY(HOME_SIG, ao);
-  QS_SIG_DICTIONARY(HOME_ALL_SIG, ao);
+  QS_SIG_DICTIONARY(HOMED_SIG, ao);
+  QS_SIG_DICTIONARY(WRITE_TARGET_POSITION_SIG, ao);
 
   BSP::initializeCluster();
 
@@ -617,8 +618,12 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       case HOME_ALL_CMD:
       {
         response[response_byte_count++] = command_number;
-        CommandEvt *cev = Q_NEW(CommandEvt, HOME_ALL_SIG);
-        AO_Cluster->POST(cev, &l_FSP_ID);
+        for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+        {
+          PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
+          pcev->prism_address = n;
+          AO_Cluster->POST(pcev, &l_FSP_ID);
+        }
         break;
       }
       case WRITE_TARGET_POSITION_CMD:

@@ -165,11 +165,6 @@ Q_STATE_DEF(Prism, Enabled) {
             status_ = tran(&Homing);
             break;
         }
-        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Enabled::HOME_ALL}
-        case HOME_ALL_SIG: {
-            status_ = tran(&Homing);
-            break;
-        }
         default: {
             status_ = super(&SetupAndCommunicating);
             break;
@@ -230,11 +225,6 @@ Q_STATE_DEF(Prism, Homed) {
         }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::HOME}
         case HOME_SIG: {
-            status_ = tran(&Homing);
-            break;
-        }
-        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::HOME_ALL}
-        case HOME_ALL_SIG: {
             status_ = tran(&Homing);
             break;
         }

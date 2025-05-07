@@ -25,7 +25,6 @@ enum ClusterControllerSignals
   POWER_ON_SIG,
   POWER_OFF_SIG,
   HOME_SIG,
-  HOME_ALL_SIG,
   HOMED_SIG,
   WRITE_TARGET_POSITION_SIG,
 
