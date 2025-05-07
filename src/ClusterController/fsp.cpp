@@ -285,6 +285,11 @@ void FSP::Prism_writeTargetPosition(QP::QHsm * const hsm, QP::QEvt const * e)
   Prism * const prism = static_cast<Prism * const>(hsm);
   PrismCommandEvt const * pce = static_cast<PrismCommandEvt const *>(e);
   BSP::writeTargetPosition(pce->prism_address, pce->position_mm);
+  QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+    QS_STR("writing target position to prism");
+    QS_U8(0, pce->prism_address);
+    QS_U16(5, pce->position_mm);
+  QS_END()
 }
 
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
@@ -639,6 +644,23 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
         pcev->prism_address = prism_address;
         pcev->position_mm = position_mm;
         AO_Cluster->POST(pcev, &l_FSP_ID);
+        break;
+      }
+      case WRITE_ALL_TARGET_POSITIONS_CMD:
+      {
+        response[response_byte_count++] = command_number;
+
+        uint16_t position_mm;
+        for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+        {
+          memcpy(&position_mm, command_buffer + command_buffer_position, sizeof(position_mm));
+          command_buffer_position += sizeof(position_mm);
+
+          PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
+          pcev->prism_address = n;
+          pcev->position_mm = position_mm;
+          AO_Cluster->POST(pcev, &l_FSP_ID);
+        }
         break;
       }
       default:
