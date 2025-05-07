@@ -560,16 +560,27 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
     uint8_t response[constants::byte_count_per_response_max])
 {
   uint8_t response_byte_count = 0;
-  if (command_byte_count < 2)
+  if (command_byte_count == 0)
+  {
+    response[response_byte_count++] = constants::error_response;
+    return response_byte_count;
+  }
+  if (command_byte_count == 1)
   {
     response[response_byte_count++] = constants::error_response;
     return response_byte_count;
   }
   uint8_t command_buffer_position = 0;
   uint8_t protocol_version = command_buffer[command_buffer_position++];
+  if (protocol_version != 0x01)
+  {
+    response[response_byte_count++] = constants::error_response;
+    return response_byte_count;
+  }
   if (protocol_version == 0x01)
   {
     uint8_t command_number = command_buffer[command_buffer_position++];
+    response[response_byte_count++] = command_number;
     switch (command_number)
     {
       case READ_CLUSTER_ADDRESS_CMD:
@@ -585,7 +596,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case RESET_CMD:
       {
-        response[response_byte_count++] = command_number;
         CommandEvt *cev = Q_NEW(CommandEvt, RESET_SIG);
         QF::PUBLISH(cev, &l_FSP_ID);
         break;
@@ -597,7 +607,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
           response[response_byte_count++] = constants::error_response;
           return response_byte_count;
         }
-        response[response_byte_count++] = command_number;
         uint16_t duration_ms;
         memcpy(&duration_ms, command_buffer + command_buffer_position, sizeof(duration_ms));
         // QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
@@ -609,33 +618,28 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case LED_OFF_CMD:
       {
-        response[response_byte_count++] = command_number;
         BSP::ledOff();
         break;
       }
       case LED_ON_CMD:
       {
-        response[response_byte_count++] = command_number;
         BSP::ledOn();
         break;
       }
       case POWER_OFF_ALL_CMD:
       {
-        response[response_byte_count++] = command_number;
         CommandEvt *cev = Q_NEW(CommandEvt, POWER_OFF_SIG);
         AO_Cluster->POST(cev, &l_FSP_ID);
         break;
       }
       case POWER_ON_ALL_CMD:
       {
-        response[response_byte_count++] = command_number;
         CommandEvt *cev = Q_NEW(CommandEvt, POWER_ON_SIG);
         AO_Cluster->POST(cev, &l_FSP_ID);
         break;
       }
       case HOME_CMD:
       {
-        response[response_byte_count++] = command_number;
         uint8_t prism_address;
         memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
 
@@ -646,7 +650,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case HOME_ALL_CMD:
       {
-        response[response_byte_count++] = command_number;
         for (uint8_t n = 0; n < constants::prism_count_max; ++n)
         {
           PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
@@ -657,7 +660,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case WRITE_TARGET_POSITION_CMD:
       {
-        response[response_byte_count++] = command_number;
         uint8_t prism_address;
         memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
         command_buffer_position += sizeof(prism_address);
@@ -672,8 +674,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case WRITE_ALL_TARGET_POSITIONS_CMD:
       {
-        response[response_byte_count++] = command_number;
-
         uint16_t position_mm;
         for (uint8_t n = 0; n < constants::prism_count_max; ++n)
         {
@@ -689,7 +689,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case PAUSE_CMD:
       {
-        response[response_byte_count++] = command_number;
         uint8_t prism_address;
         memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
 
@@ -700,7 +699,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case PAUSE_ALL_CMD:
       {
-        response[response_byte_count++] = command_number;
         for (uint8_t n = 0; n < constants::prism_count_max; ++n)
         {
           PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PAUSE_SIG);
@@ -711,7 +709,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case RESUME_CMD:
       {
-        response[response_byte_count++] = command_number;
         uint8_t prism_address;
         memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
 
@@ -722,7 +719,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       case RESUME_ALL_CMD:
       {
-        response[response_byte_count++] = command_number;
         for (uint8_t n = 0; n < constants::prism_count_max; ++n)
         {
           PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, RESUME_SIG);
@@ -738,5 +734,6 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
     }
   }
+
   return response_byte_count;
 }

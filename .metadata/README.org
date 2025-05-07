@@ -23,34 +23,27 @@
 
 Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 
-Commands would be like a few bytes, sent to one IP: one byte for command, one byte for prism id, two for arguments.
-Commands would be e.g.
-Beep (no arg, no arg),
-Calibrate to bottom position (prism, no arg),
-set target (prism, position),
-start move (prism, no arg),
-stop move (prism, no arg),
-report position (prism, no arg),
-set parameters (param id, param value)
-
-| Command Name               | Command Format | Protocol Version | Command Number | Args                      |   Response | Response Format |
-|----------------------------+----------------+------------------+----------------+---------------------------+------------+-----------------|
-| read-cluster-address       | '<BB'          |             0x01 |           0x01 |                           |  0x00-0xFF | '<B'            |
-| check-communication        | '<BB'          |             0x01 |           0x02 |                           | 0x12345678 | '<L'            |
-| reset                      | '<BB'          |             0x01 |           0x03 |                           |       0x03 | '<B'            |
-| beep                       | '<BBH'         |             0x01 |           0x04 | duration-ms               |       0x04 | '<B'            |
-| led-off                    | '<BB'          |             0x01 |           0x05 |                           |       0x05 | '<B'            |
-| led-on                     | '<BB'          |             0x01 |           0x06 |                           |       0x06 | '<B'            |
-| power-off-all              | '<BB'          |             0x01 |           0x07 |                           |       0x07 | '<B'            |
-| power-on-all               | '<BB'          |             0x01 |           0x08 |                           |       0x08 | '<B'            |
-| home                       | '<BBB'         |             0x01 |           0x09 | prism-address             |       0x09 | '<B'            |
-| home-all                   | '<BB'          |             0x01 |           0x0A |                           |       0x0A | '<B'            |
-| write-target-position      | '<BBBH'        |             0x01 |           0x0B | prism-address position-mm |       0x0B | '<B'            |
-| write-all-target-positions | '<BBHHHHHHH'   |             0x01 |           0x0C | position-mm * 7           |       0x0C | '<B'            |
-| pause                      | '<BBB'         |             0x01 |           0x0D | prism-address             |       0x0D | '<B'            |
-| pause-all                  | '<BB'          |             0x01 |           0x0E |                           |       0x0E | '<B'            |
-| resume                     | '<BBB'         |             0x01 |           0x0F | prism-address             |       0x0F | '<B'            |
-| resume-all                 | '<BB'          |             0x01 |           0x10 |                           |       0x10 | '<B'            |
+| Command Name               | Command Format | Protocol Version | Command Number | Args                       |                       Response | Response Format |
+|----------------------------+----------------+------------------+----------------+----------------------------+--------------------------------+-----------------|
+| invalid-command            |                |                  |                |                            |                           0xEE | '<B'            |
+| read-cluster-address       | '<BB'          |             0x01 |           0x01 |                            |               0x01, 0x00..0xFF | '<BB'           |
+| check-communication        | '<BB'          |             0x01 |           0x02 |                            |               0x02, 0x12345678 | '<BL'           |
+| reset                      | '<BB'          |             0x01 |           0x03 |                            |                           0x03 | '<B'            |
+| beep                       | '<BBH'         |             0x01 |           0x04 | duration-ms                |                           0x04 | '<B'            |
+| led-off                    | '<BB'          |             0x01 |           0x05 |                            |                           0x05 | '<B'            |
+| led-on                     | '<BB'          |             0x01 |           0x06 |                            |                           0x06 | '<B'            |
+| power-off-all              | '<BB'          |             0x01 |           0x07 |                            |                           0x07 | '<B'            |
+| power-on-all               | '<BB'          |             0x01 |           0x08 |                            |                           0x08 | '<B'            |
+| home                       | '<BBB'         |             0x01 |           0x09 | prism-address              |            0x09, prism-address | '<BB'           |
+| home-all                   | '<BB'          |             0x01 |           0x0A |                            |                           0x0A | '<B'            |
+| write-target-position      | '<BBBH'        |             0x01 |           0x0B | prism-address, position-mm |            0x0B, prism-address | '<BB'           |
+| write-all-target-positions | '<BBHHHHHHH'   |             0x01 |           0x0C | position-mm * 7            |                           0x0C | '<B'            |
+| pause                      | '<BBB'         |             0x01 |           0x0D | prism-address              |            0x0D, prism-address | '<BB'           |
+| pause-all                  | '<BB'          |             0x01 |           0x0E |                            |                           0x0E | '<B'            |
+| resume                     | '<BBB'         |             0x01 |           0x0F | prism-address              |            0x0F, prism-address | '<BB'           |
+| resume-all                 | '<BB'          |             0x01 |           0x10 |                            |                           0x10 | '<B'            |
+| read-actual-position       | '<BBB'         |             0x01 |           0x11 | prism-address              | 0x11, prism-address, -1..32767 | '<BhB'          |
+| read-all-actual-positions  | '<BB'          |             0x01 |           0x12 |                            |            0x12, -1..32767 * 7 | '<Bhhhhhhh'     |
 
 * Host Computer Setup
 
