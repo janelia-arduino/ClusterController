@@ -90,6 +90,18 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
         <action box="0,-2,30,2"/>
        </tran_glyph>
       </tran>
+      <tran trig="PAUSE">
+       <action brief="dispatch()">FSP::Cluster_dispatch(this, e);</action>
+       <tran_glyph conn="16,58,3,-1,30">
+        <action box="0,-2,29,2"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="RESUME">
+       <action brief="dispatch()">FSP::Cluster_dispatch(this, e);</action>
+       <tran_glyph conn="16,62,3,-1,30">
+        <action box="0,-2,29,2"/>
+       </tran_glyph>
+      </tran>
       <state_glyph node="16,32,70,43">
        <entry box="1,2,22,2"/>
        <exit box="1,4,22,2"/>
@@ -511,6 +523,7 @@ delay_count_ = 0;</entry>
       </state>
       <state name="Homed">
        <entry brief="recordHomed()">FSP::Prism_recordHomed(this, e);</entry>
+       <exit brief="resume()">FSP::Prism_resume(this, e);</exit>
        <tran trig="HOME" target="../../2">
         <tran_glyph conn="52,78,0,2,-4">
          <action box="1,-3,12,2"/>
@@ -518,12 +531,25 @@ delay_count_ = 0;</entry>
        </tran>
        <tran trig="WRITE_TARGET_POSITION">
         <action brief="writeTargetPosition()">FSP::Prism_writeTargetPosition(this, e);</action>
-        <tran_glyph conn="31,86,3,-1,28">
-         <action box="0,-2,25,4"/>
+        <tran_glyph conn="31,86,3,-1,37">
+         <action box="0,-2,40,3"/>
+        </tran_glyph>
+       </tran>
+       <tran trig="PAUSE">
+        <action brief="pause()">FSP::Prism_pause(this, e);</action>
+        <tran_glyph conn="31,90,3,-1,37">
+         <action box="0,-2,36,2"/>
+        </tran_glyph>
+       </tran>
+       <tran trig="RESUME">
+        <action brief="resume()">FSP::Prism_resume(this, e);</action>
+        <tran_glyph conn="31,94,3,-1,37">
+         <action box="0,-2,35,2"/>
         </tran_glyph>
        </tran>
        <state_glyph node="31,78,64,25">
         <entry box="1,2,15,2"/>
+        <exit box="1,4,16,2"/>
        </state_glyph>
       </state>
       <state_glyph node="30,43,73,69">

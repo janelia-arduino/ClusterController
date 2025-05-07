@@ -327,6 +327,8 @@ void BSP::setupParametersAndEnable(uint8_t prism_address)
   }
   TMC51X0 & prism = prisms[prism_address];
 
+  prism.reinitialize();
+
   prism.converter.setup(constants::converter_parameters);
 
   driver_parameters_chip = prism.converter.driverParametersRealToChip(constants::driver_parameters_real);
@@ -379,6 +381,26 @@ void BSP::writeTargetPosition(uint8_t prism_address, uint16_t position_mm)
   }
   TMC51X0 & prism = prisms[prism_address];
   prism.controller.writeTargetPosition(prism.converter.positionRealToChip(position_mm));
+}
+
+void BSP::pause(uint8_t prism_address)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.setupSwitches(constants::switch_parameters_paused);
+}
+
+void BSP::resume(uint8_t prism_address)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.setupSwitches(constants::switch_parameters_running);
 }
 
 bool BSP::beginSerial()

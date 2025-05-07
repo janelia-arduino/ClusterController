@@ -149,6 +149,18 @@ Q_STATE_DEF(Cluster, AllPoweredOn) {
             status_ = Q_RET_HANDLED;
             break;
         }
+        //.${AOs::Cluster::SM::ClusterOn::AllPoweredOn::PAUSE}
+        case PAUSE_SIG: {
+            FSP::Cluster_dispatch(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Cluster::SM::ClusterOn::AllPoweredOn::RESUME}
+        case RESUME_SIG: {
+            FSP::Cluster_dispatch(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         default: {
             status_ = super(&ClusterOn);
             break;

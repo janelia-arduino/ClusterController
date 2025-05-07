@@ -223,6 +223,12 @@ Q_STATE_DEF(Prism, Homed) {
             status_ = Q_RET_HANDLED;
             break;
         }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed}
+        case Q_EXIT_SIG: {
+            FSP::Prism_resume(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::HOME}
         case HOME_SIG: {
             status_ = tran(&Homing);
@@ -231,6 +237,18 @@ Q_STATE_DEF(Prism, Homed) {
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::WRITE_TARGET_POSITION}
         case WRITE_TARGET_POSITION_SIG: {
             FSP::Prism_writeTargetPosition(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::PAUSE}
+        case PAUSE_SIG: {
+            FSP::Prism_pause(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::RESUME}
+        case RESUME_SIG: {
+            FSP::Prism_resume(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }

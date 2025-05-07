@@ -103,6 +103,8 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
   QS_SIG_DICTIONARY(HOME_SIG, ao);
   QS_SIG_DICTIONARY(HOMED_SIG, ao);
   QS_SIG_DICTIONARY(WRITE_TARGET_POSITION_SIG, ao);
+  QS_SIG_DICTIONARY(PAUSE_SIG, ao);
+  QS_SIG_DICTIONARY(RESUME_SIG, ao);
 
   BSP::initializeCluster();
 
@@ -284,11 +286,33 @@ void FSP::Prism_writeTargetPosition(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
   PrismCommandEvt const * pce = static_cast<PrismCommandEvt const *>(e);
-  BSP::writeTargetPosition(pce->prism_address, pce->position_mm);
+  BSP::writeTargetPosition(prism->prism_address_, pce->position_mm);
   QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
     QS_STR("writing target position to prism");
-    QS_U8(0, pce->prism_address);
+    QS_U8(0, prism->prism_address_);
     QS_U16(5, pce->position_mm);
+  QS_END()
+}
+
+void FSP::Prism_pause(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  PrismCommandEvt const * pce = static_cast<PrismCommandEvt const *>(e);
+  BSP::pause(prism->prism_address_);
+  QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+    QS_STR("pausing prism");
+    QS_U8(0, prism->prism_address_);
+  QS_END()
+}
+
+void FSP::Prism_resume(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  PrismCommandEvt const * pce = static_cast<PrismCommandEvt const *>(e);
+  BSP::resume(prism->prism_address_);
+  QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+    QS_STR("resuming prism");
+    QS_U8(0, prism->prism_address_);
   QS_END()
 }
 
@@ -659,6 +683,50 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
           PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
           pcev->prism_address = n;
           pcev->position_mm = position_mm;
+          AO_Cluster->POST(pcev, &l_FSP_ID);
+        }
+        break;
+      }
+      case PAUSE_CMD:
+      {
+        response[response_byte_count++] = command_number;
+        uint8_t prism_address;
+        memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
+
+        PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PAUSE_SIG);
+        pcev->prism_address = prism_address;
+        AO_Cluster->POST(pcev, &l_FSP_ID);
+        break;
+      }
+      case PAUSE_ALL_CMD:
+      {
+        response[response_byte_count++] = command_number;
+        for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+        {
+          PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PAUSE_SIG);
+          pcev->prism_address = n;
+          AO_Cluster->POST(pcev, &l_FSP_ID);
+        }
+        break;
+      }
+      case RESUME_CMD:
+      {
+        response[response_byte_count++] = command_number;
+        uint8_t prism_address;
+        memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
+
+        PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, RESUME_SIG);
+        pcev->prism_address = prism_address;
+        AO_Cluster->POST(pcev, &l_FSP_ID);
+        break;
+      }
+      case RESUME_ALL_CMD:
+      {
+        response[response_byte_count++] = command_number;
+        for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+        {
+          PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, RESUME_SIG);
+          pcev->prism_address = n;
           AO_Cluster->POST(pcev, &l_FSP_ID);
         }
         break;

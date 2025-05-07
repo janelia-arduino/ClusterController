@@ -21,6 +21,8 @@ enum ClusterControllerCommands
   WRITE_ALL_TARGET_POSITIONS_CMD = 0x0C,
   PAUSE_CMD = 0x0D,
   PAUSE_ALL_CMD = 0x0E,
+  RESUME_CMD = 0x0F,
+  RESUME_ALL_CMD = 0x10,
 };
 
 } // namespace AC

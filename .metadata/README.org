@@ -49,6 +49,8 @@ set parameters (param id, param value)
 | write-all-target-positions | '<BBHHHHHHH'   |             0x01 |           0x0C | position-mm * 7           |       0x0C | '<B'            |
 | pause                      | '<BBB'         |             0x01 |           0x0D | prism-address             |       0x0D | '<B'            |
 | pause-all                  | '<BB'          |             0x01 |           0x0E |                           |       0x0E | '<B'            |
+| resume                     | '<BBB'         |             0x01 |           0x0F | prism-address             |       0x0F | '<B'            |
+| resume-all                 | '<BB'          |             0x01 |           0x10 |                           |       0x10 | '<B'            |
 
 * Host Computer Setup
 
