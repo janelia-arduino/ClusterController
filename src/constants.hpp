@@ -30,6 +30,11 @@ constexpr uint32_t ethernet_timer_frequency_hz = 100;
 constexpr uint8_t mac_address_size = 6;
 constexpr uint32_t ethernet_server_port = 7777;
 
+// Protocol
+constexpr uint8_t protocol_version = 0x02;
+constexpr uint8_t command_length_min = 3;
+constexpr uint8_t response_length_index = 1;
+
 // Commands
 constexpr uint16_t string_command_length_max = 512;
 constexpr byte first_command_byte_max_value_binary = 0x23;

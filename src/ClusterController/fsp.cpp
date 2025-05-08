@@ -560,180 +560,175 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
     uint8_t response[constants::byte_count_per_response_max])
 {
   uint8_t response_byte_count = 0;
-  if (command_byte_count == 0)
+  response[response_byte_count++] = constants::protocol_version;
+  response[response_byte_count++] = 0; // response_length placeholder
+  if (command_byte_count < 3)
   {
     response[response_byte_count++] = constants::error_response;
-    return response_byte_count;
-  }
-  if (command_byte_count == 1)
-  {
-    response[response_byte_count++] = constants::error_response;
+    response[constants::response_length_index] = response_byte_count;
     return response_byte_count;
   }
   uint8_t command_buffer_position = 0;
-  uint8_t protocol_version = command_buffer[command_buffer_position++];
-  if (protocol_version != 0x01)
+  uint8_t command_protocol_version = command_buffer[command_buffer_position++];
+  if (command_protocol_version != constants::protocol_version)
   {
     response[response_byte_count++] = constants::error_response;
+    response[constants::response_length_index] = response_byte_count;
     return response_byte_count;
   }
-  if (protocol_version == 0x01)
+  uint8_t command_length = command_buffer[command_buffer_position++];
+  if (command_length != command_byte_count)
   {
-    uint8_t command_number = command_buffer[command_buffer_position++];
-    response[response_byte_count++] = command_number;
-    switch (command_number)
+    response[response_byte_count++] = constants::error_response;
+    response[constants::response_length_index] = response_byte_count;
+    return response_byte_count;
+  }
+  uint8_t command_number = command_buffer[command_buffer_position++];
+  response[response_byte_count++] = command_number;
+  switch (command_number)
+  {
+    case READ_CLUSTER_ADDRESS_CMD:
     {
-      case READ_CLUSTER_ADDRESS_CMD:
-      {
-        response[response_byte_count++] = BSP::readClusterAddress();
-        break;
-      }
-      case CHECK_COMMUNICATION_CMD:
-      {
-        memcpy(response, &constants::check_communication_response, sizeof(constants::check_communication_response));
-        response_byte_count += sizeof(constants::check_communication_response);
-        break;
-      }
-      case RESET_CMD:
-      {
-        CommandEvt *cev = Q_NEW(CommandEvt, RESET_SIG);
-        QF::PUBLISH(cev, &l_FSP_ID);
-        break;
-      }
-      case BEEP_CMD:
-      {
-        if (command_byte_count < 4)
-        {
-          response[response_byte_count++] = constants::error_response;
-          return response_byte_count;
-        }
-        uint16_t duration_ms;
-        memcpy(&duration_ms, command_buffer + command_buffer_position, sizeof(duration_ms));
-        // QS_BEGIN_ID(USER_COMMENT, AO_EthernetCommandInterface->m_prio)
-        //   QS_U16(5, duration_ms_1);
-        //   QS_U16(5, duration_ms);
-        // QS_END()
-        BSP::beep(duration_ms);
-        break;
-      }
-      case LED_OFF_CMD:
-      {
-        BSP::ledOff();
-        break;
-      }
-      case LED_ON_CMD:
-      {
-        BSP::ledOn();
-        break;
-      }
-      case POWER_OFF_ALL_CMD:
-      {
-        CommandEvt *cev = Q_NEW(CommandEvt, POWER_OFF_SIG);
-        AO_Cluster->POST(cev, &l_FSP_ID);
-        break;
-      }
-      case POWER_ON_ALL_CMD:
-      {
-        CommandEvt *cev = Q_NEW(CommandEvt, POWER_ON_SIG);
-        AO_Cluster->POST(cev, &l_FSP_ID);
-        break;
-      }
-      case HOME_CMD:
-      {
-        uint8_t prism_address;
-        memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
+      response[response_byte_count++] = BSP::readClusterAddress();
+      break;
+    }
+    case CHECK_COMMUNICATION_CMD:
+    {
+      memcpy(response, &constants::check_communication_response, sizeof(constants::check_communication_response));
+      response_byte_count += sizeof(constants::check_communication_response);
+      break;
+    }
+    case RESET_CMD:
+    {
+      CommandEvt *cev = Q_NEW(CommandEvt, RESET_SIG);
+      QF::PUBLISH(cev, &l_FSP_ID);
+      break;
+    }
+    case BEEP_CMD:
+    {
+      uint16_t duration_ms;
+      memcpy(&duration_ms, command_buffer + command_buffer_position, sizeof(duration_ms));
+      BSP::beep(duration_ms);
+      break;
+    }
+    case LED_OFF_CMD:
+    {
+      BSP::ledOff();
+      break;
+    }
+    case LED_ON_CMD:
+    {
+      BSP::ledOn();
+      break;
+    }
+    case POWER_OFF_ALL_CMD:
+    {
+      CommandEvt *cev = Q_NEW(CommandEvt, POWER_OFF_SIG);
+      AO_Cluster->POST(cev, &l_FSP_ID);
+      break;
+    }
+    case POWER_ON_ALL_CMD:
+    {
+      CommandEvt *cev = Q_NEW(CommandEvt, POWER_ON_SIG);
+      AO_Cluster->POST(cev, &l_FSP_ID);
+      break;
+    }
+    case HOME_CMD:
+    {
+      uint8_t prism_address;
+      memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
 
+      PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
+      pcev->prism_address = prism_address;
+      AO_Cluster->POST(pcev, &l_FSP_ID);
+      break;
+    }
+    case HOME_ALL_CMD:
+    {
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
         PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
-        pcev->prism_address = prism_address;
+        pcev->prism_address = n;
         AO_Cluster->POST(pcev, &l_FSP_ID);
-        break;
       }
-      case HOME_ALL_CMD:
+      break;
+    }
+    case WRITE_TARGET_POSITION_CMD:
+    {
+      uint8_t prism_address;
+      memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
+      command_buffer_position += sizeof(prism_address);
+      uint16_t position_mm;
+      memcpy(&position_mm, command_buffer + command_buffer_position, sizeof(position_mm));
+
+      PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
+      pcev->prism_address = prism_address;
+      pcev->position_mm = position_mm;
+      AO_Cluster->POST(pcev, &l_FSP_ID);
+      break;
+    }
+    case WRITE_ALL_TARGET_POSITIONS_CMD:
+    {
+      uint16_t position_mm;
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
       {
-        for (uint8_t n = 0; n < constants::prism_count_max; ++n)
-        {
-          PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
-          pcev->prism_address = n;
-          AO_Cluster->POST(pcev, &l_FSP_ID);
-        }
-        break;
-      }
-      case WRITE_TARGET_POSITION_CMD:
-      {
-        uint8_t prism_address;
-        memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
-        command_buffer_position += sizeof(prism_address);
-        uint16_t position_mm;
         memcpy(&position_mm, command_buffer + command_buffer_position, sizeof(position_mm));
+        command_buffer_position += sizeof(position_mm);
 
         PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
-        pcev->prism_address = prism_address;
+        pcev->prism_address = n;
         pcev->position_mm = position_mm;
         AO_Cluster->POST(pcev, &l_FSP_ID);
-        break;
       }
-      case WRITE_ALL_TARGET_POSITIONS_CMD:
-      {
-        uint16_t position_mm;
-        for (uint8_t n = 0; n < constants::prism_count_max; ++n)
-        {
-          memcpy(&position_mm, command_buffer + command_buffer_position, sizeof(position_mm));
-          command_buffer_position += sizeof(position_mm);
+      break;
+    }
+    case PAUSE_CMD:
+    {
+      uint8_t prism_address;
+      memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
 
-          PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
-          pcev->prism_address = n;
-          pcev->position_mm = position_mm;
-          AO_Cluster->POST(pcev, &l_FSP_ID);
-        }
-        break;
-      }
-      case PAUSE_CMD:
+      PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PAUSE_SIG);
+      pcev->prism_address = prism_address;
+      AO_Cluster->POST(pcev, &l_FSP_ID);
+      break;
+    }
+    case PAUSE_ALL_CMD:
+    {
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
       {
-        uint8_t prism_address;
-        memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
-
         PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PAUSE_SIG);
-        pcev->prism_address = prism_address;
+        pcev->prism_address = n;
         AO_Cluster->POST(pcev, &l_FSP_ID);
-        break;
       }
-      case PAUSE_ALL_CMD:
-      {
-        for (uint8_t n = 0; n < constants::prism_count_max; ++n)
-        {
-          PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, PAUSE_SIG);
-          pcev->prism_address = n;
-          AO_Cluster->POST(pcev, &l_FSP_ID);
-        }
-        break;
-      }
-      case RESUME_CMD:
-      {
-        uint8_t prism_address;
-        memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
+      break;
+    }
+    case RESUME_CMD:
+    {
+      uint8_t prism_address;
+      memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
 
+      PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, RESUME_SIG);
+      pcev->prism_address = prism_address;
+      AO_Cluster->POST(pcev, &l_FSP_ID);
+      break;
+    }
+    case RESUME_ALL_CMD:
+    {
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
         PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, RESUME_SIG);
-        pcev->prism_address = prism_address;
+        pcev->prism_address = n;
         AO_Cluster->POST(pcev, &l_FSP_ID);
-        break;
       }
-      case RESUME_ALL_CMD:
-      {
-        for (uint8_t n = 0; n < constants::prism_count_max; ++n)
-        {
-          PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, RESUME_SIG);
-          pcev->prism_address = n;
-          AO_Cluster->POST(pcev, &l_FSP_ID);
-        }
-        break;
-      }
-      default:
-      {
-        response[response_byte_count++] = constants::error_response;
-        break;
-      }
+      break;
+    }
+    default:
+    {
+      response[response_byte_count++] = constants::error_response;
+      break;
     }
   }
 
+  response[constants::response_length_index] = response_byte_count;
   return response_byte_count;
 }
