@@ -594,7 +594,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
     }
     case CHECK_COMMUNICATION_CMD:
     {
-      memcpy(response, &constants::check_communication_response, sizeof(constants::check_communication_response));
+      memcpy(response + constants::response_header_size, &constants::check_communication_response, sizeof(constants::check_communication_response));
       response_byte_count += sizeof(constants::check_communication_response);
       break;
     }

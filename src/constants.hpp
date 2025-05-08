@@ -34,6 +34,7 @@ constexpr uint32_t ethernet_server_port = 7777;
 constexpr uint8_t protocol_version = 0x02;
 constexpr uint8_t command_length_min = 3;
 constexpr uint8_t response_length_index = 1;
+constexpr uint8_t response_header_size = 3;
 
 // Commands
 constexpr uint16_t string_command_length_max = 512;
