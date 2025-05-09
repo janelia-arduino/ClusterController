@@ -594,7 +594,8 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
     }
     case CHECK_COMMUNICATION_CMD:
     {
-      memcpy(response + constants::response_header_size, &constants::check_communication_response, sizeof(constants::check_communication_response));
+      uint8_t * response_ptr = response + constants::response_header_size;
+      memcpy(response_ptr, &constants::check_communication_response, sizeof(constants::check_communication_response));
       response_byte_count += sizeof(constants::check_communication_response);
       break;
     }
@@ -719,6 +720,19 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
         PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, RESUME_SIG);
         pcev->prism_address = n;
         AO_Cluster->POST(pcev, &l_FSP_ID);
+      }
+      break;
+    }
+    case READ_ALL_ACTUAL_POSITIONS_CMD:
+    {
+      int16_t position;
+      uint8_t * response_ptr = response + constants::response_header_size;
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        position = BSP::readActualPosition(n);
+        memcpy(response_ptr, &position, sizeof(position));
+        response_byte_count += sizeof(position);
+        response_ptr += sizeof(position);
       }
       break;
     }

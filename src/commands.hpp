@@ -23,6 +23,7 @@ enum ClusterControllerCommands
   PAUSE_ALL_CMD = 0x0E,
   RESUME_CMD = 0x0F,
   RESUME_ALL_CMD = 0x10,
+  READ_ALL_ACTUAL_POSITIONS_CMD = 0x11,
 };
 
 } // namespace AC

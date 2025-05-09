@@ -403,6 +403,16 @@ void BSP::resume(uint8_t prism_address)
   prism.controller.setupSwitches(constants::switch_parameters_running);
 }
 
+int16_t BSP::readActualPosition(uint8_t prism_address)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return -1;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  return prism.converter.positionChipToReal(prism.controller.readActualPosition());
+}
+
 bool BSP::beginSerial()
 {
   // serial_communication_interface_stream.setRX(constants::serial_rx_pin);
