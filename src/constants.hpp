@@ -17,6 +17,7 @@ constexpr uint32_t cluster_timer_frequency_hz = 10;
 // Prism
 constexpr uint32_t home_delay_s = 2;
 constexpr uint32_t home_delay_count = cluster_timer_frequency_hz * home_delay_s;
+constexpr int16_t unhomed_position = -1;
 
 // Serial Communication Interface
 constexpr uint32_t serial_timer_delay_s = 1;

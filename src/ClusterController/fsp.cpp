@@ -203,7 +203,20 @@ void FSP::Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e)
     QS_OBJ_DICTIONARY(&Prism::instances[6]);
   }
   // local signals
+  QS_SIG_DICTIONARY(RESET_SIG, hsm);
   QS_SIG_DICTIONARY(POWER_ON_SIG, hsm);
+  QS_SIG_DICTIONARY(POWER_OFF_SIG, hsm);
+  QS_SIG_DICTIONARY(CLUSTER_TIMEOUT_SIG, hsm);
+  QS_SIG_DICTIONARY(HOME_SIG, hsm);
+  QS_SIG_DICTIONARY(HOMED_SIG, hsm);
+  QS_SIG_DICTIONARY(WRITE_TARGET_POSITION_SIG, hsm);
+  QS_SIG_DICTIONARY(PAUSE_SIG, hsm);
+  QS_SIG_DICTIONARY(RESUME_SIG, hsm);
+
+  // setup prism even though power is off
+  // so BSP calls to prism will not fail
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  BSP::setupPrism(prism->prism_address_);
 
   (void)e; // unused parameter
 }
