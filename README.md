@@ -1,16 +1,16 @@
-- [Library Information](#org7e622e9)
-- [Host Computer Setup](#org02eb969)
+- [Library Information](#orge63bee0)
+- [Host Computer Setup](#org84df3aa)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org7e622e9"></a>
+<a id="orge63bee0"></a>
 
 # Library Information
 
 -   **Name:** ClusterController
--   **Version:** 2.0.1
+-   **Version:** 2.1.0
 -   **License:** BSD
 -   **URL:** <https://github.com/janelia-arduino/ClusterController>
 -   **Author:** Peter Polidoro
@@ -49,7 +49,7 @@ Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 | read-all-actual-positions  | '<BBB'         | 3              | 0x11           |                            | '<BBBhhhhhhh'   | 17              | -1..32767[prism-count] |
 
 
-<a id="org02eb969"></a>
+<a id="org84df3aa"></a>
 
 # Host Computer Setup
 
