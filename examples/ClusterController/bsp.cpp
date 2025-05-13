@@ -90,8 +90,8 @@ const tmc51x0::HomeParameters home_parameters_real =
 {
   .run_current = 50, // (percent)
   .hold_current = 20, // (percent)
-  .target_position = -1000, // (millimeters)
-  .velocity = 20, // (millimeters/s)
+  .target_position = -750, // (millimeters)
+  .velocity = 50, // (millimeters/s)
   .acceleration = 2, // ((millimeters/s)/s)
   .zero_wait_duration = 100 // (milliseconds)
 };
