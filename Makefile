@@ -2,13 +2,29 @@
 clean:
 	rm -rf .pio
 
-.PHONY: pico-firmware
-pico-firmware: clean
+.PHONY: firmware
+firmware:
 	pio run -e pico
 
-.PHONY: pico-upload
-pico-upload: clean
+.PHONY: firmware-clean
+firmware-clean: clean
+	pio run -e pico
+
+.PHONY: upload
+upload:
 	pio run -e pico --target upload
+
+.PHONY: upload-clean
+upload-clean: clean
+	pio run -e pico --target upload
+
+PORTS := $(wildcard /dev/ttyACM*)
+.PHONY: upload-all
+upload-all:
+	@for port in $(PORTS); do \
+		echo "Uploading to $$port"; \
+		pio run -e pico --target upload; \
+	done
 
 .PHONY: monitor
 monitor:
