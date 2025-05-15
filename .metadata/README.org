@@ -12,7 +12,7 @@
 
 * Library Information
 - Name :: ClusterController
-- Version :: 2.2.0
+- Version :: 3.0.0
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/ClusterController
 - Author :: Peter Polidoro
@@ -23,31 +23,32 @@
 
 Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 
-- protocol-version = 0x02
+- protocol-version = 0x03
 - prism-count = 7
 - command = protocol-version command-length command-number command-parameters
 - response = protocol-version response-length command-number response-parameters
 
-| command-name               | command-format | command-length | command-number | command-parameters         | response-format | response-length | response-parameters    |
-|----------------------------+----------------+----------------+----------------+----------------------------+-----------------+-----------------+------------------------|
-| invalid-command            |                |                |                |                            | '<BBB'          |               3 | 0xEE                   |
-| read-cluster-address       | '<BBB'         |              3 |           0x01 |                            | '<BBBB'         |               4 | 0x00..0xFF             |
-| check-communication        | '<BBB'         |              3 |           0x02 |                            | '<BBBL'         |               7 | 0x12345678             |
-| reset                      | '<BBB'         |              3 |           0x03 |                            | '<BBB'          |               3 |                        |
-| beep                       | '<BBBH'        |              5 |           0x04 | duration-ms                | '<BBB'          |               3 |                        |
-| led-off                    | '<BBB'         |              3 |           0x05 |                            | '<BBB'          |               3 |                        |
-| led-on                     | '<BBB'         |              3 |           0x06 |                            | '<BBB'          |               3 |                        |
-| power-off-all              | '<BBB'         |              3 |           0x07 |                            | '<BBB'          |               3 |                        |
-| power-on-all               | '<BBB'         |              3 |           0x08 |                            | '<BBB'          |               3 |                        |
-| home                       | '<BBBB'        |              4 |           0x09 | prism-address              | '<BBBB'         |               4 | prism-address          |
-| home-all                   | '<BBB'         |              3 |           0x0A |                            | '<BBB'          |               3 |                        |
-| write-target-position      | '<BBBBH'       |              6 |           0x0B | prism-address, position-mm | '<BBBB'         |               4 | prism-address          |
-| write-all-target-positions | '<BBBHHHHHHH'  |             17 |           0x0C | position-mm[prism-count]   | '<BBB'          |               3 |                        |
-| pause                      | '<BBBB'        |              4 |           0x0D | prism-address              | '<BBBB'         |               4 | prism-address          |
-| pause-all                  | '<BBB'         |              3 |           0x0E |                            | '<BBB'          |               3 |                        |
-| resume                     | '<BBBB'        |              4 |           0x0F | prism-address              | '<BBBB'         |               4 | prism-address          |
-| resume-all                 | '<BBB'         |              3 |           0x10 |                            | '<BBB'          |               3 |                        |
-| read-all-actual-positions  | '<BBB'         |              3 |           0x11 |                            | '<BBBhhhhhhh'   |              17 | -1..32767[prism-count] |
+| command-name               | command-format | command-length | command-number | command-parameters                              | response-format | response-length | response-parameters    |
+|----------------------------+----------------+----------------+----------------+-------------------------------------------------+-----------------+-----------------+------------------------|
+| invalid-command            |                |                |                |                                                 | '<BBB'          |               3 | 0xEE                   |
+| read-cluster-address       | '<BBB'         |              3 |           0x01 |                                                 | '<BBBB'         |               4 | 0x00..0xFF             |
+| check-communication        | '<BBB'         |              3 |           0x02 |                                                 | '<BBBL'         |               7 | 0x12345678             |
+| reset                      | '<BBB'         |              3 |           0x03 |                                                 | '<BBB'          |               3 |                        |
+| beep                       | '<BBBH'        |              5 |           0x04 | duration-ms                                     | '<BBB'          |               3 |                        |
+| led-off                    | '<BBB'         |              3 |           0x05 |                                                 | '<BBB'          |               3 |                        |
+| led-on                     | '<BBB'         |              3 |           0x06 |                                                 | '<BBB'          |               3 |                        |
+| power-off-all              | '<BBB'         |              3 |           0x07 |                                                 | '<BBB'          |               3 |                        |
+| power-on-all               | '<BBB'         |              3 |           0x08 |                                                 | '<BBB'          |               3 |                        |
+| home                       | '<BBBBHb'      |              7 |           0x09 | prism-address, travel-limit-mm, stall-threshold | '<BBBB'         |               4 | prism-address          |
+| home-all                   | '<BBBHb'       |              6 |           0x0A | travel-limit-mm, stall-threshold                | '<BBB'          |               3 |                        |
+| all-homed                  | '<BBB'         |              3 |           0x0B |                                                 |                 |                 |                        |
+| write-target-position      | '<BBBBH'       |              6 |           0x0C | prism-address, position-mm                      | '<BBBB'         |               4 | prism-address          |
+| write-all-target-positions | '<BBBHHHHHHH'  |             17 |           0x0D | position-mm[prism-count]                        | '<BBB'          |               3 |                        |
+| pause                      | '<BBBB'        |              4 |           0x0E | prism-address                                   | '<BBBB'         |               4 | prism-address          |
+| pause-all                  | '<BBB'         |              3 |           0x0F |                                                 | '<BBB'          |               3 |                        |
+| resume                     | '<BBBB'        |              4 |           0x10 | prism-address                                   | '<BBBB'         |               4 | prism-address          |
+| resume-all                 | '<BBB'         |              3 |           0x11 |                                                 | '<BBB'          |               3 |                        |
+| read-all-actual-positions  | '<BBB'         |              3 |           0x12 |                                                 | '<BBBhhhhhhh'   |              17 | -1..32767[prism-count] |
 
 * Host Computer Setup
 

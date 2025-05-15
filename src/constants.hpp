@@ -32,7 +32,7 @@ constexpr uint8_t mac_address_size = 6;
 constexpr uint32_t ethernet_server_port = 7777;
 
 // Protocol
-constexpr uint8_t protocol_version = 0x02;
+constexpr uint8_t protocol_version = 0x03;
 constexpr uint8_t command_length_min = 3;
 constexpr uint8_t response_length_index = 1;
 constexpr uint8_t response_header_size = 3;
