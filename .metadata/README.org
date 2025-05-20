@@ -39,8 +39,8 @@ Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 | led-on-cluster             | '<BBB'         |              3 |           0x06 |                                                        | '<BBB'          |               3 |                        |
 | power-off-cluster          | '<BBB'         |              3 |           0x07 |                                                        | '<BBB'          |               3 |                        |
 | power-on-cluster           | '<BBB'         |              3 |           0x08 |                                                        | '<BBB'          |               3 |                        |
-| home-prism                 | '<BBBBBHb'     |              8 |           0x09 | prism-address, speed, travel-limit-mm, stall-threshold | '<BBBB'         |               4 | prism-address          |
-| home-cluster               | '<BBBBHb'      |              7 |           0x0A | speed, travel-limit-mm, stall-threshold                | '<BBB'          |               3 |                        |
+| home-prism                 | '<BBBBBHb'     |              8 |           0x09 | prism-address, travel-limit-mm, speed, stall-threshold | '<BBBB'         |               4 | prism-address          |
+| home-cluster               | '<BBBBHb'      |              7 |           0x0A | travel-limit-mm, speed, stall-threshold                | '<BBB'          |               3 |                        |
 | homed-cluster              | '<BBB'         |              3 |           0x0B |                                                        | '<BBBBBBBBBB'   |              10 | 0..1[prism-count]      |
 | write-target-prism         | '<BBBBH'       |              6 |           0x0C | prism-address, position-mm                             | '<BBBB'         |               4 | prism-address          |
 | write-targets-cluster      | '<BBBHHHHHHH'  |             17 |           0x0D | position-mm[prism-count]                               | '<BBB'          |               3 |                        |
