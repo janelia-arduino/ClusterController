@@ -37,6 +37,9 @@ private:
     std::uint32_t delay_count_;
 
 public:
+    std::uint8_t homed_;
+
+public:
     Prism()
       : QHsm(&initial)
     {}

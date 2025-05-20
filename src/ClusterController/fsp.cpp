@@ -28,7 +28,7 @@ static QEvt const ethernetServerConnectedEvt = {ETHERNET_SERVER_CONNECTED_SIG, 0
 void FSP::ClusterController_setup()
 {
   static QF_MPOOL_EL(QP::QEvt) smlPoolSto[4*constants::prism_count_max + 10];
-  static QF_MPOOL_EL(CC::PrismCommandEvt) medPoolSto[4*constants::prism_count_max + 10];
+  static QF_MPOOL_EL(PrismCommandEvt) medPoolSto[4*constants::prism_count_max + 10];
 
   QF::init(); // initialize the framework
 
@@ -41,20 +41,20 @@ void FSP::ClusterController_setup()
   QP::QF::poolInit(medPoolSto, sizeof(medPoolSto), sizeof(medPoolSto[0]));
 
   // object dictionaries for AOs...
-  QS_OBJ_DICTIONARY(CC::AO_Cluster);
-  QS_OBJ_DICTIONARY(CC::AO_SerialCommandInterface);
-  QS_OBJ_DICTIONARY(CC::AO_EthernetCommandInterface);
-  QS_OBJ_DICTIONARY(CC::AO_Watchdog);
+  QS_OBJ_DICTIONARY(AO_Cluster);
+  QS_OBJ_DICTIONARY(AO_SerialCommandInterface);
+  QS_OBJ_DICTIONARY(AO_EthernetCommandInterface);
+  QS_OBJ_DICTIONARY(AO_Watchdog);
 
   QS_OBJ_DICTIONARY(&l_FSP_ID);
 
   // signal dictionaries for globally published events...
-  QS_SIG_DICTIONARY(CC::RESET_SIG, nullptr);
-  QS_SIG_DICTIONARY(CC::POWER_ON_SIG, nullptr);
-  QS_SIG_DICTIONARY(CC::POWER_OFF_SIG, nullptr);
-  QS_SIG_DICTIONARY(CC::SERIAL_COMMAND_AVAILABLE_SIG, nullptr);
-  QS_SIG_DICTIONARY(CC::ETHERNET_COMMAND_AVAILABLE_SIG, nullptr);
-  QS_SIG_DICTIONARY(CC::COMMAND_PROCESSED_SIG, nullptr);
+  QS_SIG_DICTIONARY(RESET_SIG, nullptr);
+  QS_SIG_DICTIONARY(POWER_ON_SIG, nullptr);
+  QS_SIG_DICTIONARY(POWER_OFF_SIG, nullptr);
+  QS_SIG_DICTIONARY(SERIAL_COMMAND_AVAILABLE_SIG, nullptr);
+  QS_SIG_DICTIONARY(ETHERNET_COMMAND_AVAILABLE_SIG, nullptr);
+  QS_SIG_DICTIONARY(COMMAND_PROCESSED_SIG, nullptr);
 
   // user record dictionaries
   QS_USR_DICTIONARY(ETHERNET_LOG);
@@ -217,6 +217,7 @@ void FSP::Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e)
   // so BSP calls to prism will not fail
   Prism * const prism = static_cast<Prism * const>(hsm);
   BSP::setupPrism(prism->prism_address_);
+  prism->homed_ = false;
 
   (void)e; // unused parameter
 }
@@ -286,13 +287,21 @@ bool FSP::Prism_homed(QP::QHsm * const hsm, QP::QEvt const * e)
   return homed;
 }
 
-void FSP::Prism_recordHomed(QP::QHsm * const hsm, QP::QEvt const * e)
+void FSP::Prism_enterHomed(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
+  prism->homed_ = true;
   QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
     QS_STR("prism homed");
     QS_U8(0, prism->prism_address_);
   QS_END()
+}
+
+void FSP::Prism_exitHomed(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  prism->homed_ = false;
+  Prism_resume(hsm, e);
 }
 
 void FSP::Prism_writeTargetPosition(QP::QHsm * const hsm, QP::QEvt const * e)
@@ -360,7 +369,7 @@ void FSP::SerialCommandInterface_beginSerial(QActive * const ao, QEvt const * e)
   bool serial_ready = BSP::beginSerial();
   if (serial_ready)
   {
-    CC::AO_SerialCommandInterface->POST(&serialReadyEvt, &l_FSP_ID);
+    AO_SerialCommandInterface->POST(&serialReadyEvt, &l_FSP_ID);
   }
 }
 
@@ -605,49 +614,49 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       response[response_byte_count++] = BSP::readClusterAddress();
       break;
     }
-    case CHECK_COMMUNICATION_CMD:
+    case COMMUNICATING_CLUSTER_CMD:
     {
       uint8_t * response_ptr = response + constants::response_header_size;
       memcpy(response_ptr, &constants::check_communication_response, sizeof(constants::check_communication_response));
       response_byte_count += sizeof(constants::check_communication_response);
       break;
     }
-    case RESET_CMD:
+    case RESET_CLUSTER_CMD:
     {
       CommandEvt *cev = Q_NEW(CommandEvt, RESET_SIG);
       QF::PUBLISH(cev, &l_FSP_ID);
       break;
     }
-    case BEEP_CMD:
+    case BEEP_CLUSTER_CMD:
     {
       uint16_t duration_ms;
       memcpy(&duration_ms, command_buffer + command_buffer_position, sizeof(duration_ms));
       BSP::beep(duration_ms);
       break;
     }
-    case LED_OFF_CMD:
+    case LED_OFF_CLUSTER_CMD:
     {
       BSP::ledOff();
       break;
     }
-    case LED_ON_CMD:
+    case LED_ON_CLUSTER_CMD:
     {
       BSP::ledOn();
       break;
     }
-    case POWER_OFF_ALL_CMD:
+    case POWER_OFF_CLUSTER_CMD:
     {
       CommandEvt *cev = Q_NEW(CommandEvt, POWER_OFF_SIG);
       AO_Cluster->POST(cev, &l_FSP_ID);
       break;
     }
-    case POWER_ON_ALL_CMD:
+    case POWER_ON_CLUSTER_CMD:
     {
       CommandEvt *cev = Q_NEW(CommandEvt, POWER_ON_SIG);
       AO_Cluster->POST(cev, &l_FSP_ID);
       break;
     }
-    case HOME_CMD:
+    case HOME_PRISM_CMD:
     {
       uint8_t prism_address;
       memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
@@ -657,13 +666,29 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       AO_Cluster->POST(pcev, &l_FSP_ID);
       break;
     }
-    case HOME_ALL_CMD:
+    case HOME_CLUSTER_CMD:
     {
       for (uint8_t n = 0; n < constants::prism_count_max; ++n)
       {
         PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
         pcev->prism_address = n;
         AO_Cluster->POST(pcev, &l_FSP_ID);
+      }
+      break;
+    }
+    case HOMED_CLUSTER_CMD:
+    {
+      uint8_t prism_homed;
+      uint8_t * response_ptr = response + constants::response_header_size;
+
+      Cluster * const cluster = static_cast<Cluster * const>(AO_Cluster);
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        Prism * const prism = static_cast<Prism * const>(cluster->prisms_[n]);
+        prism_homed = prism->homed_;
+        memcpy(response_ptr, &prism_homed, sizeof(prism_homed));
+        response_byte_count += sizeof(prism_homed);
+        response_ptr += sizeof(prism_homed);
       }
       break;
     }

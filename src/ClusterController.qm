@@ -419,6 +419,7 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
    <attribute name="instances[constants::prism_count_max]" type="Prism" visibility="0x00" properties="0x01"/>
    <attribute name="prism_address_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <attribute name="delay_count_" type="std::uint32_t" visibility="0x02" properties="0x00"/>
+   <attribute name="homed_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <operation name="Prism" type="" visibility="0x00" properties="0x02">
     <code>  : QHsm(&amp;initial)</code>
    </operation>
@@ -522,8 +523,8 @@ delay_count_ = 0;</entry>
        </state_glyph>
       </state>
       <state name="Homed">
-       <entry brief="recordHomed()">FSP::Prism_recordHomed(this, e);</entry>
-       <exit brief="resume()">FSP::Prism_resume(this, e);</exit>
+       <entry brief="enterHomed()">FSP::Prism_enterHomed(this, e);</entry>
+       <exit brief="exitHomed()">FSP::Prism_exitHomed(this, e);</exit>
        <tran trig="HOME" target="../../2">
         <tran_glyph conn="52,62,0,2,-4">
          <action box="1,-3,12,2"/>

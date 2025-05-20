@@ -219,13 +219,13 @@ Q_STATE_DEF(Prism, Homed) {
     switch (e->sig) {
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed}
         case Q_ENTRY_SIG: {
-            FSP::Prism_recordHomed(this, e);
+            FSP::Prism_enterHomed(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed}
         case Q_EXIT_SIG: {
-            FSP::Prism_resume(this, e);
+            FSP::Prism_exitHomed(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
