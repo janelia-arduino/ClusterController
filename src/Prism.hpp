@@ -32,11 +32,7 @@ class Prism : public QP::QHsm {
 public:
     static Prism instances[constants::prism_count_max];
     std::uint8_t prism_address_;
-
-private:
     std::uint32_t delay_count_;
-
-public:
     std::uint8_t homed_;
 
 public:

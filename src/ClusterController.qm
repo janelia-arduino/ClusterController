@@ -418,7 +418,7 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
   <class name="Prism" superclass="qpcpp::QHsm">
    <attribute name="instances[constants::prism_count_max]" type="Prism" visibility="0x00" properties="0x01"/>
    <attribute name="prism_address_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
-   <attribute name="delay_count_" type="std::uint32_t" visibility="0x02" properties="0x00"/>
+   <attribute name="delay_count_" type="std::uint32_t" visibility="0x00" properties="0x00"/>
    <attribute name="homed_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <operation name="Prism" type="" visibility="0x00" properties="0x02">
     <code>  : QHsm(&amp;initial)</code>
@@ -490,21 +490,21 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
       </initial>
       <state name="Enabled">
        <tran trig="HOME" target="../../2">
+        <action brief="beginHome()">FSP::Prism_beginHome(this, e);</action>
         <tran_glyph conn="35,40,2,0,4">
-         <action box="1,0,12,2"/>
+         <action box="1,1,18,2"/>
         </tran_glyph>
        </tran>
        <state_glyph node="33,34,29,6"/>
       </state>
       <state name="Homing">
-       <entry brief="beginHome()">FSP::Prism_beginHome(this, e);
-delay_count_ = 0;</entry>
+       <entry brief="initializeDelay()">FSP::Prism_initializeDelay(this, e);</entry>
        <exit brief="endHome()">FSP::Prism_endHome(this, e);</exit>
        <tran trig="CLUSTER_TIMEOUT">
         <choice>
-         <guard brief="delay">(delay_count_++ &gt;= constants::home_delay_count)</guard>
+         <guard brief="delayComplete">FSP::Prism_delayComplete(this, e)</guard>
          <action brief="homed()">FSP::Prism_homed(this, e);</action>
-         <choice_glyph conn="52,52,5,-1,9">
+         <choice_glyph conn="52,52,5,-1,14">
           <action box="1,-2,11,5"/>
          </choice_glyph>
         </choice>
@@ -518,7 +518,7 @@ delay_count_ = 0;</entry>
         </tran_glyph>
        </tran>
        <state_glyph node="33,44,45,14">
-        <entry box="1,2,14,2"/>
+        <entry box="1,2,20,2"/>
         <exit box="1,4,15,2"/>
        </state_glyph>
       </state>
@@ -526,8 +526,9 @@ delay_count_ = 0;</entry>
        <entry brief="enterHomed()">FSP::Prism_enterHomed(this, e);</entry>
        <exit brief="exitHomed()">FSP::Prism_exitHomed(this, e);</exit>
        <tran trig="HOME" target="../../2">
+        <action brief="beginHome()">FSP::Prism_beginHome(this, e);</action>
         <tran_glyph conn="52,62,0,2,-4">
-         <action box="1,-3,12,2"/>
+         <action box="1,-3,18,3"/>
         </tran_glyph>
        </tran>
        <tran trig="WRITE_TARGET_POSITION">
@@ -578,7 +579,9 @@ delay_count_ = 0;</entry>
   </class>
   <class name="PrismCommandEvt" superclass="qpcpp::QEvt">
    <attribute name="prism_address" type="std::uint8_t" visibility="0x00" properties="0x00"/>
-   <attribute name="position_mm" type="std::uint16_t" visibility="0x00" properties="0x00"/>
+   <attribute name="position" type="std::uint16_t" visibility="0x00" properties="0x00"/>
+   <attribute name="speed" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="stall_threshold" type="std::int8_t" visibility="0x00" properties="0x00"/>
   </class>
   <attribute name="AO_Cluster" type="QP::QActive * const" visibility="0x00" properties="0x00">
    <code>= &amp;Cluster::instance;</code>

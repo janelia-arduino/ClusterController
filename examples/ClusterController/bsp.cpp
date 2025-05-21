@@ -59,17 +59,16 @@ const tmc51x0::ConverterParameters converter_parameters =
 
 const tmc51x0::DriverParameters driver_parameters_real =
 {
-  .global_current_scaler = 50, // (percent)
-  .run_current = 50, // (percent)
+  .run_current = 75, // (percent)
   .hold_current = 0, // (percent)
   .hold_delay = 0, // (percent)
-  .pwm_offset = 15, // (percent)
-  .pwm_gradient = 5, // (percent)
+  .pwm_offset = 25, // (percent)
+  .pwm_gradient = 15, // (percent)
   .motor_direction = tmc51x0::ForwardDirection,
   .standstill_mode = tmc51x0::PassiveBrakingLsMode,
   .stealth_chop_threshold = 10, // (millimeters/s)
   .cool_step_threshold = 50, // (millimeters/s)
-  .cool_step_enabled = true,
+  .cool_step_enabled = false,
   .stall_guard_threshold = 1,
 };
 
@@ -86,7 +85,7 @@ const tmc51x0::ControllerParameters controller_parameters_real =
   .first_deceleration = 25, // ((millimeters/s)/s)
 };
 
-const tmc51x0::HomeParameters home_parameters_real =
+const tmc51x0::HomeParameters home_parameters_base_real =
 {
   .run_current = 50, // (percent)
   .hold_current = 20, // (percent)
@@ -96,7 +95,7 @@ const tmc51x0::HomeParameters home_parameters_real =
   .zero_wait_duration = 100 // (milliseconds)
 };
 
-const tmc51x0::StallParameters stall_parameters_real =
+const tmc51x0::StallParameters stall_parameters_base_real =
 {
   .stall_guard_threshold = 10,
   .cool_step_threshold = 15 // (millimeters/s)
@@ -153,8 +152,6 @@ SPIClassRP2040 & prism_spi = SPI1;
 TMC51X0 prisms[constants::prism_count];
 tmc51x0::DriverParameters driver_parameters_chip;
 tmc51x0::ControllerParameters controller_parameters_chip;
-tmc51x0::HomeParameters home_parameters_chip;
-tmc51x0::StallParameters stall_parameters_chip;
 
 //----------------------------------------------------------------------------
 // Local functions
@@ -337,19 +334,28 @@ void BSP::setupParametersAndEnable(uint8_t prism_address)
   controller_parameters_chip = prism.converter.controllerParametersRealToChip(constants::controller_parameters_real);
   prism.controller.setup(controller_parameters_chip);
 
-  home_parameters_chip = prism.converter.homeParametersRealToChip(constants::home_parameters_real);
-  stall_parameters_chip = prism.converter.stallParametersRealToChip(constants::stall_parameters_real);
-
   prism.driver.enable();
 }
 
-void BSP::beginHome(uint8_t prism_address)
+void BSP::beginHome(uint8_t prism_address, int16_t travel_limit, uint8_t speed, int8_t stall_threshold)
 {
   if (prism_address >= constants::prism_count)
   {
     return;
   }
   TMC51X0 & prism = prisms[prism_address];
+
+  tmc51x0::HomeParameters home_parameters_real = constants::home_parameters_base_real;
+  home_parameters_real.target_position = -1 * travel_limit;
+  home_parameters_real.velocity = speed;
+
+  tmc51x0::StallParameters stall_parameters_real = constants::stall_parameters_base_real;
+  stall_parameters_real.stall_guard_threshold = stall_threshold;
+  stall_parameters_real.cool_step_threshold = speed / 2;
+
+  tmc51x0::HomeParameters home_parameters_chip = prism.converter.homeParametersRealToChip(home_parameters_real);
+  tmc51x0::StallParameters stall_parameters_chip = prism.converter.stallParametersRealToChip(stall_parameters_real);
+
   prism.beginHomeToStall(home_parameters_chip, stall_parameters_chip);
 }
 

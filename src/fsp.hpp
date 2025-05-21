@@ -38,6 +38,8 @@ struct FSP
   static void Prism_setupParametersAndEnable(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_recordDisconnected(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_recordSetupAndCommunicating(QP::QHsm * const hsm, QP::QEvt const * e);
+  static void Prism_initializeDelay(QP::QHsm * const hsm, QP::QEvt const * e);
+  static bool Prism_delayComplete(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_beginHome(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_endHome(QP::QHsm * const hsm, QP::QEvt const * e);
   static bool Prism_homed(QP::QHsm * const hsm, QP::QEvt const * e);

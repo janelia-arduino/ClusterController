@@ -162,6 +162,7 @@ Q_STATE_DEF(Prism, Enabled) {
     switch (e->sig) {
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Enabled::HOME}
         case HOME_SIG: {
+            FSP::Prism_beginHome(this, e);
             status_ = tran(&Homing);
             break;
         }
@@ -178,8 +179,7 @@ Q_STATE_DEF(Prism, Homing) {
     switch (e->sig) {
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing}
         case Q_ENTRY_SIG: {
-            FSP::Prism_beginHome(this, e);
-            delay_count_ = 0;
+            FSP::Prism_initializeDelay(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }
@@ -191,8 +191,8 @@ Q_STATE_DEF(Prism, Homing) {
         }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::CLUSTER_TIMEOUT}
         case CLUSTER_TIMEOUT_SIG: {
-            //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::CLUSTER_TIMEOUT::[delay]}
-            if ((delay_count_++ >= constants::home_delay_count)) {
+            //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homing::CLUSTER_TIMEOUT::[delayComplete]}
+            if (FSP::Prism_delayComplete(this, e)) {
                 FSP::Prism_homed(this, e);
                 status_ = Q_RET_HANDLED;
             }
@@ -231,6 +231,7 @@ Q_STATE_DEF(Prism, Homed) {
         }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::HOME}
         case HOME_SIG: {
+            FSP::Prism_beginHome(this, e);
             status_ = tran(&Homing);
             break;
         }
