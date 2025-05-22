@@ -47,6 +47,7 @@ public:
     std::uint8_t prism_address;
     std::uint16_t position;
     std::uint8_t speed;
+    std::uint8_t run_current;
     std::int8_t stall_threshold;
 };
 extern QP::QActive * const AO_Cluster;

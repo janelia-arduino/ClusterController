@@ -66,10 +66,7 @@ const tmc51x0::DriverParameters driver_parameters_real =
   .pwm_gradient = 15, // (percent)
   .motor_direction = tmc51x0::ForwardDirection,
   .standstill_mode = tmc51x0::PassiveBrakingLsMode,
-  .stealth_chop_threshold = 10, // (millimeters/s)
-  .cool_step_threshold = 50, // (millimeters/s)
-  .cool_step_enabled = false,
-  .stall_guard_threshold = 1,
+  .stealth_chop_threshold = 250, // (millimeters/s)
 };
 
 const tmc51x0::ControllerParameters controller_parameters_real =
@@ -337,7 +334,7 @@ void BSP::setupParametersAndEnable(uint8_t prism_address)
   prism.driver.enable();
 }
 
-void BSP::beginHome(uint8_t prism_address, int16_t travel_limit, uint8_t speed, int8_t stall_threshold)
+void BSP::beginHome(uint8_t prism_address, int16_t travel_limit, uint8_t speed, uint8_t run_current, int8_t stall_threshold)
 {
   if (prism_address >= constants::prism_count)
   {
@@ -346,6 +343,7 @@ void BSP::beginHome(uint8_t prism_address, int16_t travel_limit, uint8_t speed, 
   TMC51X0 & prism = prisms[prism_address];
 
   tmc51x0::HomeParameters home_parameters_real = constants::home_parameters_base_real;
+  home_parameters_real.run_current = run_current;
   home_parameters_real.target_position = -1 * travel_limit;
   home_parameters_real.velocity = speed;
 

@@ -23,7 +23,7 @@ public:
   static void setupPrism(uint8_t prism_address);
   static bool communicating(uint8_t prism_address);
   static void setupParametersAndEnable(uint8_t prism_address);
-  static void beginHome(uint8_t prism_address, int16_t travel_limit, uint8_t speed, int8_t stall_threshold);
+  static void beginHome(uint8_t prism_address, int16_t travel_limit, uint8_t speed, uint8_t run_current, int8_t stall_threshold);
   static void endHome(uint8_t prism_address);
   static bool homed(uint8_t prism_address);
   static void writeTargetPosition(uint8_t prism_address, uint16_t position_mm);

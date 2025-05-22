@@ -274,12 +274,13 @@ void FSP::Prism_beginHome(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
   PrismCommandEvt const * pce = static_cast<PrismCommandEvt const *>(e);
-  BSP::beginHome(prism->prism_address_, pce->position, pce->speed, pce->stall_threshold);
+  BSP::beginHome(prism->prism_address_, pce->position, pce->speed, pce->run_current, pce->stall_threshold);
   QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
     QS_STR("prism homing");
     QS_U8(0, prism->prism_address_);
     QS_U16(5, pce->position);
     QS_U8(0, pce->speed);
+    QS_U8(0, pce->run_current);
     QS_U8(0, pce->stall_threshold);
   QS_END()
 }
@@ -707,6 +708,9 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       uint8_t speed;
       memcpy(&speed, command_buffer + command_buffer_position, sizeof(speed));
       command_buffer_position += sizeof(speed);
+      uint8_t run_current;
+      memcpy(&run_current, command_buffer + command_buffer_position, sizeof(run_current));
+      command_buffer_position += sizeof(run_current);
       int8_t stall_threshold;
       memcpy(&stall_threshold, command_buffer + command_buffer_position, sizeof(stall_threshold));
 
@@ -714,6 +718,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       pcev->prism_address = prism_address;
       pcev->position = travel_limit;
       pcev->speed = speed;
+      pcev->run_current = run_current;
       pcev->stall_threshold = stall_threshold;
       AO_Cluster->POST(pcev, &l_FSP_ID);
       QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
@@ -723,10 +728,26 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
     }
     case HOME_CLUSTER_CMD:
     {
+      uint16_t travel_limit;
+      memcpy(&travel_limit, command_buffer + command_buffer_position, sizeof(travel_limit));
+      command_buffer_position += sizeof(travel_limit);
+      uint8_t speed;
+      memcpy(&speed, command_buffer + command_buffer_position, sizeof(speed));
+      command_buffer_position += sizeof(speed);
+      uint8_t run_current;
+      memcpy(&run_current, command_buffer + command_buffer_position, sizeof(run_current));
+      command_buffer_position += sizeof(run_current);
+      int8_t stall_threshold;
+      memcpy(&stall_threshold, command_buffer + command_buffer_position, sizeof(stall_threshold));
+
       for (uint8_t n = 0; n < constants::prism_count_max; ++n)
       {
         PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, HOME_SIG);
         pcev->prism_address = n;
+        pcev->position = travel_limit;
+        pcev->speed = speed;
+        pcev->run_current = run_current;
+        pcev->stall_threshold = stall_threshold;
         AO_Cluster->POST(pcev, &l_FSP_ID);
       }
       QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
@@ -753,7 +774,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       QS_END()
       break;
     }
-    case WRITE_TARGET_POSITION_CMD:
+    case WRITE_TARGET_PRISM_CMD:
     {
       uint8_t prism_address;
       memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
@@ -770,7 +791,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       QS_END()
       break;
     }
-    case WRITE_ALL_TARGET_POSITIONS_CMD:
+    case WRITE_TARGETS_CLUSTER_CMD:
     {
       uint16_t position;
       for (uint8_t n = 0; n < constants::prism_count_max; ++n)
@@ -788,7 +809,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       QS_END()
       break;
     }
-    case PAUSE_CMD:
+    case PAUSE_PRISM_CMD:
     {
       uint8_t prism_address;
       memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
@@ -801,7 +822,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       QS_END()
       break;
     }
-    case PAUSE_ALL_CMD:
+    case PAUSE_CLUSTER_CMD:
     {
       for (uint8_t n = 0; n < constants::prism_count_max; ++n)
       {
@@ -814,7 +835,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       QS_END()
       break;
     }
-    case RESUME_CMD:
+    case RESUME_PRISM_CMD:
     {
       uint8_t prism_address;
       memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
@@ -827,7 +848,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       QS_END()
       break;
     }
-    case RESUME_ALL_CMD:
+    case RESUME_CLUSTER_CMD:
     {
       for (uint8_t n = 0; n < constants::prism_count_max; ++n)
       {
@@ -840,7 +861,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       QS_END()
       break;
     }
-    case READ_ALL_ACTUAL_POSITIONS_CMD:
+    case READ_POSITIONS_CLUSTER_CMD:
     {
       int16_t position;
       uint8_t * response_ptr = response + constants::response_header_size;
@@ -852,7 +873,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
         response_ptr += sizeof(position);
       }
       QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
-        QS_STR("read-all-actual-positions command");
+        QS_STR("read-positions-cluster command");
       QS_END()
       break;
     }
