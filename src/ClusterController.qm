@@ -581,7 +581,7 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
    <attribute name="prism_address" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <attribute name="position" type="std::uint16_t" visibility="0x00" properties="0x00"/>
    <attribute name="speed" type="std::uint8_t" visibility="0x00" properties="0x00"/>
-   <attribute name="run_current" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="current" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <attribute name="stall_threshold" type="std::int8_t" visibility="0x00" properties="0x00"/>
   </class>
   <attribute name="AO_Cluster" type="QP::QActive * const" visibility="0x00" properties="0x00">

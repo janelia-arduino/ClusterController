@@ -30,6 +30,8 @@ public:
   static void pause(uint8_t prism_address);
   static void resume(uint8_t prism_address);
   static int16_t readActualPosition(uint8_t prism_address);
+  static void writeMaxVelocity(uint8_t prism_address, uint8_t speed_mm_per_s);
+  static void writeRunCurrent(uint8_t prism_address, uint8_t run_current_percent);
 
   static bool beginSerial();
   static bool pollSerialCommand();

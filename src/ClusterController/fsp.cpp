@@ -274,13 +274,13 @@ void FSP::Prism_beginHome(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
   PrismCommandEvt const * pce = static_cast<PrismCommandEvt const *>(e);
-  BSP::beginHome(prism->prism_address_, pce->position, pce->speed, pce->run_current, pce->stall_threshold);
+  BSP::beginHome(prism->prism_address_, pce->position, pce->speed, pce->current, pce->stall_threshold);
   QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
     QS_STR("prism homing");
     QS_U8(0, prism->prism_address_);
     QS_U16(5, pce->position);
     QS_U8(0, pce->speed);
-    QS_U8(0, pce->run_current);
+    QS_U8(0, pce->current);
     QS_U8(0, pce->stall_threshold);
   QS_END()
 }
@@ -708,9 +708,9 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       uint8_t speed;
       memcpy(&speed, command_buffer + command_buffer_position, sizeof(speed));
       command_buffer_position += sizeof(speed);
-      uint8_t run_current;
-      memcpy(&run_current, command_buffer + command_buffer_position, sizeof(run_current));
-      command_buffer_position += sizeof(run_current);
+      uint8_t current;
+      memcpy(&current, command_buffer + command_buffer_position, sizeof(current));
+      command_buffer_position += sizeof(current);
       int8_t stall_threshold;
       memcpy(&stall_threshold, command_buffer + command_buffer_position, sizeof(stall_threshold));
 
@@ -718,7 +718,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       pcev->prism_address = prism_address;
       pcev->position = travel_limit;
       pcev->speed = speed;
-      pcev->run_current = run_current;
+      pcev->current = current;
       pcev->stall_threshold = stall_threshold;
       AO_Cluster->POST(pcev, &l_FSP_ID);
       QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
@@ -734,9 +734,9 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       uint8_t speed;
       memcpy(&speed, command_buffer + command_buffer_position, sizeof(speed));
       command_buffer_position += sizeof(speed);
-      uint8_t run_current;
-      memcpy(&run_current, command_buffer + command_buffer_position, sizeof(run_current));
-      command_buffer_position += sizeof(run_current);
+      uint8_t current;
+      memcpy(&current, command_buffer + command_buffer_position, sizeof(current));
+      command_buffer_position += sizeof(current);
       int8_t stall_threshold;
       memcpy(&stall_threshold, command_buffer + command_buffer_position, sizeof(stall_threshold));
 
@@ -746,7 +746,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
         pcev->prism_address = n;
         pcev->position = travel_limit;
         pcev->speed = speed;
-        pcev->run_current = run_current;
+        pcev->current = current;
         pcev->stall_threshold = stall_threshold;
         AO_Cluster->POST(pcev, &l_FSP_ID);
       }
@@ -874,6 +874,32 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       }
       QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
         QS_STR("read-positions-cluster command");
+      QS_END()
+      break;
+    }
+    case WRITE_SPEED_CLUSTER_CMD:
+    {
+      uint8_t speed;
+      memcpy(&speed, command_buffer + command_buffer_position, sizeof(speed));
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeMaxVelocity(n, speed);
+      }
+      QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+        QS_STR("write-speed-cluster command");
+      QS_END()
+      break;
+    }
+    case WRITE_CURRENT_CLUSTER_CMD:
+    {
+      uint8_t current;
+      memcpy(&current, command_buffer + command_buffer_position, sizeof(current));
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeRunCurrent(n, current);
+      }
+      QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+        QS_STR("write-current-cluster command");
       QS_END()
       break;
     }
