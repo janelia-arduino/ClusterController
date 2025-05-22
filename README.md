@@ -1,11 +1,11 @@
-- [Library Information](#org2f7a740)
-- [Host Computer Setup](#org2eccd74)
+- [Library Information](#orge29d601)
+- [Host Computer Setup](#org57caff4)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org2f7a740"></a>
+<a id="orge29d601"></a>
 
 # Library Information
 
@@ -57,7 +57,7 @@ Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 | write-current-cluster  | '<BBBB'        | 4              | 0x14           | current                                                      | '<BBB'          | 3               |                        |
 
 
-<a id="org2eccd74"></a>
+<a id="org57caff4"></a>
 
 # Host Computer Setup
 
