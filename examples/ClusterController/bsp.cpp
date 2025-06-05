@@ -86,7 +86,7 @@ const tmc51x0::HomeParameters home_parameters_base_real =
 {
   .run_current = 50, // (percent)
   .hold_current = 20, // (percent)
-  .target_position = -750, // (millimeters)
+  .target_position = -500, // (millimeters)
   .velocity = 20, // (millimeters/s)
   .acceleration = 2, // ((millimeters/s)/s)
   .zero_wait_duration = 100 // (milliseconds)
@@ -417,16 +417,6 @@ int16_t BSP::readActualPosition(uint8_t prism_address)
   return prism.converter.positionChipToReal(prism.controller.readActualPosition());
 }
 
-void BSP::writeMaxVelocity(uint8_t prism_address, uint8_t speed_mm_per_s)
-{
-  if (prism_address >= constants::prism_count)
-  {
-    return;
-  }
-  TMC51X0 & prism = prisms[prism_address];
-  prism.controller.writeMaxVelocity(prism.converter.velocityRealToChip(speed_mm_per_s));
-}
-
 void BSP::writeRunCurrent(uint8_t prism_address, uint8_t run_current_percent)
 {
   if (prism_address >= constants::prism_count)
@@ -435,6 +425,86 @@ void BSP::writeRunCurrent(uint8_t prism_address, uint8_t run_current_percent)
   }
   TMC51X0 & prism = prisms[prism_address];
   prism.driver.writeRunCurrent(prism.converter.percentToCurrentSetting(run_current_percent));
+}
+
+void BSP::writeStartVelocity(uint8_t prism_address, uint8_t velocity_mm_per_s)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.writeStartVelocity(prism.converter.velocityRealToChip(velocity_mm_per_s));
+}
+
+void BSP::writeStopVelocity(uint8_t prism_address, uint8_t velocity_mm_per_s)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.writeStopVelocity(prism.converter.velocityRealToChip(velocity_mm_per_s));
+}
+
+void BSP::writeFirstVelocity(uint8_t prism_address, uint8_t velocity_mm_per_s)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.writeFirstVelocity(prism.converter.velocityRealToChip(velocity_mm_per_s));
+}
+
+void BSP::writeMaxVelocity(uint8_t prism_address, uint8_t velocity_mm_per_s)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.writeMaxVelocity(prism.converter.velocityRealToChip(velocity_mm_per_s));
+}
+
+void BSP::writeFirstAcceleration(uint8_t prism_address, uint8_t acceleration_mm_per_s_per_s)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.writeFirstAcceleration(prism.converter.accelerationRealToChip(acceleration_mm_per_s_per_s));
+}
+
+void BSP::writeMaxAcceleration(uint8_t prism_address, uint8_t acceleration_mm_per_s_per_s)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.writeMaxAcceleration(prism.converter.accelerationRealToChip(acceleration_mm_per_s_per_s));
+}
+
+void BSP::writeMaxDeceleration(uint8_t prism_address, uint8_t deceleration_mm_per_s_per_s)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.writeMaxDeceleration(prism.converter.accelerationRealToChip(deceleration_mm_per_s_per_s));
+}
+
+void BSP::writeFirstDeceleration(uint8_t prism_address, uint8_t deceleration_mm_per_s_per_s)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  prism.controller.writeFirstDeceleration(prism.converter.accelerationRealToChip(deceleration_mm_per_s_per_s));
 }
 
 bool BSP::beginSerial()

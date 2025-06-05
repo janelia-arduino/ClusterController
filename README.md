@@ -1,16 +1,17 @@
-- [Library Information](#orge29d601)
-- [Host Computer Setup](#org57caff4)
+- [Library Information](#orgb511a95)
+- [Background](#org288d731)
+- [Host Computer Setup](#orgd3a1c2e)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="orge29d601"></a>
+<a id="orgb511a95"></a>
 
 # Library Information
 
 -   **Name:** ClusterController
--   **Version:** 3.0.0
+-   **Version:** 4.0.0
 -   **License:** BSD
 -   **URL:** <https://github.com/janelia-arduino/ClusterController>
 -   **Author:** Peter Polidoro
@@ -22,42 +23,54 @@
 
 Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 
--   protocol-version = 0x03
+
+## Protocol
+
+-   protocol-version = 0x04
 -   prism-count = 7
 -   command = protocol-version command-length command-number command-parameters
 -   response = protocol-version response-length command-number response-parameters
 -   duration units = ms
 -   position units = mm
--   speed units = mm/s
+-   velocity units = mm/s
 -   current units = percent
 -   stall-threshold -> higher value = lower sensitivity, 0 indifferent value, 1..63 less sensitivity, -1..-64 higher sensitivity
+-   home-parameters = travel-limit, max-velocity, run-current, stall-threshold
+-   controller-parameters = start-velocity, stop-velocity, first-velocity, max-velocity, first-acceleration, max-acceleration, max-deceleration, first-deceleration
 
-| command-name           | command-format | command-length | command-number | command-parameters                                           | response-format | response-length | response-parameters    |
-|---------------------- |-------------- |-------------- |-------------- |------------------------------------------------------------ |--------------- |--------------- |---------------------- |
-| invalid-command        |                |                |                |                                                              | '<BBB'          | 3               | 0xEE                   |
-| read-cluster-address   | '<BBB'         | 3              | 0x01           |                                                              | '<BBBB'         | 4               | 0x00..0xFF             |
-| communicating-cluster  | '<BBB'         | 3              | 0x02           |                                                              | '<BBBL'         | 7               | 0x12345678             |
-| reset-cluster          | '<BBB'         | 3              | 0x03           |                                                              | '<BBB'          | 3               |                        |
-| beep-cluster           | '<BBBH'        | 5              | 0x04           | duration                                                     | '<BBB'          | 3               |                        |
-| led-off-cluster        | '<BBB'         | 3              | 0x05           |                                                              | '<BBB'          | 3               |                        |
-| led-on-cluster         | '<BBB'         | 3              | 0x06           |                                                              | '<BBB'          | 3               |                        |
-| power-off-cluster      | '<BBB'         | 3              | 0x07           |                                                              | '<BBB'          | 3               |                        |
-| power-on-cluster       | '<BBB'         | 3              | 0x08           |                                                              | '<BBB'          | 3               |                        |
-| home-prism             | '<BBBBHBBb'    | 9              | 0x09           | prism-address, travel-limit, speed, current, stall-threshold | '<BBBB'         | 4               | prism-address          |
-| home-cluster           | '<BBBHBBb'     | 8              | 0x0A           | travel-limit, speed, current, stall-threshold                | '<BBB'          | 3               |                        |
-| homed-cluster          | '<BBB'         | 3              | 0x0B           |                                                              | '<BBBBBBBBBB'   | 10              | 0..1[prism-count]      |
-| write-target-prism     | '<BBBBH'       | 6              | 0x0C           | prism-address, position                                      | '<BBBB'         | 4               | prism-address          |
-| write-targets-cluster  | '<BBBHHHHHHH'  | 17             | 0x0D           | position[prism-count]                                        | '<BBB'          | 3               |                        |
-| pause-prism            | '<BBBB'        | 4              | 0x0E           | prism-address                                                | '<BBBB'         | 4               | prism-address          |
-| pause-cluster          | '<BBB'         | 3              | 0x0F           |                                                              | '<BBB'          | 3               |                        |
-| resume-prism           | '<BBBB'        | 4              | 0x10           | prism-address                                                | '<BBBB'         | 4               | prism-address          |
-| resume-cluster         | '<BBB'         | 3              | 0x11           |                                                              | '<BBB'          | 3               |                        |
-| read-positions-cluster | '<BBB'         | 3              | 0x12           |                                                              | '<BBBhhhhhhh'   | 17              | -1..32767[prism-count] |
-| write-speed-cluster    | '<BBBB'        | 4              | 0x13           | speed                                                        | '<BBB'          | 3               |                        |
-| write-current-cluster  | '<BBBB'        | 4              | 0x14           | current                                                      | '<BBB'          | 3               |                        |
+| command-name                        | command-format | command-length | command-number | command-parameters             | response-format | response-length | response-parameters    |
+|----------------------------------- |-------------- |-------------- |-------------- |------------------------------ |--------------- |--------------- |---------------------- |
+| invalid-command                     |                |                |                |                                | '<BBB'          | 3               | 0xEE                   |
+| read-cluster-address                | '<BBB'         | 3              | 0x01           |                                | '<BBBB'         | 4               | 0x00..0xFF             |
+| communicating-cluster               | '<BBB'         | 3              | 0x02           |                                | '<BBBL'         | 7               | 0x12345678             |
+| reset-cluster                       | '<BBB'         | 3              | 0x03           |                                | '<BBB'          | 3               |                        |
+| beep-cluster                        | '<BBBH'        | 5              | 0x04           | duration                       | '<BBB'          | 3               |                        |
+| led-off-cluster                     | '<BBB'         | 3              | 0x05           |                                | '<BBB'          | 3               |                        |
+| led-on-cluster                      | '<BBB'         | 3              | 0x06           |                                | '<BBB'          | 3               |                        |
+| power-off-cluster                   | '<BBB'         | 3              | 0x07           |                                | '<BBB'          | 3               |                        |
+| power-on-cluster                    | '<BBB'         | 3              | 0x08           |                                | '<BBB'          | 3               |                        |
+| home-prism                          | '<BBBBHBBb'    | 9              | 0x09           | prism-address, home-parameters | '<BBBB'         | 4               | prism-address          |
+| home-cluster                        | '<BBBHBBb'     | 8              | 0x0A           | home-parameters                | '<BBB'          | 3               |                        |
+| homed-cluster                       | '<BBB'         | 3              | 0x0B           |                                | '<BBBBBBBBBB'   | 10              | 0..1[prism-count]      |
+| write-target-prism                  | '<BBBBH'       | 6              | 0x0C           | prism-address, position        | '<BBBB'         | 4               | prism-address          |
+| write-targets-cluster               | '<BBBHHHHHHH'  | 17             | 0x0D           | position[prism-count]          | '<BBB'          | 3               |                        |
+| pause-prism                         | '<BBBB'        | 4              | 0x0E           | prism-address                  | '<BBBB'         | 4               | prism-address          |
+| pause-cluster                       | '<BBB'         | 3              | 0x0F           |                                | '<BBB'          | 3               |                        |
+| resume-prism                        | '<BBBB'        | 4              | 0x10           | prism-address                  | '<BBBB'         | 4               | prism-address          |
+| resume-cluster                      | '<BBB'         | 3              | 0x11           |                                | '<BBB'          | 3               |                        |
+| read-positions-cluster              | '<BBB'         | 3              | 0x12           |                                | '<BBBhhhhhhh'   | 17              | -1..32767[prism-count] |
+| write-run-current-cluster           | '<BBBB'        | 4              | 0x13           | current                        | '<BBB'          | 3               |                        |
+| write-controller-parameters-cluster | '<BBBBBBBBBBB' | 11             | 0x14           | controller-parameters          | '<BBB'          | 3               |                        |
 
 
-<a id="org57caff4"></a>
+<a id="org288d731"></a>
+
+# Background
+
+<img src="./documentation/img/ramp.png" width="1920">
+
+
+<a id="orgd3a1c2e"></a>
 
 # Host Computer Setup
 

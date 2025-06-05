@@ -877,20 +877,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       QS_END()
       break;
     }
-    case WRITE_SPEED_CLUSTER_CMD:
-    {
-      uint8_t speed;
-      memcpy(&speed, command_buffer + command_buffer_position, sizeof(speed));
-      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
-      {
-        BSP::writeMaxVelocity(n, speed);
-      }
-      QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
-        QS_STR("write-speed-cluster command");
-      QS_END()
-      break;
-    }
-    case WRITE_CURRENT_CLUSTER_CMD:
+    case WRITE_RUN_CURRENT_CLUSTER_CMD:
     {
       uint8_t current;
       memcpy(&current, command_buffer + command_buffer_position, sizeof(current));
@@ -899,7 +886,65 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
         BSP::writeRunCurrent(n, current);
       }
       QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
-        QS_STR("write-current-cluster command");
+        QS_STR("write-run-current-cluster command");
+      QS_END()
+      break;
+    }
+    case WRITE_CONTROLLER_PARAMETERS_CLUSTER_CMD:
+    {
+      uint8_t velocity;
+      memcpy(&velocity, command_buffer + command_buffer_position, sizeof(velocity));
+      command_buffer_position += sizeof(velocity);
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeStartVelocity(n, velocity);
+      }
+      memcpy(&velocity, command_buffer + command_buffer_position, sizeof(velocity));
+      command_buffer_position += sizeof(velocity);
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeStopVelocity(n, velocity);
+      }
+      memcpy(&velocity, command_buffer + command_buffer_position, sizeof(velocity));
+      command_buffer_position += sizeof(velocity);
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeFirstVelocity(n, velocity);
+      }
+      memcpy(&velocity, command_buffer + command_buffer_position, sizeof(velocity));
+      command_buffer_position += sizeof(velocity);
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeMaxVelocity(n, velocity);
+      }
+      uint8_t acceleration;
+      memcpy(&acceleration, command_buffer + command_buffer_position, sizeof(acceleration));
+      command_buffer_position += sizeof(acceleration);
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeFirstAcceleration(n, acceleration);
+      }
+      memcpy(&acceleration, command_buffer + command_buffer_position, sizeof(acceleration));
+      command_buffer_position += sizeof(acceleration);
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeMaxAcceleration(n, acceleration);
+      }
+      uint8_t deceleration;
+      memcpy(&deceleration, command_buffer + command_buffer_position, sizeof(deceleration));
+      command_buffer_position += sizeof(deceleration);
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeMaxDeceleration(n, deceleration);
+      }
+      memcpy(&deceleration, command_buffer + command_buffer_position, sizeof(deceleration));
+      command_buffer_position += sizeof(deceleration);
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        BSP::writeFirstDeceleration(n, deceleration);
+      }
+      QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+        QS_STR("write-controller-parameters-cluster command");
       QS_END()
       break;
     }
