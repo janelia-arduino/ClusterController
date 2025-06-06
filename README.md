@@ -1,12 +1,12 @@
-- [Library Information](#orgb511a95)
-- [Background](#org288d731)
-- [Host Computer Setup](#orgd3a1c2e)
+- [Library Information](#org02c3e3b)
+- [Background](#org9aaeaa8)
+- [Host Computer Setup](#org0df44e6)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="orgb511a95"></a>
+<a id="org02c3e3b"></a>
 
 # Library Information
 
@@ -59,18 +59,20 @@ Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 | resume-prism                        | '<BBBB'        | 4              | 0x10           | prism-address                  | '<BBBB'         | 4               | prism-address          |
 | resume-cluster                      | '<BBB'         | 3              | 0x11           |                                | '<BBB'          | 3               |                        |
 | read-positions-cluster              | '<BBB'         | 3              | 0x12           |                                | '<BBBhhhhhhh'   | 17              | -1..32767[prism-count] |
-| write-run-current-cluster           | '<BBBB'        | 4              | 0x13           | current                        | '<BBB'          | 3               |                        |
-| write-controller-parameters-cluster | '<BBBBBBBBBBB' | 11             | 0x14           | controller-parameters          | '<BBB'          | 3               |                        |
+| write-run-current-cluster           | '<BBBB'        | 4              | 0x13           | run-current                    | '<BBB'          | 3               |                        |
+| read-run-current-cluster            | '<BBB'         | 3              | 0x14           |                                | '<BBBB'         | 4               | run-current            |
+| write-controller-parameters-cluster | '<BBBBBBBBBBB' | 11             | 0x15           | controller-parameters          | '<BBB'          | 3               |                        |
+| read-controller-parameters-cluster  | '<BBB'         | 3              | 0x16           |                                | '<BBBBBBBBBBB'  | 11              | controller-parameters  |
 
 
-<a id="org288d731"></a>
+<a id="org9aaeaa8"></a>
 
 # Background
 
 <img src="./documentation/img/ramp.png" width="1920">
 
 
-<a id="orgd3a1c2e"></a>
+<a id="org0df44e6"></a>
 
 # Host Computer Setup
 

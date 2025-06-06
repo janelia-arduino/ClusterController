@@ -69,6 +69,18 @@ constexpr uint16_t beep_frequency_max = 10000;
 // Prisms
 constexpr uint8_t prism_count_max = 7;
 
+// Driver Parameters
+constexpr uint8_t run_current_default = 75;
+
+// Controller Parameters
+constexpr uint8_t start_velocity_default = 1;
+constexpr uint8_t stop_velocity_default = 5;
+constexpr uint8_t first_velocity_default = 10;
+constexpr uint8_t max_velocity_default = 20;
+constexpr uint8_t first_acceleration_default = 40;
+constexpr uint8_t max_acceleration_default = 20;
+constexpr uint8_t max_deceleration_default = 30;
+constexpr uint8_t first_deceleration_default = 50;
 }
 }
 #endif

@@ -25,6 +25,15 @@ This structure of the code is recommended for applications with only one active 
    </attribute>
    <attribute name="prisms_[constants::prism_count_max]" type="QP::QHsm *" visibility="0x00" properties="0x00"/>
    <attribute name="cluster_time_evt_" type="QP::QTimeEvt" visibility="0x00" properties="0x00"/>
+   <attribute name="run_current_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="start_velocity_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="stop_velocity_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="first_velocity_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="max_velocity_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="first_acceleration_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="max_acceleration_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="max_deceleration_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="first_deceleration_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <operation name="Cluster" type="" visibility="0x00" properties="0x00">
     <code>: QActive(Q_STATE_CAST(&amp;Cluster::initial)),
     cluster_time_evt_(this, CLUSTER_TIMEOUT_SIG, 0U)
@@ -533,19 +542,19 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
        </tran>
        <tran trig="WRITE_TARGET_POSITION">
         <action brief="writeTargetPosition()">FSP::Prism_writeTargetPosition(this, e);</action>
-        <tran_glyph conn="33,70,3,-1,35">
+        <tran_glyph conn="33,70,3,-1,37">
          <action box="0,-2,40,3"/>
         </tran_glyph>
        </tran>
        <tran trig="PAUSE">
         <action brief="pause()">FSP::Prism_pause(this, e);</action>
-        <tran_glyph conn="33,74,3,-1,13">
+        <tran_glyph conn="33,74,3,-1,16">
          <action box="0,-2,36,2"/>
         </tran_glyph>
        </tran>
        <tran trig="RESUME">
         <action brief="resume()">FSP::Prism_resume(this, e);</action>
-        <tran_glyph conn="33,78,3,-1,13">
+        <tran_glyph conn="33,78,3,-1,16">
          <action box="0,-2,35,2"/>
         </tran_glyph>
        </tran>

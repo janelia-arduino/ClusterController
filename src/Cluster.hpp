@@ -33,6 +33,15 @@ public:
     static Cluster instance;
     QP::QHsm * prisms_[constants::prism_count_max];
     QP::QTimeEvt cluster_time_evt_;
+    std::uint8_t run_current_;
+    std::uint8_t start_velocity_;
+    std::uint8_t stop_velocity_;
+    std::uint8_t first_velocity_;
+    std::uint8_t max_velocity_;
+    std::uint8_t first_acceleration_;
+    std::uint8_t max_acceleration_;
+    std::uint8_t max_deceleration_;
+    std::uint8_t first_deceleration_;
 
 public:
     Cluster();

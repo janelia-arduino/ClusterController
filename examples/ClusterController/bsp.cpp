@@ -59,7 +59,7 @@ const tmc51x0::ConverterParameters converter_parameters =
 
 const tmc51x0::DriverParameters driver_parameters_real =
 {
-  .run_current = 75, // (percent)
+  .run_current = run_current_default, // (percent)
   .hold_current = 0, // (percent)
   .hold_delay = 0, // (percent)
   .pwm_offset = 25, // (percent)
@@ -72,14 +72,14 @@ const tmc51x0::DriverParameters driver_parameters_real =
 const tmc51x0::ControllerParameters controller_parameters_real =
 {
   .ramp_mode = tmc51x0::PositionMode,
-  .max_velocity = 20, // (millimeters/s)
-  .max_acceleration = 20, // ((millimeters/s)/s)
-  .start_velocity = 1, // (millimeters/s)
-  .stop_velocity = 5, // (millimeters/s)
-  .first_velocity = 10, // (millimeters/s)
-  .first_acceleration = 40, // ((millimeters/s)/s)
-  .max_deceleration = 30, // ((millimeters/s)/s)
-  .first_deceleration = 50, // ((millimeters/s)/s)
+  .max_velocity = max_velocity_default, // (millimeters/s)
+  .max_acceleration = max_acceleration_default, // ((millimeters/s)/s)
+  .start_velocity = start_velocity_default, // (millimeters/s)
+  .stop_velocity = stop_velocity_default, // (millimeters/s)
+  .first_velocity = first_velocity_default, // (millimeters/s)
+  .first_acceleration = first_acceleration_default, // ((millimeters/s)/s)
+  .max_deceleration = max_deceleration_default, // ((millimeters/s)/s)
+  .first_deceleration = first_deceleration_default, // ((millimeters/s)/s)
 };
 
 const tmc51x0::HomeParameters home_parameters_base_real =
