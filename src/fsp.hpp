@@ -46,6 +46,7 @@ struct FSP
   static void Prism_enterHomed(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_exitHomed(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_writeTargetPosition(QP::QHsm * const hsm, QP::QEvt const * e);
+  static bool Prism_positionReached(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_pause(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_resume(QP::QHsm * const hsm, QP::QEvt const * e);
 

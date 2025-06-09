@@ -343,6 +343,27 @@ void FSP::Prism_writeTargetPosition(QP::QHsm * const hsm, QP::QEvt const * e)
   QS_END()
 }
 
+bool FSP::Prism_positionReached(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  bool position_reached = BSP::positionReached(prism->prism_address_);
+  if (position_reached)
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+      QS_STR("position reached!");
+      QS_U8(0, prism->prism_address_);
+    QS_END()
+  }
+  else
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+      QS_STR("not at target");
+      QS_U8(0, prism->prism_address_);
+    QS_END()
+  }
+  return position_reached;
+}
+
 void FSP::Prism_pause(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
@@ -1010,6 +1031,35 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
 
       QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
         QS_STR("read-controller-parameters-cluster command");
+      QS_END()
+      break;
+    }
+    case WRITE_DOUBLE_TARGET_PRISM_CMD:
+    {
+      uint8_t prism_address;
+      memcpy(&prism_address, command_buffer + command_buffer_position, sizeof(prism_address));
+      command_buffer_position += sizeof(prism_address);
+      response[response_byte_count++] = prism_address;
+
+      uint16_t position;
+      memcpy(&position, command_buffer + command_buffer_position, sizeof(position));
+      command_buffer_position += sizeof(position);
+
+      PrismCommandEvt *pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
+      pcev->prism_address = prism_address;
+      pcev->position = position;
+      AO_Cluster->POST(pcev, &l_FSP_ID);
+
+      memcpy(&position, command_buffer + command_buffer_position, sizeof(position));
+      command_buffer_position += sizeof(position);
+
+      *pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
+      pcev->prism_address = prism_address;
+      pcev->position = position;
+      AO_Cluster->POST(pcev, &l_FSP_ID);
+
+      QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+        QS_STR("write-double-target-prism command");
       QS_END()
       break;
     }

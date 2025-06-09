@@ -58,6 +58,8 @@ Q_STATE_DEF(Prism, initial) {
     QS_FUN_DICTIONARY(&Prism::Enabled);
     QS_FUN_DICTIONARY(&Prism::Homing);
     QS_FUN_DICTIONARY(&Prism::Homed);
+    QS_FUN_DICTIONARY(&Prism::WaitingForTarget);
+    QS_FUN_DICTIONARY(&Prism::MovingToTarget);
     QS_FUN_DICTIONARY(&Prism::Disconnected);
 
     return tran(&PoweredOff);
@@ -229,16 +231,15 @@ Q_STATE_DEF(Prism, Homed) {
             status_ = Q_RET_HANDLED;
             break;
         }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::initial}
+        case Q_INIT_SIG: {
+            status_ = tran(&WaitingForTarget);
+            break;
+        }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::HOME}
         case HOME_SIG: {
             FSP::Prism_beginHome(this, e);
             status_ = tran(&Homing);
-            break;
-        }
-        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::WRITE_TARGET_POSITION}
-        case WRITE_TARGET_POSITION_SIG: {
-            FSP::Prism_writeTargetPosition(this, e);
-            status_ = Q_RET_HANDLED;
             break;
         }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::PAUSE}
@@ -255,6 +256,54 @@ Q_STATE_DEF(Prism, Homed) {
         }
         default: {
             status_ = super(&SetupAndCommunicating);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::WaitingForTarget} ..
+Q_STATE_DEF(Prism, WaitingForTarget) {
+    QP::QState status_;
+    switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::WaitingForTarget::WRITE_TARGET_POSITION}
+        case WRITE_TARGET_POSITION_SIG: {
+            FSP::Prism_writeTargetPosition(this, e);
+            status_ = tran(&MovingToTarget);
+            break;
+        }
+        default: {
+            status_ = super(&Homed);
+            break;
+        }
+    }
+    return status_;
+}
+//.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::MovingToTarget} ....
+Q_STATE_DEF(Prism, MovingToTarget) {
+    QP::QState status_;
+    switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::MovingToTarget::CLUSTER_TIMEOUT}
+        case CLUSTER_TIMEOUT_SIG: {
+            //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::MovingToTarget::CLUSTER_TIMEOUT::[positionReached]}
+            if (FSP::Prism_positionReached(this, e)) {
+                status_ = tran(&WaitingForTarget);
+            }
+            else {
+                status_ = Q_RET_UNHANDLED;
+            }
+            break;
+        }
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::MovingToTarget::WRITE_TARGET_POSITION}
+        case WRITE_TARGET_POSITION_SIG: {
+              QS_BEGIN_ID(USER_COMMENT, cluster->m_prio)
+                QS_STR("second target position set");
+              QS_END()
+
+            status_ = Q_RET_HANDLED;
+            break;
+        }
+        default: {
+            status_ = super(&Homed);
             break;
         }
     }

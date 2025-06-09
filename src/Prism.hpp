@@ -49,6 +49,8 @@ protected:
     Q_STATE_DECL(Enabled);
     Q_STATE_DECL(Homing);
     Q_STATE_DECL(Homed);
+    Q_STATE_DECL(WaitingForTarget);
+    Q_STATE_DECL(MovingToTarget);
     Q_STATE_DECL(Disconnected);
 };
 

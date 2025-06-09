@@ -534,36 +534,67 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
       <state name="Homed">
        <entry brief="enterHomed()">FSP::Prism_enterHomed(this, e);</entry>
        <exit brief="exitHomed()">FSP::Prism_exitHomed(this, e);</exit>
+       <initial target="../4">
+        <initial_glyph conn="62,73,4,0,4">
+         <action box="0,-2,10,2"/>
+        </initial_glyph>
+       </initial>
        <tran trig="HOME" target="../../2">
         <action brief="beginHome()">FSP::Prism_beginHome(this, e);</action>
         <tran_glyph conn="52,62,0,2,-4">
          <action box="1,-3,18,3"/>
         </tran_glyph>
        </tran>
-       <tran trig="WRITE_TARGET_POSITION">
-        <action brief="writeTargetPosition()">FSP::Prism_writeTargetPosition(this, e);</action>
-        <tran_glyph conn="33,70,3,-1,37">
-         <action box="0,-2,40,3"/>
-        </tran_glyph>
-       </tran>
        <tran trig="PAUSE">
         <action brief="pause()">FSP::Prism_pause(this, e);</action>
-        <tran_glyph conn="33,74,3,-1,16">
-         <action box="0,-2,36,2"/>
+        <tran_glyph conn="33,72,3,-1,12">
+         <action box="1,-2,9,5"/>
         </tran_glyph>
        </tran>
        <tran trig="RESUME">
         <action brief="resume()">FSP::Prism_resume(this, e);</action>
-        <tran_glyph conn="33,78,3,-1,16">
-         <action box="0,-2,35,2"/>
+        <tran_glyph conn="33,76,3,-1,12">
+         <action box="1,-2,10,4"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="33,62,62,48">
+       <state name="WaitingForTarget">
+        <tran trig="WRITE_TARGET_POSITION" target="../../5">
+         <action brief="writeTargetPosition()">FSP::Prism_writeTargetPosition(this, e);</action>
+         <tran_glyph conn="53,83,3,3,29">
+          <action box="0,-2,22,4"/>
+         </tran_glyph>
+        </tran>
+        <state_glyph node="53,77,22,14"/>
+       </state>
+       <state name="MovingToTarget">
+        <tran trig="CLUSTER_TIMEOUT">
+         <choice target="../../../4">
+          <guard brief="positionReached">FSP::Prism_positionReached(this, e)</guard>
+          <choice_glyph conn="102,77,5,1,17,11,-44">
+           <action box="1,0,13,2"/>
+          </choice_glyph>
+         </choice>
+         <tran_glyph conn="82,77,3,-1,20">
+          <action box="0,-2,17,4"/>
+         </tran_glyph>
+        </tran>
+        <tran trig="WRITE_TARGET_POSITION">
+         <action brief="writeTargetPosition()">  QS_BEGIN_ID(USER_COMMENT, cluster-&gt;m_prio)
+    QS_STR(&quot;second target position set&quot;);
+  QS_END()
+</action>
+         <tran_glyph conn="82,95,5,-1,26">
+          <action box="0,-2,22,6"/>
+         </tran_glyph>
+        </tran>
+        <state_glyph node="82,70,40,35"/>
+       </state>
+       <state_glyph node="33,62,95,59">
         <entry box="1,2,15,2"/>
         <exit box="1,4,16,2"/>
        </state_glyph>
       </state>
-      <state_glyph node="32,23,71,89">
+      <state_glyph node="32,23,97,100">
        <entry box="1,2,28,2"/>
       </state_glyph>
      </state>
@@ -573,9 +604,9 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
        <entry box="1,2,19,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="6,19,99,94"/>
+     <state_glyph node="6,19,124,106"/>
     </state>
-    <state_diagram size="107,115"/>
+    <state_diagram size="132,128"/>
    </statechart>
   </class>
  </package>

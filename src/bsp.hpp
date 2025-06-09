@@ -27,6 +27,7 @@ public:
   static void endHome(uint8_t prism_address);
   static bool homed(uint8_t prism_address);
   static void writeTargetPosition(uint8_t prism_address, uint16_t position_mm);
+  static bool positionReached(uint8_t prism_address);
   static void pause(uint8_t prism_address);
   static void resume(uint8_t prism_address);
   static int16_t readActualPosition(uint8_t prism_address);

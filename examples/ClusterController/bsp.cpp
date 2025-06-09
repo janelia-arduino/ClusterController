@@ -387,6 +387,17 @@ void BSP::writeTargetPosition(uint8_t prism_address, uint16_t position_mm)
   prism.controller.writeTargetPosition(prism.converter.positionRealToChip(position_mm));
 }
 
+bool BSP::positionReached(uint8_t prism_address)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return false;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  return prism.controller.positionReached();
+}
+
+
 void BSP::pause(uint8_t prism_address)
 {
   if (prism_address >= constants::prism_count)
