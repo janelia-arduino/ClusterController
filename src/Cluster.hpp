@@ -42,6 +42,7 @@ public:
     std::uint8_t max_acceleration_;
     std::uint8_t max_deceleration_;
     std::uint8_t first_deceleration_;
+    QP::QEQueue target_queues_[constants::prism_count_max];
 
 public:
     Cluster();

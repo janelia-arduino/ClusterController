@@ -265,6 +265,12 @@ Q_STATE_DEF(Prism, Homed) {
 Q_STATE_DEF(Prism, WaitingForTarget) {
     QP::QState status_;
     switch (e->sig) {
+        //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::WaitingForTarget}
+        case Q_ENTRY_SIG: {
+            FSP::Prism_recall(this, e);
+            status_ = Q_RET_HANDLED;
+            break;
+        }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::WaitingForTarget::WRITE_TARGET_POSITION}
         case WRITE_TARGET_POSITION_SIG: {
             FSP::Prism_writeTargetPosition(this, e);
@@ -295,10 +301,7 @@ Q_STATE_DEF(Prism, MovingToTarget) {
         }
         //.${AOs::Prism::SM::PoweredOn::SetupAndCommunic~::Homed::MovingToTarget::WRITE_TARGET_POSITION}
         case WRITE_TARGET_POSITION_SIG: {
-              QS_BEGIN_ID(USER_COMMENT, cluster->m_prio)
-                QS_STR("second target position set");
-              QS_END()
-
+            FSP::Prism_defer(this, e);
             status_ = Q_RET_HANDLED;
             break;
         }

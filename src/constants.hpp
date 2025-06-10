@@ -65,9 +65,9 @@ constexpr uint8_t cluster_address_max = 255;
 constexpr uint16_t beep_frequency_min = 1000;
 constexpr uint16_t beep_frequency_max = 10000;
 
-
 // Prisms
 constexpr uint8_t prism_count_max = 7;
+constexpr uint8_t target_count_max = 2;
 
 // Driver Parameters
 constexpr uint8_t run_current_default = 75;

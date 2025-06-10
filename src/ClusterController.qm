@@ -34,6 +34,7 @@ This structure of the code is recommended for applications with only one active 
    <attribute name="max_acceleration_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <attribute name="max_deceleration_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <attribute name="first_deceleration_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="target_queues_[constants::prism_count_max]" type="QP::QEQueue" visibility="0x00" properties="0x00"/>
    <operation name="Cluster" type="" visibility="0x00" properties="0x00">
     <code>: QActive(Q_STATE_CAST(&amp;Cluster::initial)),
     cluster_time_evt_(this, CLUSTER_TIMEOUT_SIG, 0U)
@@ -558,13 +559,16 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
         </tran_glyph>
        </tran>
        <state name="WaitingForTarget">
+        <entry brief="recall()">FSP::Prism_recall(this, e);</entry>
         <tran trig="WRITE_TARGET_POSITION" target="../../5">
          <action brief="writeTargetPosition()">FSP::Prism_writeTargetPosition(this, e);</action>
-         <tran_glyph conn="53,83,3,3,29">
+         <tran_glyph conn="53,85,3,3,29">
           <action box="0,-2,22,4"/>
          </tran_glyph>
         </tran>
-        <state_glyph node="53,77,22,14"/>
+        <state_glyph node="53,77,22,14">
+         <entry box="1,2,11,2"/>
+        </state_glyph>
        </state>
        <state name="MovingToTarget">
         <tran trig="CLUSTER_TIMEOUT">
@@ -579,10 +583,7 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
          </tran_glyph>
         </tran>
         <tran trig="WRITE_TARGET_POSITION">
-         <action brief="writeTargetPosition()">  QS_BEGIN_ID(USER_COMMENT, cluster-&gt;m_prio)
-    QS_STR(&quot;second target position set&quot;);
-  QS_END()
-</action>
+         <action brief="defer()">FSP::Prism_defer(this, e);</action>
          <tran_glyph conn="82,95,5,-1,26">
           <action box="0,-2,22,6"/>
          </tran_glyph>

@@ -124,6 +124,12 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
   cluster->max_acceleration_ = constants::max_acceleration_default;
   cluster->max_deceleration_ = constants::max_deceleration_default;
   cluster->first_deceleration_ = constants::first_deceleration_default;
+
+  static QEvt const *target_queue_stores[constants::prism_count_max][constants::target_count_max];
+  for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+  {
+    cluster->target_queues_[n].init(target_queue_stores[n], Q_DIM(target_queue_stores[n]));
+  }
 }
 
 void FSP::Cluster_activateCommandInterfaces(QActive * const ao, QEvt const * e)
@@ -354,13 +360,6 @@ bool FSP::Prism_positionReached(QP::QHsm * const hsm, QP::QEvt const * e)
       QS_U8(0, prism->prism_address_);
     QS_END()
   }
-  else
-  {
-    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
-      QS_STR("not at target");
-      QS_U8(0, prism->prism_address_);
-    QS_END()
-  }
   return position_reached;
 }
 
@@ -384,6 +383,39 @@ void FSP::Prism_resume(QP::QHsm * const hsm, QP::QEvt const * e)
     QS_STR("resuming prism");
     QS_U8(0, prism->prism_address_);
   QS_END()
+}
+
+void FSP::Prism_defer(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  Cluster * const cluster = static_cast<Cluster * const>(AO_Cluster);
+  if (cluster->defer(&cluster->target_queues_[prism->prism_address_], e))
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+      QS_STR("write target position deferred");
+      QS_U8(0, prism->prism_address_);
+    QS_END()
+  }
+  else
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+      QS_STR("write target position not deferred!");
+      QS_U8(0, prism->prism_address_);
+    QS_END()
+  }
+}
+
+void FSP::Prism_recall(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  Cluster * const cluster = static_cast<Cluster * const>(AO_Cluster);
+  if(cluster->recall(&cluster->target_queues_[prism->prism_address_]))
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+      QS_STR("write target position recalled");
+      QS_U8(0, prism->prism_address_);
+    QS_END()
+  }
 }
 
 void FSP::SerialCommandInterface_initializeAndSubscribe(QActive * const ao, QEvt const * e)
@@ -1053,7 +1085,7 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
       memcpy(&position, command_buffer + command_buffer_position, sizeof(position));
       command_buffer_position += sizeof(position);
 
-      *pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
+      pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
       pcev->prism_address = prism_address;
       pcev->position = position;
       AO_Cluster->POST(pcev, &l_FSP_ID);

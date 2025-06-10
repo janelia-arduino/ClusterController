@@ -49,6 +49,8 @@ struct FSP
   static bool Prism_positionReached(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_pause(QP::QHsm * const hsm, QP::QEvt const * e);
   static void Prism_resume(QP::QHsm * const hsm, QP::QEvt const * e);
+  static void Prism_defer(QP::QHsm * const hsm, QP::QEvt const * e);
+  static void Prism_recall(QP::QHsm * const hsm, QP::QEvt const * e);
 
   static void SerialCommandInterface_initializeAndSubscribe(QP::QActive * const ao, QP::QEvt const * e);
   static void SerialCommandInterface_armSerialTimer(QP::QActive * const ao, QP::QEvt const * e);
