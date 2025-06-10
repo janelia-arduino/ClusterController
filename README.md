@@ -1,12 +1,12 @@
-- [Library Information](#orgfcb8872)
-- [Background](#orgb5f583e)
-- [Host Computer Setup](#org8e97d8a)
+- [Library Information](#orgff0fe41)
+- [Background](#orgb0abd37)
+- [Host Computer Setup](#org3c6c683)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="orgfcb8872"></a>
+<a id="orgff0fe41"></a>
 
 # Library Information
 
@@ -68,14 +68,14 @@ Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 | write-double-targets-cluster        | '<BBBHHHHHHHHHHHHHH' | 31             | 0x18           | double-position[prism-count]   | '<BBB'          | 3               |                        |
 
 
-<a id="orgb5f583e"></a>
+<a id="orgb0abd37"></a>
 
 # Background
 
 <img src="./documentation/img/ramp.png" width="1920">
 
 
-<a id="org8e97d8a"></a>
+<a id="org3c6c683"></a>
 
 # Host Computer Setup
 

@@ -396,13 +396,6 @@ void FSP::Prism_defer(QP::QHsm * const hsm, QP::QEvt const * e)
       QS_U8(0, prism->prism_address_);
     QS_END()
   }
-  else
-  {
-    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
-      QS_STR("write target position not deferred!");
-      QS_U8(0, prism->prism_address_);
-    QS_END()
-  }
 }
 
 void FSP::Prism_recall(QP::QHsm * const hsm, QP::QEvt const * e)
@@ -1092,6 +1085,30 @@ uint8_t FSP::processBinaryCommand(uint8_t const *command_buffer,
 
       QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
         QS_STR("write-double-target-prism command");
+      QS_END()
+      break;
+    }
+    case WRITE_DOUBLE_TARGETS_CLUSTER_CMD:
+    {
+      uint16_t position;
+      PrismCommandEvt *pcev;
+
+      for (uint8_t n = 0; n < constants::prism_count_max; ++n)
+      {
+        for (uint8_t t = 0; t < 2; ++t)
+        {
+          memcpy(&position, command_buffer + command_buffer_position, sizeof(position));
+          command_buffer_position += sizeof(position);
+
+          pcev = Q_NEW(PrismCommandEvt, WRITE_TARGET_POSITION_SIG);
+          pcev->prism_address = n;
+          pcev->position = position;
+          AO_Cluster->POST(pcev, &l_FSP_ID);
+        }
+      }
+
+      QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+        QS_STR("write-double-targets-cluster command");
       QS_END()
       break;
     }
