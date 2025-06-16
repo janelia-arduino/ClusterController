@@ -125,7 +125,7 @@ void FSP::Cluster_initializeAndSubscribe(QActive * const ao, QEvt const * e)
   cluster->max_deceleration_ = constants::max_deceleration_default;
   cluster->first_deceleration_ = constants::first_deceleration_default;
 
-  static QEvt const *target_queue_stores[constants::prism_count_max][constants::target_count_max];
+  static QEvt const * target_queue_stores[constants::prism_count_max][constants::target_count_max];
   for (uint8_t n = 0; n < constants::prism_count_max; ++n)
   {
     cluster->target_queues_[n].init(target_queue_stores[n], Q_DIM(target_queue_stores[n]));
