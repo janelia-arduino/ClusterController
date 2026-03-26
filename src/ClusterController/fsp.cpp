@@ -234,6 +234,7 @@ void FSP::Prism_initialize(QP::QHsm * const hsm, QP::QEvt const * e)
   Prism * const prism = static_cast<Prism * const>(hsm);
   BSP::setupPrism(prism->prism_address_);
   prism->homed_ = false;
+  prism->home_status_ = 0U;
 
   (void)e; // unused parameter
 }
@@ -278,12 +279,37 @@ void FSP::Prism_initializeDelay(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
   prism->delay_count_ = 0;
+  prism->home_status_ = 0U;
 }
 
 bool FSP::Prism_delayComplete(QP::QHsm * const hsm, QP::QEvt const * e)
 {
   Prism * const prism = static_cast<Prism * const>(hsm);
   return (prism->delay_count_++ >= constants::home_delay_count);
+}
+
+void FSP::Prism_checkHome(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  prism->home_status_ = 0U;
+  if (!Prism_delayComplete(hsm, e))
+  {
+    return;
+  }
+  if (Prism_homed(hsm, e))
+  {
+    prism->home_status_ = 1U;
+  }
+  else if (Prism_homeFailed(hsm, e))
+  {
+    prism->home_status_ = 2U;
+  }
+}
+
+bool FSP::Prism_homeSucceeded(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  return prism->home_status_ == 1U;
 }
 
 void FSP::Prism_beginHome(QP::QHsm * const hsm, QP::QEvt const * e)
@@ -318,6 +344,20 @@ bool FSP::Prism_homed(QP::QHsm * const hsm, QP::QEvt const * e)
     AO_Cluster->POST(pcev, &l_FSP_ID);
   }
   return homed;
+}
+
+bool FSP::Prism_homeFailed(QP::QHsm * const hsm, QP::QEvt const * e)
+{
+  Prism * const prism = static_cast<Prism * const>(hsm);
+  bool home_failed = BSP::homeFailed(prism->prism_address_);
+  if (home_failed)
+  {
+    QS_BEGIN_ID(USER_COMMENT, AO_Cluster->m_prio)
+      QS_STR("prism home failed");
+      QS_U8(0, prism->prism_address_);
+    QS_END()
+  }
+  return home_failed;
 }
 
 void FSP::Prism_enterHomed(QP::QHsm * const hsm, QP::QEvt const * e)

@@ -26,6 +26,7 @@ public:
   static void beginHome(uint8_t prism_address, int16_t travel_limit, uint8_t speed, uint8_t run_current, int8_t stall_threshold);
   static void endHome(uint8_t prism_address);
   static bool homed(uint8_t prism_address);
+  static bool homeFailed(uint8_t prism_address);
   static void writeTargetPosition(uint8_t prism_address, uint16_t position_mm);
   static bool positionReached(uint8_t prism_address);
   static void pause(uint8_t prism_address);

@@ -430,6 +430,7 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
    <attribute name="prism_address_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <attribute name="delay_count_" type="std::uint32_t" visibility="0x00" properties="0x00"/>
    <attribute name="homed_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
+   <attribute name="home_status_" type="std::uint8_t" visibility="0x00" properties="0x00"/>
    <operation name="Prism" type="" visibility="0x00" properties="0x02">
     <code>  : QHsm(&amp;initial)</code>
    </operation>
@@ -511,15 +512,27 @@ for (uint8_t n = 0U; n &lt; constants::prism_count_max; ++n)
        <entry brief="initializeDelay()">FSP::Prism_initializeDelay(this, e);</entry>
        <exit brief="endHome()">FSP::Prism_endHome(this, e);</exit>
        <tran trig="CLUSTER_TIMEOUT">
+        <action brief="checkHome()">FSP::Prism_checkHome(this, e);</action>
         <choice>
-         <guard brief="delayComplete">FSP::Prism_delayComplete(this, e)</guard>
-         <action brief="homed()">FSP::Prism_homed(this, e);</action>
+         <guard brief="homeSucceeded">FSP::Prism_homeSucceeded(this, e)</guard>
          <choice_glyph conn="52,52,5,-1,14">
-          <action box="1,-2,11,5"/>
+          <action box="1,-2,16,5"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../1">
+         <guard brief="homeFailed">FSP::Prism_homeFailed(this, e)</guard>
+         <choice_glyph conn="52,52,5,2,10,-7">
+          <action box="1,1,16,2"/>
+         </choice_glyph>
+        </choice>
+        <choice>
+         <guard brief="else"/>
+         <choice_glyph conn="52,52,4,0,8">
+          <action box="-6,1,10,2"/>
          </choice_glyph>
         </choice>
         <tran_glyph conn="33,52,3,-1,19">
-         <action box="1,-2,18,4"/>
+         <action box="1,-2,16,4"/>
         </tran_glyph>
        </tran>
        <tran trig="HOMED" target="../../3">

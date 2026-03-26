@@ -10,7 +10,9 @@
 \#*\#
 .\#*
 .pio
+.pixi
 .venv
+.tools/
 GPATH
 GRTAGS
 GTAGS

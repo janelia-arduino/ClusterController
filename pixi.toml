@@ -1,0 +1,39 @@
+[workspace]
+name = "ClusterController"
+version = "0.1.0"
+description = "Firmware for controlling a cluster of prism actuators."
+authors = ["Peter Polidoro <peter@polidoro.io>"]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[dependencies]
+platformio = ">=6.1.19,<7"
+python = ">=3.12,<=3.14"
+git = "*"
+
+[tasks]
+ports = "pio device list"
+pio-version = "pio --version"
+build = "pio run -e pico"
+clean = "pio run -e pico -t clean"
+rebuild = "pio run -e pico -t clean && pio run -e pico"
+monitor = "pio device monitor --echo --eol=LF --baud 115200"
+ql-install = "python tools/quantum_leaps_tools.py install"
+qm = "python tools/quantum_leaps_tools.py qm"
+qm-install = "python tools/quantum_leaps_tools.py qm --install-only"
+codegen = "python tools/qm_codegen.py"
+check-qm-sync = "python tools/check_qm_sync.py"
+qtools-install = "python tools/quantum_leaps_tools.py qtools-install"
+qspy = "python tools/quantum_leaps_tools.py qspy"
+
+[target.linux-64.dependencies]
+make = "*"
+c-compiler = "*"
+
+[target.osx-64.dependencies]
+make = "*"
+c-compiler = "*"
+
+[target.osx-arm64.dependencies]
+make = "*"
+c-compiler = "*"

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<session version="5.1.3">
+<session version="5.2.3">
  <item name="license">GPL</item>
  <group name="locked"/>
  <group name="settings">
@@ -9,18 +9,18 @@
   <item name="backups">0</item>
  </group>
  <group name="windows">
-  <item id="./ClusterController::EthernetCommandInterface.cpp">0,0,596,300</item>
-  <item id="./ClusterController::Cluster.cpp">0,300,596,300</item>
-  <item id=".::Cluster.hpp">0,600,596,300</item>
-  <item id=".::SerialCommandInterface.hpp">488,897,596,300</item>
-  <item id="./ClusterController::SerialCommandInterface.cpp">488,0,596,300</item>
-  <item id=".::EthernetCommandInterface.hpp">488,300,596,300</item>
-  <item id=".::Watchdog.hpp">488,600,596,300</item>
-  <item id="AOs::Cluster::SM">0,265,1040,932</item>
-  <item id="AOs::SerialCommandInterface::SM">212,0,872,924</item>
-  <item id="AOs::EthernetCommandInterface::SM">-178,273,1262,924</item>
-  <item id="AOs::Watchdog::SM">0,0,934,924</item>
-  <item id="AOs::Prism::SM">0,0,1084,1164,*</item>
+  <item id="./ClusterController::EthernetCommandInterface.cpp">0,0,256,70</item>
+  <item id="./ClusterController::Cluster.cpp">0,0,256,70</item>
+  <item id=".::Cluster.hpp">0,0,256,70</item>
+  <item id=".::SerialCommandInterface.hpp">0,0,256,70</item>
+  <item id="./ClusterController::SerialCommandInterface.cpp">0,0,256,70</item>
+  <item id=".::EthernetCommandInterface.hpp">0,0,256,70</item>
+  <item id=".::Watchdog.hpp">0,0,256,70</item>
+  <item id="AOs::Cluster::SM">0,0,100,70</item>
+  <item id="AOs::SerialCommandInterface::SM">0,0,100,70</item>
+  <item id="AOs::EthernetCommandInterface::SM">0,0,100,70</item>
+  <item id="AOs::Watchdog::SM">0,0,100,70</item>
+  <item id="AOs::Prism::SM">0,0,100,70,*</item>
  </group>
  <group name="search">
   <item name="options">2032128</item>

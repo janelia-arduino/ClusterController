@@ -47,72 +47,65 @@ constexpr pin_size_t prism_spi_rx_pin = 12;
 constexpr pin_size_t prism_spi_csn_pins[prism_count] = {14, 8, 7, 6, 5, 4, 3};
 constexpr uint32_t prism_spi_clock_rate = 1000000;
 
-const tmc51x0::ConverterParameters converter_parameters =
-{
-  .clock_frequency_mhz = 16,
-  .microsteps_per_real_position_unit = 4881
-};
+const tmc51x0::ConverterParameters converter_parameters
+  = tmc51x0::ConverterParameters()
+      .withClockFrequencyMHz(16)
+      .withMicrostepsPerRealPositionUnit(4881);
 // external clock is 16MHz
 // 200 fullsteps per revolution for many steppers * 256 microsteps per fullstep
 // 10.49 millimeters per revolution leadscrew -> 51200 / 10.49 ~= 4881
 // one "real unit" in this example is one millimeters of linear travel
 
-const tmc51x0::DriverParameters driver_parameters_real =
-{
-  .run_current = run_current_default, // (percent)
-  .hold_current = 0, // (percent)
-  .hold_delay = 0, // (percent)
-  .pwm_offset = 25, // (percent)
-  .pwm_gradient = 15, // (percent)
-  .motor_direction = tmc51x0::ForwardDirection,
-  .standstill_mode = tmc51x0::PassiveBrakingLsMode,
-  .stealth_chop_threshold = 250, // (millimeters/s)
-};
+const tmc51x0::DriverParameters driver_parameters_real
+  = tmc51x0::DriverParameters()
+      .withRunCurrent(run_current_default) // (percent)
+      .withHoldCurrent(0) // (percent)
+      .withHoldDelay(0) // (percent)
+      .withPwmOffset(25) // (percent)
+      .withPwmGradient(15) // (percent)
+      .withMotorDirection(tmc51x0::ForwardDirection)
+      .withStandstillMode(tmc51x0::PassiveBrakingLsMode)
+      .withStealthChopThreshold(250); // (millimeters/s)
 
-const tmc51x0::ControllerParameters controller_parameters_real =
-{
-  .ramp_mode = tmc51x0::PositionMode,
-  .max_velocity = max_velocity_default, // (millimeters/s)
-  .max_acceleration = max_acceleration_default, // ((millimeters/s)/s)
-  .start_velocity = start_velocity_default, // (millimeters/s)
-  .stop_velocity = stop_velocity_default, // (millimeters/s)
-  .first_velocity = first_velocity_default, // (millimeters/s)
-  .first_acceleration = first_acceleration_default, // ((millimeters/s)/s)
-  .max_deceleration = max_deceleration_default, // ((millimeters/s)/s)
-  .first_deceleration = first_deceleration_default, // ((millimeters/s)/s)
-};
+const tmc51x0::ControllerParameters controller_parameters_real
+  = tmc51x0::ControllerParameters()
+      .withRampMode(tmc51x0::PositionMode)
+      .withMaxVelocity(max_velocity_default) // (millimeters/s)
+      .withMaxAcceleration(max_acceleration_default) // ((millimeters/s)/s)
+      .withStartVelocity(start_velocity_default) // (millimeters/s)
+      .withStopVelocity(stop_velocity_default) // (millimeters/s)
+      .withFirstVelocity(first_velocity_default) // (millimeters/s)
+      .withFirstAcceleration(first_acceleration_default) // ((millimeters/s)/s)
+      .withMaxDeceleration(max_deceleration_default) // ((millimeters/s)/s)
+      .withFirstDeceleration(first_deceleration_default); // ((millimeters/s)/s)
 
-const tmc51x0::HomeParameters home_parameters_base_real =
-{
-  .run_current = 50, // (percent)
-  .hold_current = 20, // (percent)
-  .target_position = -500, // (millimeters)
-  .velocity = 20, // (millimeters/s)
-  .acceleration = 2, // ((millimeters/s)/s)
-  .zero_wait_duration = 100 // (milliseconds)
-};
+const tmc51x0::HomeParameters home_parameters_base_real
+  = tmc51x0::HomeParameters()
+      .withRunCurrent(50) // (percent)
+      .withHoldCurrent(20) // (percent)
+      .withTargetPosition(-500) // (millimeters)
+      .withVelocity(20) // (millimeters/s)
+      .withAcceleration(2) // ((millimeters/s)/s)
+      .withZeroWaitDuration(100); // (milliseconds)
 
-const tmc51x0::StallParameters stall_parameters_base_real =
-{
-  .stall_guard_threshold = 10,
-  .cool_step_threshold = 15 // (millimeters/s)
-};
+const tmc51x0::StallParameters stall_parameters_base_real
+  = tmc51x0::StallParameters()
+      .withStallGuardThreshold(10)
+      .withCoolStepThreshold(15); // (millimeters/s)
 
-const tmc51x0::SwitchParameters switch_parameters_running =
-{
-  .left_stop_enabled = false,
-  .right_stop_enabled = false,
-  .invert_left_polarity = false, // left switch permanently tied to ground
-  .invert_right_polarity = false, // right switch permanently tied to ground
-};
+const tmc51x0::SwitchParameters switch_parameters_running
+  = tmc51x0::SwitchParameters()
+      .withLeftStopEnabled(false)
+      .withRightStopEnabled(false)
+      .withInvertLeftPolarity(false) // left switch permanently tied to ground
+      .withInvertRightPolarity(false); // right switch permanently tied to ground
 
-const tmc51x0::SwitchParameters switch_parameters_paused =
-{
-  .left_stop_enabled = true,
-  .right_stop_enabled = true,
-  .invert_left_polarity = true, // left switch permanently tied to ground
-  .invert_right_polarity = true, // right switch permanently tied to ground
-};
+const tmc51x0::SwitchParameters switch_parameters_paused
+  = tmc51x0::SwitchParameters()
+      .withLeftStopEnabled(true)
+      .withRightStopEnabled(true)
+      .withInvertLeftPolarity(true) // left switch permanently tied to ground
+      .withInvertRightPolarity(true); // right switch permanently tied to ground
 
 } // namespace constants
 } // namespace CC
@@ -280,6 +273,10 @@ void BSP::beep(uint16_t duration_ms)
 
 void BSP::powerOffAll()
 {
+  for (uint8_t prism_address = 0; prism_address < constants::prism_count; ++prism_address)
+  {
+    prisms[prism_address].notePossibleMirrorDrift();
+  }
   digitalWriteFast(constants::power_pin, LOW);
 }
 
@@ -294,13 +291,13 @@ void BSP::setupPrism(uint8_t prism_address)
   {
     return;
   }
-  tmc51x0::SpiParameters spi_parameters =
-    {
-      .spi_ptr = &prism_spi,
-      .chip_select_pin = constants::prism_spi_csn_pins[prism_address],
-    };
+  tmc51x0::SpiParameters spi_parameters
+    = tmc51x0::SpiParameters()
+        .withSpi(&prism_spi)
+        .withClockRate(constants::prism_spi_clock_rate)
+        .withChipSelectPin(constants::prism_spi_csn_pins[prism_address]);
   TMC51X0 & prism = prisms[prism_address];
-  prism.setupSpi(spi_parameters);
+  prism.setupSpi(spi_parameters, tmc51x0::Registers::DeviceModel::TMC5130A);
 }
 
 bool BSP::communicating(uint8_t prism_address)
@@ -375,6 +372,16 @@ bool BSP::homed(uint8_t prism_address)
   }
   TMC51X0 & prism = prisms[prism_address];
   return prism.homed();
+}
+
+bool BSP::homeFailed(uint8_t prism_address)
+{
+  if (prism_address >= constants::prism_count)
+  {
+    return false;
+  }
+  TMC51X0 & prism = prisms[prism_address];
+  return prism.homeFailed();
 }
 
 void BSP::writeTargetPosition(uint8_t prism_address, uint16_t position_mm)
