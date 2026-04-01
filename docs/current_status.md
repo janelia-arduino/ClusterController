@@ -4,13 +4,15 @@
 
 This is a reasonable checkpoint to commit and push, but it should be treated as:
 
-- a solid rewrite transport and non-motion compatibility checkpoint
-- an active homing investigation checkpoint
-- not yet a "homing works" checkpoint
+- a solid rewrite transport, motion, and single-cluster rewrite checkpoint
+- a dependency-sync checkpoint with `TMC51X0` bumped to `4.0.3`
+- ready for staged hardware validation tomorrow, starting with single-cluster
+  Python readback checks
 
-The rewrite firmware is useful and validated for transport, cluster-level commands,
-power sequencing, and basic prism communication. The remaining blocker is
-single-prism stall homing behavior in the integrated rewrite.
+The rewrite firmware is useful and validated for transport, cluster-level
+commands, power sequencing, homing, and basic prism motion on the current bench.
+The next work is staged hardware validation across larger attached setups, not
+basic rewrite bring-up.
 
 ## What Is Working
 
@@ -36,28 +38,32 @@ prism board:
 - `write_run_current_cluster`
 - `read_controller_parameters_cluster`
 - `write_controller_parameters_cluster`
+- `home_cluster`
+- `homed_cluster`
+- `write_target_prism`
+- `write_targets_cluster`
+- `write_double_target_prism`
+- `write_double_targets_cluster`
 - prism communication on the attached board at CS pin `8`
 - host-side `HexMazeInterface().verify_cluster(10)` succeeds
 - prism power-cycle recovery through `power_off_cluster()` and
   `power_on_cluster()`
+- rewrite firmware build and USB flash through PlatformIO `pico-rewrite`
+- `ClusterController` build tasks now use repo-local `PLATFORMIO_CORE_DIR`
+- `ClusterController` now pins `TMC51X0` to `4.0.3`
 
 Current rewrite defaults are intentionally close to the original firmware for
 driver/controller setup.
 
 ## What Is Not Working Yet
 
-`home_cluster()` is implemented but not validated.
+The main unfinished area is broader staged hardware validation:
 
-Current behavior on the rewrite firmware:
-
-- `home_cluster(10, HomeParameters())` returns success to the host
-- `homed_cluster(10)` stays all zero over repeated polls
-- `read_positions_cluster(10)` stays at `0` for the attached prism
-- this should be treated as incomplete behavior, not successful homing
-
-So the main remaining blocker is:
-
-- integrated stall homing behavior for the single connected prism
+- single-cluster Python communication and non-destructive readback checks after
+  today's firmware flash
+- one-cluster seven-prism validation
+- full-rig seven-cluster validation
+- cleanup of temporary debug commands before calling the rewrite complete
 
 ## Important Findings From Today
 
@@ -156,25 +162,17 @@ removed or hidden before calling the rewrite complete.
 
 ## Best Next Step Tomorrow
 
-Do not add more public protocol commands first.
+Resume with staged hardware validation rather than more firmware changes first:
 
-Resume with the single-prism homing investigation:
-
-1. Compare the rewrite `begin_home()` and service loop against the standalone
-   `ClusterHomeBench` path until they are structurally identical for one prism.
-2. Add temporary serial logging to the rewrite prism path if needed, instead of
-   continuing blind Ethernet-only debugging.
-3. Once one-prism homing is reliable, revalidate:
-   - `home_cluster()`
-   - `homed_cluster()`
-   - `read_positions_cluster()`
-   - `pause_cluster()`
-   - `resume_cluster()`
-4. After homing is stable, move on to target writes and the remaining motion
-   commands.
+1. On the current `1` cluster / `1` prism setup, run Python communication and
+   non-destructive readback checks.
+2. On the `1` cluster / `7` prism setup, validate cluster-wide homing and
+   target-write behavior.
+3. On the full `7 x 7` rig, validate discovery, per-cluster verify, and
+   cluster-to-cluster behavior under network load.
 
 ## Suggested Commit Message
 
 Suggested message for this checkpoint:
 
-`rewrite: checkpoint transport and prism bring-up; homing investigation in progress`
+`rewrite: pin TMC51X0 4.0.3 and validate pico-rewrite flash path`

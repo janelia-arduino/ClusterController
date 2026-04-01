@@ -50,6 +50,7 @@ constexpr uint8_t write_controller_parameters_cluster_cmd = 0x15;
 constexpr uint8_t read_controller_parameters_cluster_cmd = 0x16;
 constexpr uint8_t write_double_target_prism_cmd = 0x17;
 constexpr uint8_t write_double_targets_cluster_cmd = 0x18;
+constexpr uint8_t read_home_outcomes_cluster_cmd = 0x19;
 constexpr uint32_t check_communication_response = 0x12345678;
 constexpr size_t command_buffer_size = 32;
 constexpr size_t response_buffer_size = 32;
@@ -355,6 +356,14 @@ size_t process_command(const uint8_t *command, const size_t command_size)
           controller_parameters.max_deceleration;
       response_buffer[response_size++] =
           controller_parameters.first_deceleration;
+      break;
+
+    case read_home_outcomes_cluster_cmd:
+      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
+           ++prism_address) {
+        response_buffer[response_size++] =
+            rewrite_prism::home_outcome(prism_address);
+      }
       break;
 
     default:

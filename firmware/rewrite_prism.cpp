@@ -80,6 +80,7 @@ TMC51X0 prisms[prism_count];
 bool initialized = false;
 bool homed_state[prism_count] = {};
 bool home_active_state[prism_count] = {};
+HomeOutcome home_outcome_state[prism_count] = {};
 bool paused_state[prism_count] = {};
 int16_t queued_target_mm[prism_count][target_queue_capacity] = {};
 uint8_t queued_target_head[prism_count] = {};
@@ -174,6 +175,7 @@ void setup()
   for (size_t prism_address = 0; prism_address < prism_count; ++prism_address) {
     homed_state[prism_address] = false;
     home_active_state[prism_address] = false;
+    home_outcome_state[prism_address] = HomeOutcome::none;
     paused_state[prism_address] = false;
     clear_target_queue(prism_address);
     home_start_ms[prism_address] = 0;
@@ -203,6 +205,7 @@ void shutdown()
   for (size_t prism_address = 0; prism_address < prism_count; ++prism_address) {
     homed_state[prism_address] = false;
     home_active_state[prism_address] = false;
+    home_outcome_state[prism_address] = HomeOutcome::none;
     paused_state[prism_address] = false;
     clear_target_queue(prism_address);
     home_start_ms[prism_address] = 0;
@@ -221,6 +224,9 @@ void loop()
 
   for (size_t prism_address = 0; prism_address < prism_count; ++prism_address) {
     if (!communicating(prism_address)) {
+      if (home_active_state[prism_address]) {
+        home_outcome_state[prism_address] = HomeOutcome::failed;
+      }
       homed_state[prism_address] = false;
       home_active_state[prism_address] = false;
       continue;
@@ -259,6 +265,7 @@ void loop()
       prism.controller.zeroActualPosition();
       homed_state[prism_address] = true;
       home_active_state[prism_address] = false;
+      home_outcome_state[prism_address] = HomeOutcome::stall;
       home_start_ms[prism_address] = 0;
       home_start_position_raw[prism_address] = 0;
       home_motion_observed[prism_address] = false;
@@ -274,6 +281,7 @@ void loop()
       prism.controller.zeroActualPosition();
       homed_state[prism_address] = true;
       home_active_state[prism_address] = false;
+      home_outcome_state[prism_address] = HomeOutcome::target_reached;
       home_start_ms[prism_address] = 0;
       home_start_position_raw[prism_address] = 0;
       home_motion_observed[prism_address] = false;
@@ -286,6 +294,7 @@ void loop()
     if (!communicating(prism_address)) {
       homed_state[prism_address] = false;
       home_active_state[prism_address] = false;
+      home_outcome_state[prism_address] = HomeOutcome::failed;
       home_start_ms[prism_address] = 0;
       home_start_position_raw[prism_address] = 0;
       home_motion_observed[prism_address] = false;
@@ -341,6 +350,7 @@ void begin_home(const uint8_t prism_address, const HomeParameters &parameters)
   prism.controller.writeTargetPosition(home_target_position_raw[prism_address]);
   prism.controller.writeRampMode(tmc51x0::PositionMode);
   homed_state[prism_address] = false;
+  home_outcome_state[prism_address] = HomeOutcome::in_progress;
   home_start_ms[prism_address] = millis();
   home_start_position_raw[prism_address] = prism.controller.readActualPosition();
   home_motion_observed[prism_address] = false;
@@ -383,6 +393,15 @@ bool home_failed(const uint8_t prism_address)
   }
 
   return prisms[prism_address].homeFailed();
+}
+
+uint8_t home_outcome(const uint8_t prism_address)
+{
+  if (!initialized || prism_address >= prism_count) {
+    return static_cast<uint8_t>(HomeOutcome::none);
+  }
+
+  return static_cast<uint8_t>(home_outcome_state[prism_address]);
 }
 
 bool paused(const uint8_t prism_address)

@@ -144,13 +144,13 @@ Linux users have to install udev rules for PlatformIO supported boards/devices.
 1.  Gnu/Linux
 
     ```sh
-    make firmware
+    pixi run build
     ```
 
 2.  Other
 
     ```sh
-    pio run -e pico
+    PLATFORMIO_CORE_DIR=.platformio pio run -e pico-rewrite
     ```
 
 
@@ -159,13 +159,13 @@ Linux users have to install udev rules for PlatformIO supported boards/devices.
 1.  Gnu/Linux
 
     ```sh
-    make upload
+    PLATFORMIO_CORE_DIR=.platformio pio run -e pico-rewrite -t upload
     ```
 
 2.  Other
 
     ```sh
-    pio run -e pico -t upload
+    PLATFORMIO_CORE_DIR=.platformio pio run -e pico-rewrite -t upload
     ```
 
 
@@ -174,13 +174,13 @@ Linux users have to install udev rules for PlatformIO supported boards/devices.
 1.  Gnu/Linux
 
     ```sh
-    make monitor
+    pixi run monitor
     ```
 
 2.  Other
 
     ```sh
-    pio device monitor --echo --eol=LF
+    PLATFORMIO_CORE_DIR=.platformio pio device monitor --echo --eol=LF --baud 115200
     ```
 
 

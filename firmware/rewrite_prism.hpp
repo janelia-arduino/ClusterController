@@ -9,6 +9,14 @@ namespace rewrite_prism
 constexpr size_t prism_count = 7;
 constexpr int16_t unhomed_position = -1;
 
+enum class HomeOutcome : uint8_t {
+  none = 0,
+  in_progress = 1,
+  stall = 2,
+  target_reached = 3,
+  failed = 4,
+};
+
 struct ControllerParameters {
   uint8_t start_velocity;
   uint8_t stop_velocity;
@@ -35,6 +43,7 @@ bool communicating(uint8_t prism_address);
 bool homed(uint8_t prism_address);
 bool home_active(uint8_t prism_address);
 bool home_failed(uint8_t prism_address);
+uint8_t home_outcome(uint8_t prism_address);
 bool paused(uint8_t prism_address);
 void write_target(uint8_t prism_address, int16_t position_mm);
 void pause(uint8_t prism_address);
