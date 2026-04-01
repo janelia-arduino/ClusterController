@@ -28,13 +28,19 @@ constexpr uint8_t protocol_version = 0x04;
 constexpr uint8_t error_response = 0xEE;
 constexpr uint8_t read_cluster_address_cmd = 0x01;
 constexpr uint8_t communicating_cluster_cmd = 0x02;
+constexpr uint8_t reset_cluster_cmd = 0x03;
 constexpr uint8_t beep_cluster_cmd = 0x04;
 constexpr uint8_t led_off_cluster_cmd = 0x05;
 constexpr uint8_t led_on_cluster_cmd = 0x06;
 constexpr uint8_t power_off_cluster_cmd = 0x07;
 constexpr uint8_t power_on_cluster_cmd = 0x08;
+constexpr uint8_t home_prism_cmd = 0x09;
 constexpr uint8_t home_cluster_cmd = 0x0A;
+constexpr uint8_t write_target_prism_cmd = 0x0C;
+constexpr uint8_t write_targets_cluster_cmd = 0x0D;
+constexpr uint8_t pause_prism_cmd = 0x0E;
 constexpr uint8_t pause_cluster_cmd = 0x0F;
+constexpr uint8_t resume_prism_cmd = 0x10;
 constexpr uint8_t resume_cluster_cmd = 0x11;
 constexpr uint8_t homed_cluster_cmd = 0x0B;
 constexpr uint8_t read_positions_cluster_cmd = 0x12;
@@ -42,9 +48,8 @@ constexpr uint8_t write_run_current_cluster_cmd = 0x13;
 constexpr uint8_t read_run_current_cluster_cmd = 0x14;
 constexpr uint8_t write_controller_parameters_cluster_cmd = 0x15;
 constexpr uint8_t read_controller_parameters_cluster_cmd = 0x16;
-constexpr uint8_t debug_prism_communication_cmd = 0x19;
-constexpr uint8_t debug_home_status_cmd = 0x1A;
-constexpr uint8_t debug_prism_raw_status_cmd = 0x1B;
+constexpr uint8_t write_double_target_prism_cmd = 0x17;
+constexpr uint8_t write_double_targets_cluster_cmd = 0x18;
 constexpr uint32_t check_communication_response = 0x12345678;
 constexpr size_t command_buffer_size = 32;
 constexpr size_t response_buffer_size = 32;
@@ -114,6 +119,12 @@ size_t process_command(const uint8_t *command, const size_t command_size)
       response_size += sizeof(check_communication_response);
       break;
 
+    case reset_cluster_cmd:
+      rewrite_bsp::set_cluster_power(false);
+      rewrite_prism::shutdown();
+      prism_setup_pending = false;
+      break;
+
     case beep_cluster_cmd:
     {
       if (command_size != 5) {
@@ -163,12 +174,112 @@ size_t process_command(const uint8_t *command, const size_t command_size)
       break;
     }
 
+    case home_prism_cmd:
+    {
+      if (command_size != 9) {
+        return build_error_response();
+      }
+      const uint8_t prism_address = command[3];
+      rewrite_prism::HomeParameters home_parameters{};
+      std::memcpy(&home_parameters.travel_limit, command + 4,
+                  sizeof(home_parameters.travel_limit));
+      home_parameters.max_velocity = command[6];
+      home_parameters.run_current = command[7];
+      home_parameters.stall_threshold = static_cast<int8_t>(command[8]);
+      rewrite_prism::begin_home(prism_address, home_parameters);
+      response_buffer[response_size++] = prism_address;
+      break;
+    }
+
+    case write_target_prism_cmd:
+    {
+      if (command_size != 6) {
+        return build_error_response();
+      }
+      const uint8_t prism_address = command[3];
+      int16_t position_mm = 0;
+      std::memcpy(&position_mm, command + 4, sizeof(position_mm));
+      rewrite_prism::write_target(prism_address, position_mm);
+      response_buffer[response_size++] = prism_address;
+      break;
+    }
+
+    case write_targets_cluster_cmd:
+      if (command_size != 17) {
+        return build_error_response();
+      }
+      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
+           ++prism_address) {
+        int16_t position_mm = 0;
+        std::memcpy(&position_mm, command + 3 + prism_address * sizeof(position_mm),
+                    sizeof(position_mm));
+        rewrite_prism::write_target(prism_address, position_mm);
+      }
+      break;
+
+    case write_double_target_prism_cmd:
+    {
+      if (command_size != 8) {
+        return build_error_response();
+      }
+      const uint8_t prism_address = command[3];
+      int16_t first_position_mm = 0;
+      int16_t second_position_mm = 0;
+      std::memcpy(&first_position_mm, command + 4, sizeof(first_position_mm));
+      std::memcpy(&second_position_mm, command + 6, sizeof(second_position_mm));
+      rewrite_prism::write_target(prism_address, first_position_mm);
+      rewrite_prism::write_target(prism_address, second_position_mm);
+      response_buffer[response_size++] = prism_address;
+      break;
+    }
+
+    case write_double_targets_cluster_cmd:
+      if (command_size != 31) {
+        return build_error_response();
+      }
+      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
+           ++prism_address) {
+        int16_t first_position_mm = 0;
+        int16_t second_position_mm = 0;
+        const size_t base_offset = 3 + prism_address * 2 * sizeof(first_position_mm);
+        std::memcpy(&first_position_mm, command + base_offset,
+                    sizeof(first_position_mm));
+        std::memcpy(&second_position_mm,
+                    command + base_offset + sizeof(first_position_mm),
+                    sizeof(second_position_mm));
+        rewrite_prism::write_target(prism_address, first_position_mm);
+        rewrite_prism::write_target(prism_address, second_position_mm);
+      }
+      break;
+
+    case pause_prism_cmd:
+    {
+      if (command_size != 4) {
+        return build_error_response();
+      }
+      const uint8_t prism_address = command[3];
+      rewrite_prism::pause(prism_address);
+      response_buffer[response_size++] = prism_address;
+      break;
+    }
+
     case pause_cluster_cmd:
       for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
            ++prism_address) {
         rewrite_prism::pause(prism_address);
       }
       break;
+
+    case resume_prism_cmd:
+    {
+      if (command_size != 4) {
+        return build_error_response();
+      }
+      const uint8_t prism_address = command[3];
+      rewrite_prism::resume(prism_address);
+      response_buffer[response_size++] = prism_address;
+      break;
+    }
 
     case resume_cluster_cmd:
       for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
@@ -224,6 +335,11 @@ size_t process_command(const uint8_t *command, const size_t command_size)
       controller_parameters.max_acceleration = command[8];
       controller_parameters.max_deceleration = command[9];
       controller_parameters.first_deceleration = command[10];
+      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
+           ++prism_address) {
+        rewrite_prism::write_controller_parameters(prism_address,
+                                                   controller_parameters);
+      }
       break;
 
     case read_controller_parameters_cluster_cmd:
@@ -240,88 +356,6 @@ size_t process_command(const uint8_t *command, const size_t command_size)
       response_buffer[response_size++] =
           controller_parameters.first_deceleration;
       break;
-
-    case debug_prism_communication_cmd:
-      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
-           ++prism_address) {
-        response_buffer[response_size++] =
-            rewrite_prism::communicating(prism_address) ? 1 : 0;
-      }
-      break;
-
-    case debug_home_status_cmd:
-      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
-           ++prism_address) {
-        uint8_t flags = 0;
-        if (rewrite_prism::communicating(prism_address)) {
-          flags |= 0x01;
-        }
-        if (rewrite_prism::home_active(prism_address)) {
-          flags |= 0x02;
-        }
-        if (rewrite_prism::home_failed(prism_address)) {
-          flags |= 0x04;
-        }
-        if (rewrite_prism::homed(prism_address)) {
-          flags |= 0x08;
-        }
-        response_buffer[response_size++] = flags;
-        const int16_t position_mm =
-            rewrite_prism::read_position_mm(prism_address);
-        std::memcpy(response_buffer + response_size,
-                    &position_mm,
-                    sizeof(position_mm));
-        response_size += sizeof(position_mm);
-      }
-      break;
-
-    case debug_prism_raw_status_cmd:
-    {
-      if (command_size != 4) {
-        return build_error_response();
-      }
-      const uint8_t prism_address = command[3];
-      uint8_t flags = 0;
-      if (rewrite_prism::communicating(prism_address)) {
-        flags |= 0x01;
-      }
-      if (rewrite_prism::home_active(prism_address)) {
-        flags |= 0x02;
-      }
-      if (rewrite_prism::home_failed(prism_address)) {
-        flags |= 0x04;
-      }
-      if (rewrite_prism::homed(prism_address)) {
-        flags |= 0x08;
-      }
-      if (rewrite_prism::step_and_direction_mode(prism_address)) {
-        flags |= 0x10;
-      }
-      response_buffer[response_size++] = flags;
-      const int32_t position_raw = rewrite_prism::read_position_raw(prism_address);
-      std::memcpy(response_buffer + response_size,
-                  &position_raw,
-                  sizeof(position_raw));
-      response_size += sizeof(position_raw);
-      const int32_t velocity_raw = rewrite_prism::read_velocity_raw(prism_address);
-      std::memcpy(response_buffer + response_size,
-                  &velocity_raw,
-                  sizeof(velocity_raw));
-      response_size += sizeof(velocity_raw);
-      const uint32_t max_velocity_raw =
-          rewrite_prism::read_max_velocity_raw(prism_address);
-      std::memcpy(response_buffer + response_size,
-                  &max_velocity_raw,
-                  sizeof(max_velocity_raw));
-      response_size += sizeof(max_velocity_raw);
-      const uint32_t max_acceleration_raw =
-          rewrite_prism::read_max_acceleration_raw(prism_address);
-      std::memcpy(response_buffer + response_size,
-                  &max_acceleration_raw,
-                  sizeof(max_acceleration_raw));
-      response_size += sizeof(max_acceleration_raw);
-      break;
-    }
 
     default:
       return build_error_response();
