@@ -24,6 +24,9 @@ constexpr uint8_t first_acceleration_default = 40;
 constexpr uint8_t max_acceleration_default = 20;
 constexpr uint8_t max_deceleration_default = 30;
 constexpr uint8_t first_deceleration_default = 50;
+constexpr int16_t position_min_mm = 0;
+constexpr int16_t position_max_mm = 550;
+constexpr int16_t home_travel_limit_max_mm = 650;
 const auto converter_parameters =
     tmc51x0::ConverterParameters()
         .withClockFrequencyMHz(16)
@@ -74,7 +77,6 @@ const auto switch_parameters_paused =
         .withInvertLeftPolarity(true)
         .withInvertRightPolarity(true);
 constexpr uint32_t home_status_poll_delay_ms = 2000;
-
 SPIClassRP2040 &prism_spi = SPI1;
 TMC51X0 prisms[prism_count];
 bool initialized = false;
@@ -97,6 +99,103 @@ ControllerParameters desired_controller_parameters = {
     max_acceleration_default, max_deceleration_default,
     first_deceleration_default};
 
+void clear_target_queue(size_t prism_address);
+
+int16_t clamp_position_mm(const int16_t position_mm)
+{
+  if (position_mm < position_min_mm) {
+    return position_min_mm;
+  }
+  if (position_mm > position_max_mm) {
+    return position_max_mm;
+  }
+  return position_mm;
+}
+
+int16_t clamp_home_travel_limit_mm(const int16_t travel_limit_mm)
+{
+  if (travel_limit_mm < 0) {
+    return 0;
+  }
+  if (travel_limit_mm > home_travel_limit_max_mm) {
+    return home_travel_limit_max_mm;
+  }
+  return travel_limit_mm;
+}
+
+void clear_home_tracking(const size_t prism_address)
+{
+  home_start_ms[prism_address] = 0;
+  home_start_position_raw[prism_address] = 0;
+  home_motion_observed[prism_address] = false;
+  home_position_fallback_allowed[prism_address] = false;
+  home_target_position_raw[prism_address] = 0;
+}
+
+void restore_runtime_configuration(const size_t prism_address)
+{
+  TMC51X0 &prism = prisms[prism_address];
+  const auto driver_parameters_real_current =
+      driver_parameters_real.withRunCurrent(desired_run_current_percent);
+  const auto controller_parameters_real_current =
+      tmc51x0::ControllerParameters()
+          .withRampMode(tmc51x0::PositionMode)
+          .withMaxVelocity(desired_controller_parameters.max_velocity)
+          .withMaxAcceleration(desired_controller_parameters.max_acceleration)
+          .withStartVelocity(desired_controller_parameters.start_velocity)
+          .withStopVelocity(desired_controller_parameters.stop_velocity)
+          .withFirstVelocity(desired_controller_parameters.first_velocity)
+          .withFirstAcceleration(
+              desired_controller_parameters.first_acceleration)
+          .withMaxDeceleration(
+              desired_controller_parameters.max_deceleration)
+          .withFirstDeceleration(
+              desired_controller_parameters.first_deceleration);
+
+  prism.driver.setup(
+      prism.converter.driverParametersRealToChip(driver_parameters_real_current));
+  prism.controller.setup(
+      prism.converter.controllerParametersRealToChip(
+          controller_parameters_real_current));
+  prism.controller.setupSwitches(paused_state[prism_address]
+                                     ? switch_parameters_paused
+                                     : switch_parameters_running);
+}
+
+void complete_home_success(const size_t prism_address, const HomeOutcome outcome)
+{
+  TMC51X0 &prism = prisms[prism_address];
+
+  // Freeze motion before zeroing so a successful home never commands a
+  // corrective move away from the physical hardstop.
+  prism.controller.writeRampMode(tmc51x0::HoldMode);
+  prism.controller.zeroActualPosition();
+  prism.controller.zeroTargetPosition();
+  restore_runtime_configuration(prism_address);
+  prism.controller.zeroActualPosition();
+  prism.controller.zeroTargetPosition();
+
+  homed_state[prism_address] = true;
+  home_active_state[prism_address] = false;
+  home_outcome_state[prism_address] = outcome;
+  clear_home_tracking(prism_address);
+  clear_target_queue(prism_address);
+}
+
+void complete_home_failure(const size_t prism_address,
+                           const HomeOutcome outcome = HomeOutcome::failed)
+{
+  TMC51X0 &prism = prisms[prism_address];
+  prism.controller.writeRampMode(tmc51x0::HoldMode);
+  restore_runtime_configuration(prism_address);
+  prism.controller.writeRampMode(tmc51x0::HoldMode);
+  homed_state[prism_address] = false;
+  home_active_state[prism_address] = false;
+  home_outcome_state[prism_address] = outcome;
+  clear_home_tracking(prism_address);
+  clear_target_queue(prism_address);
+}
+
 void clear_target_queue(const size_t prism_address)
 {
   queued_target_head[prism_address] = 0;
@@ -115,7 +214,7 @@ bool enqueue_target(const size_t prism_address, const int16_t position_mm)
   const uint8_t slot =
       (queued_target_head[prism_address] + queued_target_count[prism_address]) %
       target_queue_capacity;
-  queued_target_mm[prism_address][slot] = position_mm;
+  queued_target_mm[prism_address][slot] = clamp_position_mm(position_mm);
   ++queued_target_count[prism_address];
   return true;
 }
@@ -260,47 +359,16 @@ void loop()
     }
 
     if (prism.driver.stalled()) {
-      prism.controller.writeTargetPosition(0);
-      prism.controller.zeroActualPosition();
-      prism.controller.zeroActualPosition();
-      homed_state[prism_address] = true;
-      home_active_state[prism_address] = false;
-      home_outcome_state[prism_address] = HomeOutcome::stall;
-      home_start_ms[prism_address] = 0;
-      home_start_position_raw[prism_address] = 0;
-      home_motion_observed[prism_address] = false;
-      home_position_fallback_allowed[prism_address] = false;
-      home_target_position_raw[prism_address] = 0;
-      clear_target_queue(prism_address);
+      complete_home_success(prism_address, HomeOutcome::stall);
       continue;
     }
 
     if (home_position_fallback_allowed[prism_address] &&
         prism.controller.positionReached()) {
-      prism.controller.writeTargetPosition(0);
-      prism.controller.zeroActualPosition();
-      homed_state[prism_address] = true;
-      home_active_state[prism_address] = false;
-      home_outcome_state[prism_address] = HomeOutcome::target_reached;
-      home_start_ms[prism_address] = 0;
-      home_start_position_raw[prism_address] = 0;
-      home_motion_observed[prism_address] = false;
-      home_position_fallback_allowed[prism_address] = false;
-      home_target_position_raw[prism_address] = 0;
-      clear_target_queue(prism_address);
-      continue;
-    }
-
-    if (!communicating(prism_address)) {
-      homed_state[prism_address] = false;
-      home_active_state[prism_address] = false;
-      home_outcome_state[prism_address] = HomeOutcome::failed;
-      home_start_ms[prism_address] = 0;
-      home_start_position_raw[prism_address] = 0;
-      home_motion_observed[prism_address] = false;
-      home_position_fallback_allowed[prism_address] = false;
-      home_target_position_raw[prism_address] = 0;
-      clear_target_queue(prism_address);
+      complete_home_failure(
+          prism_address,
+          prism.controller.positionReached() ? HomeOutcome::target_reached
+                                             : HomeOutcome::failed);
       continue;
     }
 
@@ -315,9 +383,12 @@ void begin_home(const uint8_t prism_address, const HomeParameters &parameters)
   }
 
   TMC51X0 &prism = prisms[prism_address];
+  const int16_t clamped_travel_limit_mm =
+      clamp_home_travel_limit_mm(parameters.travel_limit);
   auto home_parameters_real = home_parameters_base_real;
   home_parameters_real.run_current = parameters.run_current;
-  home_parameters_real.target_position = -1 * static_cast<int32_t>(parameters.travel_limit);
+  home_parameters_real.target_position =
+      -1 * static_cast<int32_t>(clamped_travel_limit_mm);
   home_parameters_real.velocity = parameters.max_velocity;
 
   auto stall_parameters_real = stall_parameters_base_real;
@@ -329,9 +400,12 @@ void begin_home(const uint8_t prism_address, const HomeParameters &parameters)
   const auto stall_parameters_chip =
       prism.converter.stallParametersRealToChip(stall_parameters_real);
 
-  // Re-seed the prism into a known controller state before homing so home
-  // does not inherit an in-flight target or stale motion configuration.
+  // Re-seed the prism into a known runtime state before homing so home does
+  // not inherit stale motion configuration.
   configure_defaults(prism_address);
+  prism.controller.setupSwitches(paused_state[prism_address]
+                                     ? switch_parameters_paused
+                                     : switch_parameters_running);
   prism.driver.writeRunCurrent(home_parameters_chip.run_current);
   prism.driver.writeHoldCurrent(home_parameters_chip.hold_current);
   prism.driver.writeHoldDelay(0);
@@ -342,6 +416,7 @@ void begin_home(const uint8_t prism_address, const HomeParameters &parameters)
   prism.driver.writeCoolStepThreshold(stall_parameters_chip.cool_step_threshold);
   prism.driver.writeChopperMode(tmc51x0::SpreadCycleMode);
   prism.controller.writeStopMode(tmc51x0::HardMode);
+  prism.controller.enableStallStop();
   prism.controller.writeRampMode(tmc51x0::HoldMode);
   prism.controller.writeMaxVelocity(home_parameters_chip.velocity);
   prism.controller.writeMaxAcceleration(home_parameters_chip.acceleration);
@@ -420,14 +495,15 @@ void write_target(const uint8_t prism_address, const int16_t position_mm)
   }
 
   TMC51X0 &prism = prisms[prism_address];
+  const int16_t clamped_position_mm = clamp_position_mm(position_mm);
   if (paused_state[prism_address] || !prism.controller.positionReached()) {
-    (void)enqueue_target(prism_address, position_mm);
+    (void)enqueue_target(prism_address, clamped_position_mm);
     return;
   }
 
   clear_target_queue(prism_address);
   prism.controller.writeTargetPosition(
-      prism.converter.positionRealToChip(position_mm));
+      prism.converter.positionRealToChip(clamped_position_mm));
 }
 
 void pause(const uint8_t prism_address)
