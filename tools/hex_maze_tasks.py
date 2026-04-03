@@ -174,6 +174,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "release-check",
         "hardware-smoke",
         "hardware-gui-sequence",
+        "hardware-repeated-home",
         "hardware-regression",
         "hardware-edge",
         "hardware-acceptance",
@@ -232,6 +233,9 @@ def main() -> int:
         return 0
     if args.command == "hardware-gui-sequence":
         _hardware_script(repo, "hardware_gui_sequence_test.py", args)
+        return 0
+    if args.command == "hardware-repeated-home":
+        _hardware_script(repo, "hardware_repeated_home_test.py", args)
         return 0
     if args.command == "hardware-regression":
         _hardware_script(repo, "hardware_regression_test.py", args)

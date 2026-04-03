@@ -100,6 +100,7 @@ ControllerParameters desired_controller_parameters = {
     first_deceleration_default};
 
 void clear_target_queue(size_t prism_address);
+void issue_target_position(size_t prism_address, int16_t position_mm);
 
 int16_t clamp_position_mm(const int16_t position_mm)
 {
@@ -160,6 +161,9 @@ void restore_runtime_configuration(const size_t prism_address)
   prism.controller.setupSwitches(paused_state[prism_address]
                                      ? switch_parameters_paused
                                      : switch_parameters_running);
+  prism.controller.writeRampMode(paused_state[prism_address]
+                                     ? tmc51x0::HoldMode
+                                     : tmc51x0::PositionMode);
 }
 
 void complete_home_success(const size_t prism_address, const HomeOutcome outcome)
@@ -230,6 +234,14 @@ bool dequeue_target(const size_t prism_address, int16_t &position_mm)
       (queued_target_head[prism_address] + 1) % target_queue_capacity;
   --queued_target_count[prism_address];
   return true;
+}
+
+void issue_target_position(const size_t prism_address, const int16_t position_mm)
+{
+  TMC51X0 &prism = prisms[prism_address];
+  prism.controller.writeRampMode(tmc51x0::PositionMode);
+  prism.controller.writeTargetPosition(
+      prism.converter.positionRealToChip(clamp_position_mm(position_mm)));
 }
 
 bool effectively_position_reached(const size_t prism_address)
@@ -349,8 +361,7 @@ void loop()
           effectively_position_reached(prism_address)) {
         int16_t next_target_mm = 0;
         if (dequeue_target(prism_address, next_target_mm)) {
-          prism.controller.writeTargetPosition(
-              prism.converter.positionRealToChip(next_target_mm));
+          issue_target_position(prism_address, next_target_mm);
         }
       }
       (void)prism.recoverIfUnhealthy();
@@ -522,8 +533,7 @@ void write_target(const uint8_t prism_address, const int16_t position_mm)
   }
 
   clear_target_queue(prism_address);
-  prism.controller.writeTargetPosition(
-      prism.converter.positionRealToChip(clamped_position_mm));
+  issue_target_position(prism_address, clamped_position_mm);
 }
 
 void pause(const uint8_t prism_address)
@@ -552,9 +562,7 @@ void resume(const uint8_t prism_address)
       effectively_position_reached(prism_address)) {
     int16_t next_target_mm = 0;
     if (dequeue_target(prism_address, next_target_mm)) {
-      prisms[prism_address].controller.writeTargetPosition(
-          prisms[prism_address].converter.positionRealToChip(
-              next_target_mm));
+      issue_target_position(prism_address, next_target_mm);
     }
   }
 }

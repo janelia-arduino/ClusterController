@@ -43,6 +43,7 @@ hex-check-dist = "python tools/hex_maze_tasks.py check-dist"
 hex-release-check = "python tools/hex_maze_tasks.py release-check"
 hardware-smoke = "python tools/hex_maze_tasks.py hardware-smoke"
 hardware-gui-sequence = "python tools/hex_maze_tasks.py hardware-gui-sequence"
+hardware-repeated-home = "python tools/hex_maze_tasks.py hardware-repeated-home"
 hardware-regression = "python tools/hex_maze_tasks.py hardware-regression"
 hardware-edge = "python tools/hex_maze_tasks.py hardware-edge"
 hardware-acceptance = "python tools/hex_maze_tasks.py hardware-acceptance"
@@ -54,10 +55,6 @@ env = { PLATFORMIO_CORE_DIR = ".platformio" }
 
 [tasks.build-rewrite]
 cmd = "pio run -e pico-rewrite"
-env = { PLATFORMIO_CORE_DIR = ".platformio" }
-
-[tasks.build-legacy]
-cmd = "pio run -e pico-legacy"
 env = { PLATFORMIO_CORE_DIR = ".platformio" }
 
 [tasks.clean]
@@ -75,33 +72,20 @@ env = { PLATFORMIO_CORE_DIR = ".platformio" }
 cmd = "pio run -e pico-rewrite -t upload"
 env = { PLATFORMIO_CORE_DIR = ".platformio" }
 
-[tasks.upload-legacy]
-cmd = "pio run -e pico-legacy -t upload"
-env = { PLATFORMIO_CORE_DIR = ".platformio" }
-
 [tasks.flash]
 depends-on = ["upload"]
 
 [tasks.flash-rewrite]
 depends-on = ["upload-rewrite"]
 
-[tasks.flash-legacy]
-depends-on = ["upload-legacy"]
-
 [tasks.export-rewrite]
-cmd = "python tools/export_firmware_artifacts.py rewrite"
-
-[tasks.export-legacy]
-cmd = "python tools/export_firmware_artifacts.py legacy"
+cmd = "python tools/export_firmware_artifacts.py"
 
 [tasks.export-artifacts]
-cmd = "python tools/export_firmware_artifacts.py all"
+depends-on = ["export-rewrite"]
 
 [tasks.flash-artifact-rewrite]
-cmd = ".platformio/packages/tool-picotool-rp2040-earlephilhower/picotool load artifacts/firmware/clustercontroller-rewrite.uf2 -t uf2 -v -x -f"
-
-[tasks.flash-artifact-legacy]
-cmd = ".platformio/packages/tool-picotool-rp2040-earlephilhower/picotool load artifacts/firmware/clustercontroller-legacy.uf2 -t uf2 -v -x -f"
+cmd = "python tools/flash_firmware_artifact.py artifacts/firmware/clustercontroller-rewrite.uf2"
 
 [tasks.monitor]
 cmd = "pio device monitor --echo --eol=LF --baud 115200"

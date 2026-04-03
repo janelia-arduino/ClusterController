@@ -173,7 +173,7 @@ Linux users have to install udev rules for PlatformIO supported boards/devices.
 1.  Gnu/Linux
 
     ```sh
-    pixi run build
+    pixi run build-rewrite
     ```
 
 2.  Other
@@ -188,7 +188,7 @@ Linux users have to install udev rules for PlatformIO supported boards/devices.
 1.  Gnu/Linux
 
     ```sh
-    PLATFORMIO_CORE_DIR=.platformio pio run -e pico-rewrite -t upload
+    pixi run flash-rewrite -- --upload-port COM3
     ```
 
 2.  Other
@@ -196,6 +196,23 @@ Linux users have to install udev rules for PlatformIO supported boards/devices.
     ```sh
     PLATFORMIO_CORE_DIR=.platformio pio run -e pico-rewrite -t upload
     ```
+
+
+### Flash the prebuilt rewrite artifact
+
+Use the committed UF2 artifact when you want to flash without rebuilding. On a
+fresh machine, the task bootstraps the required `picotool` package into the
+repo-local `.platformio/` directory automatically.
+
+```sh
+pixi run flash-artifact-rewrite
+```
+
+To target a specific attached board:
+
+```sh
+pixi run flash-artifact-rewrite -- --ser E6625CA5633BB039
+```
 
 
 ### Serial Terminal Monitor
