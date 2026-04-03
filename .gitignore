@@ -14,6 +14,10 @@
 .pixi
 .venv
 .tools/
+__pycache__/
+*.pyc
+artifacts/firmware/*.bin
+artifacts/firmware/*.elf
 GPATH
 GRTAGS
 GTAGS

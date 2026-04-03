@@ -59,7 +59,7 @@ path first, then clean it up.
 
 ## Host Software Checklist
 
-- [ ] Keep existing `hex_maze_interface` high-level methods working:
+- [x] Keep existing `hex_maze_interface` high-level methods working:
   - `communicating_cluster()`
   - `power_on_cluster()`
   - `home_cluster()`
@@ -70,8 +70,10 @@ path first, then clean it up.
   - `read_run_current_cluster()`
   - `read_controller_parameters_cluster()`
 - [x] Verify `HexMazeInterface().verify_cluster(10)` still succeeds against the rewrite
-- [ ] Update host transport/parsing only if the rewrite response behavior now differs materially
-- [ ] Add or refresh a minimal hardware integration script that exercises:
+- [x] Update host acceptance expectations for the rewrite reset contract:
+  - `reset_cluster()` leaves the cluster communicating with prism power off
+  - host recovery should call `power_on_cluster()` afterwards
+- [x] Add or refresh a minimal hardware integration script that exercises:
   - verify
   - power cycle
   - home
@@ -115,7 +117,7 @@ hardware you care about now:
 
 These items matter, but they should not block the fast-path push:
 
-- [ ] remove or hide temporary debug commands `0x19`, `0x1A`, `0x1B`
+- [ ] remove or hide temporary debug command `0x19`
 - [ ] remove temporary serial diagnostics
 - [ ] clean up firmware module boundaries
 - [ ] decide whether protocol `0x04` stays or changes
@@ -137,15 +139,21 @@ These items matter, but they should not block the fast-path push:
 ## Current Hardware Status
 
 - Verified live on cluster `10` at `192.168.10.10`.
-- Active prism on the current bench appears to be prism index `1`.
+- The current single-cluster bench is responding on all seven prisms.
+- The focused acceptance path has been exercised with prism index `1`.
 - Short-travel homing (`travel_limit=40`) is stable across repeated power cycles.
 - Longer-travel cycling (`travel_limit=120`) passed 5 repeated power-cycle,
   home, cluster-target, and return-to-zero runs.
+- The repo `hardware_smoke_test.py --clusters 10` passes.
+- The repo `hardware_preinstall_acceptance_test.py --cluster 10 --prism 1`
+  passes against the current rewrite.
 - The legacy-compatible fallback is active: reaching the commanded negative target
   without a stall event still marks the prism homed and zeros position.
 - `pause_prism()`, `pause_cluster()`, `resume_prism()`, and `resume_cluster()`
-  hold position during the pause window and resume motion afterwards.
+  now hold position during the pause window and resume motion afterwards.
 - `write_double_target_prism()` now queues correctly:
   raw target stays on the first target, then switches to the second target only
   after the first is reached.
 - `reset_cluster()` now leaves the cluster in a clean unhomed powered-off state.
+- After a successful home, cluster target writes now survive transient per-prism
+  communication misses by queueing rather than silently disappearing.

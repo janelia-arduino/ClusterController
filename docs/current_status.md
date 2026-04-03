@@ -4,14 +4,13 @@
 
 This is a reasonable checkpoint to commit and push, but it should be treated as:
 
-- a solid rewrite transport, motion, and single-cluster rewrite checkpoint
-- a dependency-sync checkpoint with `TMC51X0` bumped to `4.0.3`
-- ready for staged hardware validation tomorrow, starting with single-cluster
-  Python readback checks
+- a hardware-validated single-cluster rewrite checkpoint
+- a stable `pico-rewrite` flash and host-verification checkpoint
+- ready for broader staged validation on larger attached setups
 
-The rewrite firmware is useful and validated for transport, cluster-level
-commands, power sequencing, homing, and basic prism motion on the current bench.
-The next work is staged hardware validation across larger attached setups, not
+The rewrite firmware is validated for transport, power sequencing, homing,
+pause/resume, reset recovery, and cluster-wide prism motion on the current
+single-cluster bench. The next work is larger attached setup validation, not
 basic rewrite bring-up.
 
 ## What Is Working
@@ -46,8 +45,14 @@ prism board:
 - `write_double_targets_cluster`
 - prism communication on the attached board at CS pin `8`
 - host-side `HexMazeInterface().verify_cluster(10)` succeeds
+- repo `hardware_smoke_test.py --clusters 10` succeeds
+- repo `hardware_preinstall_acceptance_test.py --cluster 10 --prism 1`
+  succeeds
 - prism power-cycle recovery through `power_off_cluster()` and
   `power_on_cluster()`
+- reset recovery through `reset_cluster()` followed by `power_on_cluster()`
+- cluster-wide target writes remain reliable after cluster homing
+- pause and resume now hold position on the bench during the pause window
 - rewrite firmware build and USB flash through PlatformIO `pico-rewrite`
 - `ClusterController` build tasks now use repo-local `PLATFORMIO_CORE_DIR`
 - `ClusterController` now pins `TMC51X0` to `4.0.3`
@@ -59,11 +64,10 @@ driver/controller setup.
 
 The main unfinished area is broader staged hardware validation:
 
-- single-cluster Python communication and non-destructive readback checks after
-  today's firmware flash
-- one-cluster seven-prism validation
+- repeated soak validation on the current single-cluster bench
+- one-cluster repeated seven-prism validation after any further firmware change
 - full-rig seven-cluster validation
-- cleanup of temporary debug commands before calling the rewrite complete
+- cleanup of temporary debug protocol once the rewrite is called complete
 
 ## Important Findings From Today
 
@@ -80,7 +84,7 @@ Standalone testing in the `TMC51X0` repo confirmed:
 
 This means the hardware and the underlying library are not fundamentally stuck.
 
-### 3. Standalone homing behavior does not match rewrite behavior
+### 3. Remaining motion bugs were rewrite integration issues
 
 A standalone bench sketch was added in the `TMC51X0` repo:
 
@@ -93,10 +97,16 @@ That sketch uses:
 - prism power on `GP15`
 - ClusterController-style converter, driver, controller, and homing parameters
 
-It does not reproduce the rewrite's long-running active homing behavior.
+It did not reproduce the rewrite's earlier long-running active homing behavior.
 
-That means the remaining bug is in the rewrite integration path, not just in the
-raw driver configuration.
+That confirmed the remaining bugs were in the rewrite integration path, not just
+in the raw driver configuration. The final single-cluster fixes on this bench
+were:
+
+- remove the periodic status LED blink from the active rewrite path
+- force `HoldMode` during pause and restore `PositionMode` on resume
+- avoid silently dropping a post-home cluster target when a prism hits a
+  transient communication miss during `write_target()`
 
 ### 4. Useful reference extracted from `LED-Display_G4.1_ArenaController_Slim`
 
@@ -147,27 +157,30 @@ Files of interest:
 
 Important implementation notes:
 
-- heartbeat beeping was removed for office use
+- the active rewrite no longer uses a periodic PCB status blink
 - `power_on_cluster()` reinitializes prism setup asynchronously so the host does
   not time out waiting for a response
+- `reset_cluster()` intentionally leaves the cluster communicating but prism
+  power off; host recovery should call `power_on_cluster()` afterwards
+- pause now forces the controller into `HoldMode`, then returns to
+  `PositionMode` on resume
+- post-home target writes now queue instead of being silently lost on a
+  transient prism communication miss
 - controller-parameter writes are still intentionally conservative and should
   not be assumed to be motion-safe in the final sense
-- temporary debug commands were added during homing investigation:
-  - `0x19`
-  - `0x1A`
-  - `0x1B`
+- active extra debug command still present during bring-up:
+  - `0x19` for `read_home_outcomes_cluster`
 
-Those debug commands are useful for continued bring-up but should eventually be
-removed or hidden before calling the rewrite complete.
+Any additional temporary debug commands mentioned in older notes should be
+treated as stale unless reintroduced in code.
 
 ## Best Next Step Tomorrow
 
 Resume with staged hardware validation rather than more firmware changes first:
 
-1. On the current `1` cluster / `1` prism setup, run Python communication and
-   non-destructive readback checks.
-2. On the `1` cluster / `7` prism setup, validate cluster-wide homing and
-   target-write behavior.
+1. Re-run smoke and acceptance checks after any future firmware change.
+2. On the attached `1` cluster / `7` prism setup, run a longer soak with repeated
+   power, home, move, pause, resume, and reset-recovery cycles.
 3. On the full `7 x 7` rig, validate discovery, per-cluster verify, and
    cluster-to-cluster behavior under network load.
 
@@ -175,4 +188,4 @@ Resume with staged hardware validation rather than more firmware changes first:
 
 Suggested message for this checkpoint:
 
-`rewrite: pin TMC51X0 4.0.3 and validate pico-rewrite flash path`
+`rewrite: stabilize single-cluster pause and post-home target writes`

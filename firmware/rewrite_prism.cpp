@@ -232,6 +232,17 @@ bool dequeue_target(const size_t prism_address, int16_t &position_mm)
   return true;
 }
 
+bool effectively_position_reached(const size_t prism_address)
+{
+  TMC51X0 &prism = prisms[prism_address];
+  if (prism.controller.positionReached()) {
+    return true;
+  }
+  // Some channels intermittently report a stale "position not reached" state
+  // immediately after a completed home even when XACTUAL already equals XTARGET.
+  return prism.controller.readActualPosition() == prism.controller.readTargetPosition();
+}
+
 void configure_defaults(const size_t prism_address)
 {
   TMC51X0 &prism = prisms[prism_address];
@@ -335,7 +346,7 @@ void loop()
 
     if (!home_active_state[prism_address]) {
       if (!paused_state[prism_address] && queued_target_count[prism_address] > 0 &&
-          prism.controller.positionReached()) {
+          effectively_position_reached(prism_address)) {
         int16_t next_target_mm = 0;
         if (dequeue_target(prism_address, next_target_mm)) {
           prism.controller.writeTargetPosition(
@@ -490,13 +501,22 @@ bool paused(const uint8_t prism_address)
 
 void write_target(const uint8_t prism_address, const int16_t position_mm)
 {
+  if (!initialized || prism_address >= prism_count) {
+    return;
+  }
+
+  const int16_t clamped_position_mm = clamp_position_mm(position_mm);
   if (!communicating(prism_address)) {
+    // After a successful home, a transient readVersion() miss should not cause
+    // a cluster target write to disappear permanently.
+    if (homed_state[prism_address]) {
+      (void)enqueue_target(prism_address, clamped_position_mm);
+    }
     return;
   }
 
   TMC51X0 &prism = prisms[prism_address];
-  const int16_t clamped_position_mm = clamp_position_mm(position_mm);
-  if (paused_state[prism_address] || !prism.controller.positionReached()) {
+  if (paused_state[prism_address] || !effectively_position_reached(prism_address)) {
     (void)enqueue_target(prism_address, clamped_position_mm);
     return;
   }
@@ -513,6 +533,9 @@ void pause(const uint8_t prism_address)
   }
 
   paused_state[prism_address] = true;
+  // Switch configuration alone was not sufficient to hold position reliably on
+  // the bench; force the controller into HoldMode during the pause window.
+  prisms[prism_address].controller.writeRampMode(tmc51x0::HoldMode);
   prisms[prism_address].controller.setupSwitches(switch_parameters_paused);
 }
 
@@ -524,8 +547,9 @@ void resume(const uint8_t prism_address)
 
   paused_state[prism_address] = false;
   prisms[prism_address].controller.setupSwitches(switch_parameters_running);
+  prisms[prism_address].controller.writeRampMode(tmc51x0::PositionMode);
   if (queued_target_count[prism_address] > 0 &&
-      prisms[prism_address].controller.positionReached()) {
+      effectively_position_reached(prism_address)) {
     int16_t next_target_mm = 0;
     if (dequeue_target(prism_address, next_target_mm)) {
       prisms[prism_address].controller.writeTargetPosition(

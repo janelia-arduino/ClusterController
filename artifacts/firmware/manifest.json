@@ -1,0 +1,14 @@
+[
+  {
+    "environment": "pico-rewrite",
+    "sha256": "42fc014d145f0e7a491946363bb2b3aa338db02ee11dd0f782adbf8ae1022ded",
+    "uf2": "artifacts/firmware/clustercontroller-rewrite.uf2",
+    "variant": "rewrite"
+  },
+  {
+    "environment": "pico-legacy",
+    "sha256": "afae708fd0e96683be055c20550ce45db524f1100a44784eae1bdedec2f43cdf",
+    "uf2": "artifacts/firmware/clustercontroller-legacy.uf2",
+    "variant": "legacy"
+  }
+]

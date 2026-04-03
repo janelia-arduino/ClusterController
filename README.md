@@ -11,7 +11,7 @@
 # Library Information
 
 -   **Name:** ClusterController
--   **Version:** 4.0.0
+-   **Version:** 4.1.0
 -   **License:** BSD
 -   **URL:** <https://github.com/janelia-arduino/ClusterController>
 -   **Author:** Peter Polidoro
@@ -22,6 +22,35 @@
 ## Description
 
 Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
+
+
+## Recommended Rig Settings
+
+Validated single-cluster settings for the current rewrite bench and experimental-rig bring-up:
+
+- home parameters:
+  - `travel_limit = 250`
+  - `max_velocity = 20`
+  - `run_current = 50`
+  - `stall_threshold = 10`
+- controller parameters:
+  - `start_velocity = 10`
+  - `stop_velocity = 10`
+  - `first_velocity = 40`
+  - `max_velocity = 40`
+  - `first_acceleration = 120`
+  - `max_acceleration = 80`
+  - `max_deceleration = 80`
+  - `first_deceleration = 120`
+
+Notes:
+
+- Earlier GUI settings with `start_velocity = 20` and `stop_velocity = 20`
+  were not reliable on the validated bench.
+- The historical short home setting `travel_limit = 100` was also not
+  reliable on the validated bench.
+- Keep commanded positive prism positions clear of the mechanical positive
+  hard stop on the real rig.
 
 
 ## Protocol

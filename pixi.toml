@@ -1,6 +1,6 @@
 [workspace]
 name = "ClusterController"
-version = "0.1.0"
+version = "4.1.0"
 description = "Firmware for controlling a cluster of prism actuators."
 authors = ["Peter Polidoro <peter@polidoro.io>"]
 channels = ["conda-forge"]
@@ -11,13 +11,17 @@ platformio = ">=6.1.19,<7"
 python = ">=3.12,<=3.14"
 git = "*"
 
+[pypi-dependencies]
+click = ">=8.1"
+python3-nmap = ">=1.9"
+pytest = ">=8.0"
+ruff = ">=0.11"
+build = ">=1.2"
+twine = ">=5.1"
+
 [tasks]
 ports = "pio device list"
 pio-version = "pio --version"
-build = "PLATFORMIO_CORE_DIR=.platformio pio run -e pico-rewrite"
-clean = "PLATFORMIO_CORE_DIR=.platformio pio run -e pico-rewrite -t clean"
-rebuild = "PLATFORMIO_CORE_DIR=.platformio pio run -e pico-rewrite -t clean && PLATFORMIO_CORE_DIR=.platformio pio run -e pico-rewrite"
-monitor = "pio device monitor --echo --eol=LF --baud 115200"
 ql-install = "python tools/quantum_leaps_tools.py install"
 qm = "python tools/quantum_leaps_tools.py qm"
 qm-install = "python tools/quantum_leaps_tools.py qm --install-only"
@@ -25,6 +29,83 @@ codegen = "python tools/qm_codegen.py"
 check-qm-sync = "python tools/check_qm_sync.py"
 qtools-install = "python tools/quantum_leaps_tools.py qtools-install"
 qspy = "python tools/quantum_leaps_tools.py qspy"
+hex-path = "python tools/hex_maze_tasks.py repo-path"
+hex-python = "python tools/hex_maze_tasks.py python"
+hex-help = "python tools/hex_maze_tasks.py help"
+hex-discover = "python tools/hex_maze_tasks.py discover"
+hex-verify = "python tools/hex_maze_tasks.py verify"
+hex-format = "python tools/hex_maze_tasks.py format"
+hex-lint = "python tools/hex_maze_tasks.py lint"
+hex-test = "python tools/hex_maze_tasks.py test"
+hex-check = "python tools/hex_maze_tasks.py check"
+hex-build = "python tools/hex_maze_tasks.py build"
+hex-check-dist = "python tools/hex_maze_tasks.py check-dist"
+hex-release-check = "python tools/hex_maze_tasks.py release-check"
+hardware-smoke = "python tools/hex_maze_tasks.py hardware-smoke"
+hardware-gui-sequence = "python tools/hex_maze_tasks.py hardware-gui-sequence"
+hardware-regression = "python tools/hex_maze_tasks.py hardware-regression"
+hardware-edge = "python tools/hex_maze_tasks.py hardware-edge"
+hardware-acceptance = "python tools/hex_maze_tasks.py hardware-acceptance"
+repro-post-home = "python tools/hex_maze_tasks.py repro-post-home"
+
+[tasks.build]
+cmd = "pio run -e pico-rewrite"
+env = { PLATFORMIO_CORE_DIR = ".platformio" }
+
+[tasks.build-rewrite]
+cmd = "pio run -e pico-rewrite"
+env = { PLATFORMIO_CORE_DIR = ".platformio" }
+
+[tasks.build-legacy]
+cmd = "pio run -e pico-legacy"
+env = { PLATFORMIO_CORE_DIR = ".platformio" }
+
+[tasks.clean]
+cmd = "pio run -e pico-rewrite -t clean"
+env = { PLATFORMIO_CORE_DIR = ".platformio" }
+
+[tasks.rebuild]
+depends-on = ["clean", "build"]
+
+[tasks.upload]
+cmd = "pio run -e pico-rewrite -t upload"
+env = { PLATFORMIO_CORE_DIR = ".platformio" }
+
+[tasks.upload-rewrite]
+cmd = "pio run -e pico-rewrite -t upload"
+env = { PLATFORMIO_CORE_DIR = ".platformio" }
+
+[tasks.upload-legacy]
+cmd = "pio run -e pico-legacy -t upload"
+env = { PLATFORMIO_CORE_DIR = ".platformio" }
+
+[tasks.flash]
+depends-on = ["upload"]
+
+[tasks.flash-rewrite]
+depends-on = ["upload-rewrite"]
+
+[tasks.flash-legacy]
+depends-on = ["upload-legacy"]
+
+[tasks.export-rewrite]
+cmd = "python tools/export_firmware_artifacts.py rewrite"
+
+[tasks.export-legacy]
+cmd = "python tools/export_firmware_artifacts.py legacy"
+
+[tasks.export-artifacts]
+cmd = "python tools/export_firmware_artifacts.py all"
+
+[tasks.flash-artifact-rewrite]
+cmd = ".platformio/packages/tool-picotool-rp2040-earlephilhower/picotool load artifacts/firmware/clustercontroller-rewrite.uf2 -t uf2 -v -x -f"
+
+[tasks.flash-artifact-legacy]
+cmd = ".platformio/packages/tool-picotool-rp2040-earlephilhower/picotool load artifacts/firmware/clustercontroller-legacy.uf2 -t uf2 -v -x -f"
+
+[tasks.monitor]
+cmd = "pio device monitor --echo --eol=LF --baud 115200"
+env = { PLATFORMIO_CORE_DIR = ".platformio" }
 
 [target.linux-64.dependencies]
 make = "*"
