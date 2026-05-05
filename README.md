@@ -32,7 +32,7 @@ Validated single-cluster settings for the current rewrite bench and experimental
   - `travel_limit = 250`
   - `max_velocity = 20`
   - `run_current = 50`
-  - `stall_threshold = 10`
+  - `stall_threshold = 0`
 - controller parameters:
   - `start_velocity = 10`
   - `stop_velocity = 10`
@@ -67,6 +67,9 @@ Notes:
 -   home-parameters = travel-limit, max-velocity, run-current, stall-threshold
 -   controller-parameters = start-velocity, stop-velocity, first-velocity, max-velocity, first-acceleration, max-acceleration, max-deceleration, first-deceleration
 -   double-position = position-0, position-1
+-   prism-diagnostics = health-flags, driver-flags, stall-guard-result, current-scale, last-home-travel-mm
+-   diagnostic health flags: bit0 communicating, bit1 communication-failure-latched, bit2 reset-latched, bit3 driver-error-latched, bit4 charge-pump-undervoltage-latched, bit5 recovery-attempted-latched, bit6 recovery-failed-latched, bit7 mirror-resync-required
+-   diagnostic driver flags: bit0 stallguard, bit1 over-temperature-warning, bit2 over-temperature-shutdown, bit3 short-to-ground-a, bit4 short-to-ground-b, bit5 open-load-a, bit6 open-load-b, bit7 standstill
 
 | command-name                        | command-format       | command-length | command-number | command-parameters             | response-format | response-length | response-parameters    |
 |----------------------------------- |-------------------- |-------------- |-------------- |------------------------------ |--------------- |--------------- |---------------------- |
@@ -95,6 +98,9 @@ Notes:
 | read-controller-parameters-cluster  | '<BBB'               | 3              | 0x16           |                                | '<BBBBBBBBBBB'  | 11              | controller-parameters  |
 | write-double-target-prism           | '<BBBBHH'            | 8              | 0x17           | prism-address, double-position | '<BBBB'         | 4               | prism-address          |
 | write-double-targets-cluster        | '<BBBHHHHHHHHHHHHHH' | 31             | 0x18           | double-position[prism-count]   | '<BBB'          | 3               |                        |
+| read-home-outcomes-cluster          | '<BBB'               | 3              | 0x19           |                                | '<BBBBBBBBBB'   | 10              | home-outcome[prism-count] |
+| read-prism-diagnostics-cluster      | '<BBB'               | 3              | 0x1A           |                                | '<BBB...'       | 45              | prism-diagnostics[prism-count] |
+| clear-prism-diagnostics-cluster     | '<BBB'               | 3              | 0x1B           |                                | '<BBB'          | 3               |                        |
 
 
 <a id="orgb0abd37"></a>

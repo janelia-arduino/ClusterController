@@ -189,7 +189,7 @@ def _build_parser() -> argparse.ArgumentParser:
     repro.add_argument("--travel-limit", type=int, default=250)
     repro.add_argument("--max-velocity", type=int, default=20)
     repro.add_argument("--run-current", type=int, default=50)
-    repro.add_argument("--stall-threshold", type=int, default=10)
+    repro.add_argument("--stall-threshold", type=int, default=0)
     repro.add_argument(
         "--targets",
         type=int,

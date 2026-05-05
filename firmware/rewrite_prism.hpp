@@ -35,6 +35,14 @@ struct HomeParameters {
   int8_t stall_threshold;
 };
 
+struct PrismDiagnostics {
+  uint8_t health_flags;
+  uint8_t driver_flags;
+  uint16_t stall_guard_result;
+  uint8_t current_scale;
+  uint8_t last_home_travel_mm;
+};
+
 void setup();
 void shutdown();
 void loop();
@@ -52,5 +60,7 @@ int16_t read_position_mm(uint8_t prism_address);
 void write_run_current(uint8_t prism_address, uint8_t run_current_percent);
 void write_controller_parameters(uint8_t prism_address,
                                  const ControllerParameters &parameters);
+PrismDiagnostics read_diagnostics(uint8_t prism_address);
+void clear_diagnostics(uint8_t prism_address);
 
 } // namespace rewrite_prism

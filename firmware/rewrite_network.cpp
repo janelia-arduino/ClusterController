@@ -51,9 +51,11 @@ constexpr uint8_t read_controller_parameters_cluster_cmd = 0x16;
 constexpr uint8_t write_double_target_prism_cmd = 0x17;
 constexpr uint8_t write_double_targets_cluster_cmd = 0x18;
 constexpr uint8_t read_home_outcomes_cluster_cmd = 0x19;
+constexpr uint8_t read_prism_diagnostics_cluster_cmd = 0x1A;
+constexpr uint8_t clear_prism_diagnostics_cluster_cmd = 0x1B;
 constexpr uint32_t check_communication_response = 0x12345678;
 constexpr size_t command_buffer_size = 32;
-constexpr size_t response_buffer_size = 32;
+constexpr size_t response_buffer_size = 64;
 constexpr uint32_t prism_power_stabilize_delay_ms = 2000;
 constexpr uint8_t run_current_default = 75;
 constexpr uint8_t start_velocity_default = 1;
@@ -363,6 +365,29 @@ size_t process_command(const uint8_t *command, const size_t command_size)
            ++prism_address) {
         response_buffer[response_size++] =
             rewrite_prism::home_outcome(prism_address);
+      }
+      break;
+
+    case read_prism_diagnostics_cluster_cmd:
+      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
+           ++prism_address) {
+        const rewrite_prism::PrismDiagnostics diagnostics =
+            rewrite_prism::read_diagnostics(prism_address);
+        response_buffer[response_size++] = diagnostics.health_flags;
+        response_buffer[response_size++] = diagnostics.driver_flags;
+        std::memcpy(response_buffer + response_size,
+                    &diagnostics.stall_guard_result,
+                    sizeof(diagnostics.stall_guard_result));
+        response_size += sizeof(diagnostics.stall_guard_result);
+        response_buffer[response_size++] = diagnostics.current_scale;
+        response_buffer[response_size++] = diagnostics.last_home_travel_mm;
+      }
+      break;
+
+    case clear_prism_diagnostics_cluster_cmd:
+      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
+           ++prism_address) {
+        rewrite_prism::clear_diagnostics(prism_address);
       }
       break;
 

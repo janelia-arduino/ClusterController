@@ -24,9 +24,26 @@ constexpr uint8_t first_acceleration_default = 40;
 constexpr uint8_t max_acceleration_default = 20;
 constexpr uint8_t max_deceleration_default = 30;
 constexpr uint8_t first_deceleration_default = 50;
+constexpr uint8_t diagnostic_health_communicating = 1 << 0;
+constexpr uint8_t diagnostic_health_communication_failure_latched = 1 << 1;
+constexpr uint8_t diagnostic_health_reset_latched = 1 << 2;
+constexpr uint8_t diagnostic_health_driver_error_latched = 1 << 3;
+constexpr uint8_t diagnostic_health_charge_pump_undervoltage_latched = 1 << 4;
+constexpr uint8_t diagnostic_health_recovery_attempted_latched = 1 << 5;
+constexpr uint8_t diagnostic_health_recovery_failed_latched = 1 << 6;
+constexpr uint8_t diagnostic_health_mirror_resync_required = 1 << 7;
+constexpr uint8_t diagnostic_driver_stallguard = 1 << 0;
+constexpr uint8_t diagnostic_driver_over_temperature_warning = 1 << 1;
+constexpr uint8_t diagnostic_driver_over_temperature_shutdown = 1 << 2;
+constexpr uint8_t diagnostic_driver_short_to_ground_a = 1 << 3;
+constexpr uint8_t diagnostic_driver_short_to_ground_b = 1 << 4;
+constexpr uint8_t diagnostic_driver_open_load_a = 1 << 5;
+constexpr uint8_t diagnostic_driver_open_load_b = 1 << 6;
+constexpr uint8_t diagnostic_driver_standstill = 1 << 7;
 constexpr int16_t position_min_mm = 0;
 constexpr int16_t position_max_mm = 550;
 constexpr int16_t home_travel_limit_max_mm = 650;
+constexpr int16_t home_expected_travel_tolerance_mm = 10;
 const auto converter_parameters =
     tmc51x0::ConverterParameters()
         .withClockFrequencyMHz(16)
@@ -62,7 +79,7 @@ const auto home_parameters_base_real =
         .withZeroWaitDuration(100);
 const auto stall_parameters_base_real =
     tmc51x0::StallParameters()
-        .withStallGuardThreshold(10)
+        .withStallGuardThreshold(0)
         .withCoolStepThreshold(15);
 const auto switch_parameters_running =
     tmc51x0::SwitchParameters()
@@ -81,6 +98,7 @@ SPIClassRP2040 &prism_spi = SPI1;
 TMC51X0 prisms[prism_count];
 bool initialized = false;
 bool homed_state[prism_count] = {};
+bool position_confident_state[prism_count] = {};
 bool home_active_state[prism_count] = {};
 HomeOutcome home_outcome_state[prism_count] = {};
 bool paused_state[prism_count] = {};
@@ -92,6 +110,17 @@ int32_t home_start_position_raw[prism_count] = {};
 bool home_motion_observed[prism_count] = {};
 bool home_position_fallback_allowed[prism_count] = {};
 int32_t home_target_position_raw[prism_count] = {};
+int16_t home_expected_start_position_mm[prism_count] = {};
+uint16_t home_travel_limit_mm[prism_count] = {};
+uint16_t home_target_travel_mm[prism_count] = {};
+bool home_stallguard_fallback_state[prism_count] = {};
+uint8_t last_home_travel_mm[prism_count] = {};
+bool diagnostic_communication_failure_latched[prism_count] = {};
+bool diagnostic_reset_latched[prism_count] = {};
+bool diagnostic_driver_error_latched[prism_count] = {};
+bool diagnostic_charge_pump_undervoltage_latched[prism_count] = {};
+bool diagnostic_recovery_attempted_latched[prism_count] = {};
+bool diagnostic_recovery_failed_latched[prism_count] = {};
 uint8_t desired_run_current_percent = run_current_default;
 ControllerParameters desired_controller_parameters = {
     start_velocity_default,  stop_velocity_default, first_velocity_default,
@@ -101,6 +130,14 @@ ControllerParameters desired_controller_parameters = {
 
 void clear_target_queue(size_t prism_address);
 void issue_target_position(size_t prism_address, int16_t position_mm);
+void clear_diagnostic_latches(size_t prism_address);
+uint16_t read_home_travel_mm(size_t prism_address);
+void capture_last_home_travel(size_t prism_address);
+tmc51x0::Registers::RampStat read_ramp_status(size_t prism_address);
+bool home_stall_travel_plausible(size_t prism_address);
+bool home_target_reached_success_allowed(size_t prism_address);
+void continue_home_without_stallguard(size_t prism_address);
+bool recover_if_unhealthy(size_t prism_address);
 
 int16_t clamp_position_mm(const int16_t position_mm)
 {
@@ -131,6 +168,139 @@ void clear_home_tracking(const size_t prism_address)
   home_motion_observed[prism_address] = false;
   home_position_fallback_allowed[prism_address] = false;
   home_target_position_raw[prism_address] = 0;
+  home_expected_start_position_mm[prism_address] = 0;
+  home_travel_limit_mm[prism_address] = 0;
+  home_target_travel_mm[prism_address] = 0;
+  home_stallguard_fallback_state[prism_address] = false;
+}
+
+void clear_diagnostic_latches(const size_t prism_address)
+{
+  diagnostic_communication_failure_latched[prism_address] = false;
+  diagnostic_reset_latched[prism_address] = false;
+  diagnostic_driver_error_latched[prism_address] = false;
+  diagnostic_charge_pump_undervoltage_latched[prism_address] = false;
+  diagnostic_recovery_attempted_latched[prism_address] = false;
+  diagnostic_recovery_failed_latched[prism_address] = false;
+}
+
+uint16_t read_home_travel_mm(const size_t prism_address)
+{
+  TMC51X0 &prism = prisms[prism_address];
+  const int32_t current_position_raw = prism.controller.readActualPosition();
+  const int32_t raw_delta =
+      current_position_raw >= home_start_position_raw[prism_address]
+          ? current_position_raw - home_start_position_raw[prism_address]
+          : home_start_position_raw[prism_address] - current_position_raw;
+  const int32_t travel_mm = prism.converter.positionChipToReal(raw_delta);
+  if (travel_mm <= 0) {
+    return 0;
+  }
+  if (travel_mm > UINT16_MAX) {
+    return UINT16_MAX;
+  }
+  return static_cast<uint16_t>(travel_mm);
+}
+
+void capture_last_home_travel(const size_t prism_address)
+{
+  const uint16_t travel_mm = read_home_travel_mm(prism_address);
+  last_home_travel_mm[prism_address] =
+      travel_mm > UINT8_MAX ? UINT8_MAX : static_cast<uint8_t>(travel_mm);
+}
+
+tmc51x0::Registers::RampStat read_ramp_status(const size_t prism_address)
+{
+  tmc51x0::Registers::RampStat ramp_status;
+  ramp_status.raw =
+      prisms[prism_address].registers.read(tmc51x0::Registers::RampStatAddress);
+  return ramp_status;
+}
+
+bool home_stall_travel_plausible(const size_t prism_address)
+{
+  if (!position_confident_state[prism_address]) {
+    return false;
+  }
+
+  const uint16_t travel_mm = read_home_travel_mm(prism_address);
+  const int16_t expected_start_position_mm =
+      home_expected_start_position_mm[prism_address];
+  if (expected_start_position_mm <= home_expected_travel_tolerance_mm) {
+    return true;
+  }
+  return (static_cast<int32_t>(travel_mm) +
+          home_expected_travel_tolerance_mm) >= expected_start_position_mm;
+}
+
+bool home_target_reached_success_allowed(const size_t prism_address)
+{
+  if (home_travel_limit_mm[prism_address] >= position_max_mm) {
+    return true;
+  }
+
+  const int16_t expected_start_position_mm =
+      home_expected_start_position_mm[prism_address];
+  return position_confident_state[prism_address] &&
+         expected_start_position_mm <=
+             static_cast<int16_t>(home_travel_limit_mm[prism_address] +
+                                  home_expected_travel_tolerance_mm);
+}
+
+void continue_home_without_stallguard(const size_t prism_address)
+{
+  TMC51X0 &prism = prisms[prism_address];
+  home_stallguard_fallback_state[prism_address] = true;
+  prism.controller.writeRampMode(tmc51x0::HoldMode);
+  prism.controller.disableStallStop();
+  (void)read_ramp_status(prism_address);
+  prism.controller.writeTargetPosition(home_target_position_raw[prism_address]);
+  prism.controller.writeRampMode(tmc51x0::PositionMode);
+}
+
+bool recover_if_unhealthy(const size_t prism_address)
+{
+  TMC51X0 &prism = prisms[prism_address];
+  const tmc51x0::HealthStatus health_status = prism.readHealthStatus();
+  const bool expected_home_stall_driver_error =
+      health_status.communication_ok &&
+      !health_status.reset &&
+      !health_status.charge_pump_undervoltage &&
+      health_status.driver_error &&
+      !home_active_state[prism_address] &&
+      home_outcome_state[prism_address] == HomeOutcome::stall;
+  const bool driver_error =
+      health_status.driver_error && !expected_home_stall_driver_error;
+  const bool unhealthy = !health_status.communication_ok ||
+                         health_status.reset ||
+                         driver_error ||
+                         health_status.charge_pump_undervoltage;
+
+  if (!health_status.communication_ok) {
+    diagnostic_communication_failure_latched[prism_address] = true;
+  }
+  if (health_status.reset) {
+    diagnostic_reset_latched[prism_address] = true;
+  }
+  if (driver_error) {
+    diagnostic_driver_error_latched[prism_address] = true;
+  }
+  if (health_status.charge_pump_undervoltage) {
+    diagnostic_charge_pump_undervoltage_latched[prism_address] = true;
+  }
+  if (unhealthy || health_status.mirror_resync_required) {
+    diagnostic_recovery_attempted_latched[prism_address] = true;
+  }
+  if (unhealthy) {
+    prism.notePossibleMirrorDrift();
+    position_confident_state[prism_address] = false;
+  }
+
+  const bool recovered = prism.recoverIfNeeded();
+  if (!recovered) {
+    diagnostic_recovery_failed_latched[prism_address] = true;
+  }
+  return recovered;
 }
 
 void restore_runtime_configuration(const size_t prism_address)
@@ -170,6 +340,8 @@ void complete_home_success(const size_t prism_address, const HomeOutcome outcome
 {
   TMC51X0 &prism = prisms[prism_address];
 
+  capture_last_home_travel(prism_address);
+
   // Freeze motion before zeroing so a successful home never commands a
   // corrective move away from the physical hardstop.
   prism.controller.writeRampMode(tmc51x0::HoldMode);
@@ -180,6 +352,7 @@ void complete_home_success(const size_t prism_address, const HomeOutcome outcome
   prism.controller.zeroTargetPosition();
 
   homed_state[prism_address] = true;
+  position_confident_state[prism_address] = true;
   home_active_state[prism_address] = false;
   home_outcome_state[prism_address] = outcome;
   clear_home_tracking(prism_address);
@@ -190,10 +363,14 @@ void complete_home_failure(const size_t prism_address,
                            const HomeOutcome outcome = HomeOutcome::failed)
 {
   TMC51X0 &prism = prisms[prism_address];
+  capture_last_home_travel(prism_address);
   prism.controller.writeRampMode(tmc51x0::HoldMode);
   restore_runtime_configuration(prism_address);
   prism.controller.writeRampMode(tmc51x0::HoldMode);
   homed_state[prism_address] = false;
+  if (outcome == HomeOutcome::failed) {
+    position_confident_state[prism_address] = false;
+  }
   home_active_state[prism_address] = false;
   home_outcome_state[prism_address] = outcome;
   clear_home_tracking(prism_address);
@@ -296,6 +473,7 @@ void setup()
 
   for (size_t prism_address = 0; prism_address < prism_count; ++prism_address) {
     homed_state[prism_address] = false;
+    position_confident_state[prism_address] = false;
     home_active_state[prism_address] = false;
     home_outcome_state[prism_address] = HomeOutcome::none;
     paused_state[prism_address] = false;
@@ -305,6 +483,12 @@ void setup()
     home_motion_observed[prism_address] = false;
     home_position_fallback_allowed[prism_address] = false;
     home_target_position_raw[prism_address] = 0;
+    home_expected_start_position_mm[prism_address] = 0;
+    home_travel_limit_mm[prism_address] = 0;
+    home_target_travel_mm[prism_address] = 0;
+    home_stallguard_fallback_state[prism_address] = false;
+    last_home_travel_mm[prism_address] = 0;
+    clear_diagnostic_latches(prism_address);
     const auto spi_parameters =
         tmc51x0::SpiParameters()
             .withSpi(&prism_spi)
@@ -326,6 +510,7 @@ void shutdown()
   initialized = false;
   for (size_t prism_address = 0; prism_address < prism_count; ++prism_address) {
     homed_state[prism_address] = false;
+    position_confident_state[prism_address] = false;
     home_active_state[prism_address] = false;
     home_outcome_state[prism_address] = HomeOutcome::none;
     paused_state[prism_address] = false;
@@ -335,6 +520,12 @@ void shutdown()
     home_motion_observed[prism_address] = false;
     home_position_fallback_allowed[prism_address] = false;
     home_target_position_raw[prism_address] = 0;
+    home_expected_start_position_mm[prism_address] = 0;
+    home_travel_limit_mm[prism_address] = 0;
+    home_target_travel_mm[prism_address] = 0;
+    home_stallguard_fallback_state[prism_address] = false;
+    last_home_travel_mm[prism_address] = 0;
+    clear_diagnostic_latches(prism_address);
   }
 }
 
@@ -346,10 +537,12 @@ void loop()
 
   for (size_t prism_address = 0; prism_address < prism_count; ++prism_address) {
     if (!communicating(prism_address)) {
+      diagnostic_communication_failure_latched[prism_address] = true;
       if (home_active_state[prism_address]) {
         home_outcome_state[prism_address] = HomeOutcome::failed;
       }
       homed_state[prism_address] = false;
+      position_confident_state[prism_address] = false;
       home_active_state[prism_address] = false;
       continue;
     }
@@ -364,7 +557,7 @@ void loop()
           issue_target_position(prism_address, next_target_mm);
         }
       }
-      (void)prism.recoverIfUnhealthy();
+      (void)recover_if_unhealthy(prism_address);
       continue;
     }
 
@@ -374,27 +567,37 @@ void loop()
       home_motion_observed[prism_address] = true;
     }
 
-    if (!home_motion_observed[prism_address] &&
-        (millis() - home_start_ms[prism_address]) < home_status_poll_delay_ms) {
-      (void)prism.recoverIfUnhealthy();
+    const auto ramp_status = read_ramp_status(prism_address);
+    if (!home_stallguard_fallback_state[prism_address] &&
+        home_motion_observed[prism_address] &&
+        ramp_status.event_stop_sg()) {
+      if (home_stall_travel_plausible(prism_address)) {
+        complete_home_success(prism_address, HomeOutcome::stall);
+      } else if (home_travel_limit_mm[prism_address] >= position_max_mm) {
+        continue_home_without_stallguard(prism_address);
+      } else {
+        complete_home_failure(prism_address, HomeOutcome::failed);
+      }
       continue;
     }
 
-    if (prism.driver.stalled()) {
-      complete_home_success(prism_address, HomeOutcome::stall);
+    if (!home_motion_observed[prism_address] &&
+        (millis() - home_start_ms[prism_address]) >= home_status_poll_delay_ms) {
+      complete_home_failure(prism_address, HomeOutcome::failed);
       continue;
     }
 
     if (home_position_fallback_allowed[prism_address] &&
-        prism.controller.positionReached()) {
-      complete_home_failure(
-          prism_address,
-          prism.controller.positionReached() ? HomeOutcome::target_reached
-                                             : HomeOutcome::failed);
+        ramp_status.position_reached()) {
+      if (home_target_reached_success_allowed(prism_address)) {
+        complete_home_success(prism_address, HomeOutcome::target_reached);
+      } else {
+        complete_home_failure(prism_address, HomeOutcome::target_reached);
+      }
       continue;
     }
 
-    (void)prism.recoverIfUnhealthy();
+    (void)recover_if_unhealthy(prism_address);
   }
 }
 
@@ -407,10 +610,25 @@ void begin_home(const uint8_t prism_address, const HomeParameters &parameters)
   TMC51X0 &prism = prisms[prism_address];
   const int16_t clamped_travel_limit_mm =
       clamp_home_travel_limit_mm(parameters.travel_limit);
+  const int32_t previous_position_raw = prism.controller.readActualPosition();
+  const int16_t previous_position_mm = static_cast<int16_t>(
+      prism.converter.positionChipToReal(previous_position_raw));
+  const int16_t expected_start_position_mm =
+      previous_position_mm > 0 ? previous_position_mm : 0;
+  uint16_t target_travel_limit_mm = clamped_travel_limit_mm;
+  if (position_confident_state[prism_address] &&
+      expected_start_position_mm <=
+          static_cast<int16_t>(clamped_travel_limit_mm +
+                               home_expected_travel_tolerance_mm)) {
+    const uint16_t bounded_fallback_travel_mm =
+        static_cast<uint16_t>(expected_start_position_mm +
+                              home_expected_travel_tolerance_mm);
+    if (bounded_fallback_travel_mm < target_travel_limit_mm) {
+      target_travel_limit_mm = bounded_fallback_travel_mm;
+    }
+  }
   auto home_parameters_real = home_parameters_base_real;
   home_parameters_real.run_current = parameters.run_current;
-  home_parameters_real.target_position =
-      -1 * static_cast<int32_t>(clamped_travel_limit_mm);
   home_parameters_real.velocity = parameters.max_velocity;
 
   auto stall_parameters_real = stall_parameters_base_real;
@@ -425,6 +643,7 @@ void begin_home(const uint8_t prism_address, const HomeParameters &parameters)
   // Re-seed the prism into a known runtime state before homing so home does
   // not inherit stale motion configuration.
   configure_defaults(prism_address);
+  prism.controller.writeActualPosition(previous_position_raw);
   prism.controller.setupSwitches(paused_state[prism_address]
                                      ? switch_parameters_paused
                                      : switch_parameters_running);
@@ -443,16 +662,24 @@ void begin_home(const uint8_t prism_address, const HomeParameters &parameters)
   prism.controller.writeMaxVelocity(home_parameters_chip.velocity);
   prism.controller.writeMaxAcceleration(home_parameters_chip.acceleration);
   prism.controller.writeZeroWaitDuration(home_parameters_chip.zero_wait_duration);
-  home_target_position_raw[prism_address] = home_parameters_chip.target_position;
+  home_target_position_raw[prism_address] =
+      previous_position_raw -
+      prism.converter.positionRealToChip(target_travel_limit_mm);
   prism.controller.writeTargetPosition(home_target_position_raw[prism_address]);
-  prism.controller.writeRampMode(tmc51x0::PositionMode);
   homed_state[prism_address] = false;
   home_outcome_state[prism_address] = HomeOutcome::in_progress;
-  home_start_ms[prism_address] = millis();
   home_start_position_raw[prism_address] = prism.controller.readActualPosition();
   home_motion_observed[prism_address] = false;
   home_position_fallback_allowed[prism_address] = true;
+  home_expected_start_position_mm[prism_address] = expected_start_position_mm;
+  home_travel_limit_mm[prism_address] = clamped_travel_limit_mm;
+  home_target_travel_mm[prism_address] = target_travel_limit_mm;
+  home_stallguard_fallback_state[prism_address] = false;
+  last_home_travel_mm[prism_address] = 0;
   clear_target_queue(prism_address);
+  (void)read_ramp_status(prism_address);
+  prism.controller.writeRampMode(tmc51x0::PositionMode);
+  home_start_ms[prism_address] = millis();
   home_active_state[prism_address] = true;
 }
 
@@ -462,7 +689,11 @@ bool communicating(const uint8_t prism_address)
     return false;
   }
 
-  return prisms[prism_address].communicating();
+  const bool ok = prisms[prism_address].communicating();
+  if (!ok) {
+    diagnostic_communication_failure_latched[prism_address] = true;
+  }
+  return ok;
 }
 
 bool homed(const uint8_t prism_address)
@@ -618,6 +849,85 @@ void write_controller_parameters(const uint8_t prism_address,
       prism.converter.accelerationRealToChip(parameters.max_deceleration));
   prism.controller.writeFirstDeceleration(
       prism.converter.accelerationRealToChip(parameters.first_deceleration));
+}
+
+PrismDiagnostics read_diagnostics(const uint8_t prism_address)
+{
+  PrismDiagnostics diagnostics{};
+  if (!initialized || prism_address >= prism_count) {
+    return diagnostics;
+  }
+
+  const bool communication_ok = communicating(prism_address);
+  if (communication_ok) {
+    diagnostics.health_flags |= diagnostic_health_communicating;
+  }
+  if (diagnostic_communication_failure_latched[prism_address]) {
+    diagnostics.health_flags |= diagnostic_health_communication_failure_latched;
+  }
+  if (diagnostic_reset_latched[prism_address]) {
+    diagnostics.health_flags |= diagnostic_health_reset_latched;
+  }
+  if (diagnostic_driver_error_latched[prism_address]) {
+    diagnostics.health_flags |= diagnostic_health_driver_error_latched;
+  }
+  if (diagnostic_charge_pump_undervoltage_latched[prism_address]) {
+    diagnostics.health_flags |= diagnostic_health_charge_pump_undervoltage_latched;
+  }
+  if (diagnostic_recovery_attempted_latched[prism_address]) {
+    diagnostics.health_flags |= diagnostic_health_recovery_attempted_latched;
+  }
+  if (diagnostic_recovery_failed_latched[prism_address]) {
+    diagnostics.health_flags |= diagnostic_health_recovery_failed_latched;
+  }
+  if (communication_ok && prisms[prism_address].mirrorResyncRequired()) {
+    diagnostics.health_flags |= diagnostic_health_mirror_resync_required;
+  }
+
+  if (!communication_ok) {
+    return diagnostics;
+  }
+
+  tmc51x0::Registers::DrvStatus driver_status;
+  driver_status.raw =
+      prisms[prism_address].registers.read(tmc51x0::Registers::DrvStatusAddress);
+  if (driver_status.stallguard()) {
+    diagnostics.driver_flags |= diagnostic_driver_stallguard;
+  }
+  if (driver_status.otpw()) {
+    diagnostics.driver_flags |= diagnostic_driver_over_temperature_warning;
+  }
+  if (driver_status.ot()) {
+    diagnostics.driver_flags |= diagnostic_driver_over_temperature_shutdown;
+  }
+  if (driver_status.s2ga()) {
+    diagnostics.driver_flags |= diagnostic_driver_short_to_ground_a;
+  }
+  if (driver_status.s2gb()) {
+    diagnostics.driver_flags |= diagnostic_driver_short_to_ground_b;
+  }
+  if (driver_status.ola()) {
+    diagnostics.driver_flags |= diagnostic_driver_open_load_a;
+  }
+  if (driver_status.olb()) {
+    diagnostics.driver_flags |= diagnostic_driver_open_load_b;
+  }
+  if (driver_status.stst()) {
+    diagnostics.driver_flags |= diagnostic_driver_standstill;
+  }
+  diagnostics.stall_guard_result =
+      static_cast<uint16_t>(driver_status.sg_result());
+  diagnostics.current_scale = driver_status.cs_actual();
+  diagnostics.last_home_travel_mm = last_home_travel_mm[prism_address];
+  return diagnostics;
+}
+
+void clear_diagnostics(const uint8_t prism_address)
+{
+  if (!initialized || prism_address >= prism_count) {
+    return;
+  }
+  clear_diagnostic_latches(prism_address);
 }
 
 } // namespace rewrite_prism

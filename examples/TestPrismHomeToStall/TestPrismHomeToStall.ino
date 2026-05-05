@@ -66,7 +66,7 @@ const tmc51x0::HomeParameters home_parameters_real =
 
 const tmc51x0::StallParameters stall_parameters_real =
 {
-  .stall_guard_threshold = 10,
+  .stall_guard_threshold = 0,
   .cool_step_threshold = 15 // (millimeters/s)
 };
 
