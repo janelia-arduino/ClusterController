@@ -15,6 +15,7 @@ enum class HomeOutcome : uint8_t {
   stall = 2,
   target_reached = 3,
   failed = 4,
+  confirmed = 5,
 };
 
 struct ControllerParameters {
@@ -40,13 +41,20 @@ struct PrismDiagnostics {
   uint8_t driver_flags;
   uint16_t stall_guard_result;
   uint8_t current_scale;
-  uint8_t last_home_travel_mm;
+  uint16_t last_home_travel_mm;
 };
 
+uint8_t clamp_run_current_percent(uint8_t run_current_percent);
+ControllerParameters clamp_controller_parameters(
+    const ControllerParameters &parameters);
+HomeParameters clamp_home_parameters(const HomeParameters &parameters,
+                                     bool recovery_home);
 void setup();
 void shutdown();
 void loop();
 void begin_home(uint8_t prism_address, const HomeParameters &parameters);
+void begin_recovery_home(uint8_t prism_address, const HomeParameters &parameters);
+void confirm_home(uint8_t prism_address);
 bool communicating(uint8_t prism_address);
 bool homed(uint8_t prism_address);
 bool home_active(uint8_t prism_address);

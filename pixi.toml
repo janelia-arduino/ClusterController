@@ -1,6 +1,6 @@
 [workspace]
 name = "ClusterController"
-version = "4.1.0"
+version = "4.3.0"
 description = "Firmware for controlling a cluster of prism actuators."
 authors = ["Peter Polidoro <peter@polidoro.io>"]
 channels = ["conda-forge"]

@@ -193,8 +193,8 @@ Decision to make after this spike:
 
 After the transport spike succeeds, decide whether to:
 
-- keep protocol version `0x04` with internal cleanup only, or
-- define a new protocol version with clearer framing and errors
+- protocol `0x06` adds explicit recovery-home commands, confirm-home commands,
+  and a wider `last_home_travel_mm` diagnostic field
 
 ## Milestones
 

@@ -120,7 +120,7 @@ These items matter, but they should not block the fast-path push:
 - [ ] remove or hide temporary debug command `0x19`
 - [ ] remove temporary serial diagnostics
 - [ ] clean up firmware module boundaries
-- [ ] decide whether protocol `0x04` stays or changes
+- [x] bump protocol to `0x06` for recovery-home/confirm-home commands and wider diagnostics
 - [ ] broaden tests to full multi-prism coverage
 - [ ] add broader `TMC51X0` validation coverage:
   - UART hardware validation

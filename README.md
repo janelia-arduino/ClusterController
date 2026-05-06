@@ -11,7 +11,7 @@
 # Library Information
 
 -   **Name:** ClusterController
--   **Version:** 4.1.0
+-   **Version:** 4.3.0
 -   **License:** BSD
 -   **URL:** <https://github.com/janelia-arduino/ClusterController>
 -   **Author:** Peter Polidoro
@@ -29,9 +29,9 @@ Firmware for each cluster of prisms in the Voigts Lab honeycomb maze.
 Validated single-cluster settings for the current rewrite bench and experimental-rig bring-up:
 
 - home parameters:
-  - `travel_limit = 250`
-  - `max_velocity = 20`
-  - `run_current = 50`
+  - `travel_limit = 100`
+  - `max_velocity = 10`
+  - `run_current = 43`
   - `stall_threshold = 0`
 - controller parameters:
   - `start_velocity = 10`
@@ -47,15 +47,39 @@ Notes:
 
 - Earlier GUI settings with `start_velocity = 20` and `stop_velocity = 20`
   were not reliable on the validated bench.
-- The historical short home setting `travel_limit = 100` was also not
-  reliable on the validated bench.
+- The `travel_limit = 100` setting is a researcher-supervised incremental
+  home, not a recovery home for an unknown physical state.
+- Use ordinary repeated `100 mm` homing when a researcher is present at the
+  rig. Use recovery homing only for rare fully automated preparation where one
+  command must definitely home all prisms.
+- Ordinary homing treats StallGuard as an early-stop hint, not unconditional
+  proof of home. A stall is accepted only when the recorded home travel is
+  within `2 mm` of the expected start position, or when the prism was already
+  expected to be within `2 mm` of the hard stop. Implausible ordinary-home
+  stalls continue through the bounded target-reached fallback.
+- If the researcher can see that all prisms are physically on their hard stops,
+  use `confirm-home-cluster` to zero positions without additional homing noise.
 - Keep commanded positive prism positions clear of the mechanical positive
   hard stop on the real rig.
+- Firmware clamps researcher-settable motion parameters before applying them
+  and before reporting controller/current readback:
+  - ordinary home travel: `1..100 mm`
+  - recovery home travel: `1..550 mm`
+  - home velocity: `4..12 mm/s`
+  - home run current: `35..50%`
+  - home StallGuard threshold: `-10..0`
+  - normal run current: `40..75%`
+  - normal start/stop velocity: `1..10 mm/s`
+  - normal first velocity: `1..40 mm/s`, capped to `max_velocity`
+  - normal max velocity: `10..40 mm/s`
+  - normal first acceleration/deceleration: `20..120 mm/s/s`
+  - normal max acceleration/deceleration: `20..80 mm/s/s`
+  - normal target positions: `0..550 mm`
 
 
 ## Protocol
 
--   protocol-version = 0x04
+-   protocol-version = 0x06
 -   prism-count = 7
 -   command = protocol-version command-length command-number command-parameters
 -   response = protocol-version response-length command-number response-parameters
@@ -99,8 +123,12 @@ Notes:
 | write-double-target-prism           | '<BBBBHH'            | 8              | 0x17           | prism-address, double-position | '<BBBB'         | 4               | prism-address          |
 | write-double-targets-cluster        | '<BBBHHHHHHHHHHHHHH' | 31             | 0x18           | double-position[prism-count]   | '<BBB'          | 3               |                        |
 | read-home-outcomes-cluster          | '<BBB'               | 3              | 0x19           |                                | '<BBBBBBBBBB'   | 10              | home-outcome[prism-count] |
-| read-prism-diagnostics-cluster      | '<BBB'               | 3              | 0x1A           |                                | '<BBB...'       | 45              | prism-diagnostics[prism-count] |
+| read-prism-diagnostics-cluster      | '<BBB'               | 3              | 0x1A           |                                | '<BBB...'       | 52              | prism-diagnostics[prism-count] |
 | clear-prism-diagnostics-cluster     | '<BBB'               | 3              | 0x1B           |                                | '<BBB'          | 3               |                        |
+| recovery-home-prism                 | '<BBBBHBBb'          | 9              | 0x1C           | prism-address, home-parameters | '<BBBB'         | 4               | prism-address          |
+| recovery-home-cluster               | '<BBBHBBb'           | 8              | 0x1D           | home-parameters                | '<BBB'          | 3               |                        |
+| confirm-home-prism                  | '<BBBB'              | 4              | 0x1E           | prism-address                  | '<BBBB'         | 4               | prism-address          |
+| confirm-home-cluster                | '<BBB'               | 3              | 0x1F           |                                | '<BBB'          | 3               |                        |
 
 
 <a id="orgb0abd37"></a>

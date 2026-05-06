@@ -24,7 +24,7 @@ constexpr pin_size_t ethernet_spi_tx_pin = 19;
 constexpr pin_size_t ethernet_reset_pin = 20;
 constexpr pin_size_t ethernet_int_pin = 21;
 constexpr uint16_t server_port = 7777;
-constexpr uint8_t protocol_version = 0x04;
+constexpr uint8_t protocol_version = 0x06;
 constexpr uint8_t error_response = 0xEE;
 constexpr uint8_t read_cluster_address_cmd = 0x01;
 constexpr uint8_t communicating_cluster_cmd = 0x02;
@@ -53,19 +53,23 @@ constexpr uint8_t write_double_targets_cluster_cmd = 0x18;
 constexpr uint8_t read_home_outcomes_cluster_cmd = 0x19;
 constexpr uint8_t read_prism_diagnostics_cluster_cmd = 0x1A;
 constexpr uint8_t clear_prism_diagnostics_cluster_cmd = 0x1B;
+constexpr uint8_t recovery_home_prism_cmd = 0x1C;
+constexpr uint8_t recovery_home_cluster_cmd = 0x1D;
+constexpr uint8_t confirm_home_prism_cmd = 0x1E;
+constexpr uint8_t confirm_home_cluster_cmd = 0x1F;
 constexpr uint32_t check_communication_response = 0x12345678;
 constexpr size_t command_buffer_size = 32;
 constexpr size_t response_buffer_size = 64;
 constexpr uint32_t prism_power_stabilize_delay_ms = 2000;
 constexpr uint8_t run_current_default = 75;
-constexpr uint8_t start_velocity_default = 1;
-constexpr uint8_t stop_velocity_default = 5;
-constexpr uint8_t first_velocity_default = 10;
-constexpr uint8_t max_velocity_default = 20;
-constexpr uint8_t first_acceleration_default = 40;
-constexpr uint8_t max_acceleration_default = 20;
-constexpr uint8_t max_deceleration_default = 30;
-constexpr uint8_t first_deceleration_default = 50;
+constexpr uint8_t start_velocity_default = 10;
+constexpr uint8_t stop_velocity_default = 10;
+constexpr uint8_t first_velocity_default = 40;
+constexpr uint8_t max_velocity_default = 40;
+constexpr uint8_t first_acceleration_default = 120;
+constexpr uint8_t max_acceleration_default = 80;
+constexpr uint8_t max_deceleration_default = 80;
+constexpr uint8_t first_deceleration_default = 120;
 
 uint8_t run_current_percent = run_current_default;
 rewrite_prism::ControllerParameters controller_parameters = {
@@ -170,6 +174,8 @@ size_t process_command(const uint8_t *command, const size_t command_size)
       home_parameters.max_velocity = command[5];
       home_parameters.run_current = command[6];
       home_parameters.stall_threshold = static_cast<int8_t>(command[7]);
+      home_parameters =
+          rewrite_prism::clamp_home_parameters(home_parameters, false);
       for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
            ++prism_address) {
         rewrite_prism::begin_home(prism_address, home_parameters);
@@ -189,7 +195,69 @@ size_t process_command(const uint8_t *command, const size_t command_size)
       home_parameters.max_velocity = command[6];
       home_parameters.run_current = command[7];
       home_parameters.stall_threshold = static_cast<int8_t>(command[8]);
+      home_parameters =
+          rewrite_prism::clamp_home_parameters(home_parameters, false);
       rewrite_prism::begin_home(prism_address, home_parameters);
+      response_buffer[response_size++] = prism_address;
+      break;
+    }
+
+    case recovery_home_cluster_cmd:
+    {
+      if (command_size != 8) {
+        return build_error_response();
+      }
+      rewrite_prism::HomeParameters home_parameters{};
+      std::memcpy(&home_parameters.travel_limit, command + 3,
+                  sizeof(home_parameters.travel_limit));
+      home_parameters.max_velocity = command[5];
+      home_parameters.run_current = command[6];
+      home_parameters.stall_threshold = static_cast<int8_t>(command[7]);
+      home_parameters =
+          rewrite_prism::clamp_home_parameters(home_parameters, true);
+      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
+           ++prism_address) {
+        rewrite_prism::begin_recovery_home(prism_address, home_parameters);
+      }
+      break;
+    }
+
+    case recovery_home_prism_cmd:
+    {
+      if (command_size != 9) {
+        return build_error_response();
+      }
+      const uint8_t prism_address = command[3];
+      rewrite_prism::HomeParameters home_parameters{};
+      std::memcpy(&home_parameters.travel_limit, command + 4,
+                  sizeof(home_parameters.travel_limit));
+      home_parameters.max_velocity = command[6];
+      home_parameters.run_current = command[7];
+      home_parameters.stall_threshold = static_cast<int8_t>(command[8]);
+      home_parameters =
+          rewrite_prism::clamp_home_parameters(home_parameters, true);
+      rewrite_prism::begin_recovery_home(prism_address, home_parameters);
+      response_buffer[response_size++] = prism_address;
+      break;
+    }
+
+    case confirm_home_cluster_cmd:
+      if (command_size != 3) {
+        return build_error_response();
+      }
+      for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
+           ++prism_address) {
+        rewrite_prism::confirm_home(prism_address);
+      }
+      break;
+
+    case confirm_home_prism_cmd:
+    {
+      if (command_size != 4) {
+        return build_error_response();
+      }
+      const uint8_t prism_address = command[3];
+      rewrite_prism::confirm_home(prism_address);
       response_buffer[response_size++] = prism_address;
       break;
     }
@@ -315,7 +383,7 @@ size_t process_command(const uint8_t *command, const size_t command_size)
       if (command_size != 4) {
         return build_error_response();
       }
-      run_current_percent = command[3];
+      run_current_percent = rewrite_prism::clamp_run_current_percent(command[3]);
       for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
            ++prism_address) {
         rewrite_prism::write_run_current(prism_address, run_current_percent);
@@ -338,6 +406,8 @@ size_t process_command(const uint8_t *command, const size_t command_size)
       controller_parameters.max_acceleration = command[8];
       controller_parameters.max_deceleration = command[9];
       controller_parameters.first_deceleration = command[10];
+      controller_parameters =
+          rewrite_prism::clamp_controller_parameters(controller_parameters);
       for (size_t prism_address = 0; prism_address < rewrite_prism::prism_count;
            ++prism_address) {
         rewrite_prism::write_controller_parameters(prism_address,
@@ -380,7 +450,10 @@ size_t process_command(const uint8_t *command, const size_t command_size)
                     sizeof(diagnostics.stall_guard_result));
         response_size += sizeof(diagnostics.stall_guard_result);
         response_buffer[response_size++] = diagnostics.current_scale;
-        response_buffer[response_size++] = diagnostics.last_home_travel_mm;
+        std::memcpy(response_buffer + response_size,
+                    &diagnostics.last_home_travel_mm,
+                    sizeof(diagnostics.last_home_travel_mm));
+        response_size += sizeof(diagnostics.last_home_travel_mm);
       }
       break;
 

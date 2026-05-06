@@ -186,9 +186,9 @@ def _build_parser() -> argparse.ArgumentParser:
     repro = subparsers.add_parser("repro-post-home")
     repro.add_argument("--cluster", type=int, default=10)
     repro.add_argument("--trials", type=int, default=5)
-    repro.add_argument("--travel-limit", type=int, default=250)
-    repro.add_argument("--max-velocity", type=int, default=20)
-    repro.add_argument("--run-current", type=int, default=50)
+    repro.add_argument("--travel-limit", type=int, default=100)
+    repro.add_argument("--max-velocity", type=int, default=6)
+    repro.add_argument("--run-current", type=int, default=43)
     repro.add_argument("--stall-threshold", type=int, default=0)
     repro.add_argument(
         "--targets",
