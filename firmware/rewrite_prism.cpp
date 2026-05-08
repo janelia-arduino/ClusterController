@@ -18,8 +18,8 @@ constexpr size_t target_queue_capacity = 4;
 constexpr uint8_t run_current_default = 75;
 constexpr uint8_t start_velocity_default = 10;
 constexpr uint8_t stop_velocity_default = 10;
-constexpr uint8_t first_velocity_default = 40;
-constexpr uint8_t max_velocity_default = 40;
+constexpr uint8_t first_velocity_default = 50;
+constexpr uint8_t max_velocity_default = 50;
 constexpr uint8_t first_acceleration_default = 120;
 constexpr uint8_t max_acceleration_default = 80;
 constexpr uint8_t max_deceleration_default = 80;
@@ -31,9 +31,9 @@ constexpr uint8_t controller_start_velocity_max_mm_s = 10;
 constexpr uint8_t controller_stop_velocity_min_mm_s = 10;
 constexpr uint8_t controller_stop_velocity_max_mm_s = 10;
 constexpr uint8_t controller_first_velocity_min_mm_s = 1;
-constexpr uint8_t controller_first_velocity_max_mm_s = 40;
+constexpr uint8_t controller_first_velocity_max_mm_s = 50;
 constexpr uint8_t controller_max_velocity_min_mm_s = 10;
-constexpr uint8_t controller_max_velocity_max_mm_s = 40;
+constexpr uint8_t controller_max_velocity_max_mm_s = 50;
 constexpr uint8_t controller_first_acceleration_min_mm_s2 = 20;
 constexpr uint8_t controller_first_acceleration_max_mm_s2 = 120;
 constexpr uint8_t controller_max_acceleration_min_mm_s2 = 20;
@@ -556,51 +556,15 @@ uint8_t clamp_run_current_percent(const uint8_t run_current_percent)
 ControllerParameters clamp_controller_parameters(
     const ControllerParameters &parameters)
 {
-  ControllerParameters clamped = parameters;
-  clamped.max_velocity =
-      clamp_u8(parameters.max_velocity,
-               controller_max_velocity_min_mm_s,
-               controller_max_velocity_max_mm_s);
-  clamped.first_velocity =
-      clamp_u8(parameters.first_velocity,
-               controller_first_velocity_min_mm_s,
-               controller_first_velocity_max_mm_s);
-  if (clamped.first_velocity > clamped.max_velocity) {
-    clamped.first_velocity = clamped.max_velocity;
-  }
-  clamped.start_velocity =
-      clamp_u8(parameters.start_velocity,
-               controller_start_velocity_min_mm_s,
-               controller_start_velocity_max_mm_s);
-  if (clamped.start_velocity > clamped.first_velocity) {
-    clamped.start_velocity = clamped.first_velocity;
-  }
-  clamped.stop_velocity =
-      clamp_u8(parameters.stop_velocity,
-               controller_stop_velocity_min_mm_s,
-               controller_stop_velocity_max_mm_s);
-  if (clamped.stop_velocity < clamped.start_velocity) {
-    clamped.stop_velocity = clamped.start_velocity;
-  }
-  if (clamped.stop_velocity > clamped.max_velocity) {
-    clamped.stop_velocity = clamped.max_velocity;
-  }
-  clamped.first_acceleration =
-      clamp_u8(parameters.first_acceleration,
-               controller_first_acceleration_min_mm_s2,
-               controller_first_acceleration_max_mm_s2);
-  clamped.max_acceleration =
-      clamp_u8(parameters.max_acceleration,
-               controller_max_acceleration_min_mm_s2,
-               controller_max_acceleration_max_mm_s2);
-  clamped.max_deceleration =
-      clamp_u8(parameters.max_deceleration,
-               controller_max_deceleration_min_mm_s2,
-               controller_max_deceleration_max_mm_s2);
-  clamped.first_deceleration =
-      clamp_u8(parameters.first_deceleration,
-               controller_first_deceleration_min_mm_s2,
-               controller_first_deceleration_max_mm_s2);
+  (void)parameters;
+
+  // Keep user-space tuning commands protocol-compatible while locking the rig
+  // to the full-maze profile validated against slip and acoustic resonance.
+  ControllerParameters clamped = {
+      start_velocity_default,  stop_velocity_default, first_velocity_default,
+      max_velocity_default,    first_acceleration_default,
+      max_acceleration_default, max_deceleration_default,
+      first_deceleration_default};
   return clamped;
 }
 

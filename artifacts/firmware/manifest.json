@@ -1,7 +1,7 @@
 [
   {
     "environment": "pico-rewrite",
-    "sha256": "bda33066ef3c870a25db5875cbeb9db9335ba752e2522e0cbb783c6be7d69f2b",
+    "sha256": "10a2eabf41dc50c718f1921b0d7546a775f480afe97dff2927f78d79adaffe59",
     "uf2": "artifacts/firmware/clustercontroller-rewrite.uf2",
     "variant": "rewrite"
   }
