@@ -28,7 +28,7 @@ constexpr uint8_t run_current_min_percent = 40;
 constexpr uint8_t run_current_max_percent = 75;
 constexpr uint8_t controller_start_velocity_min_mm_s = 1;
 constexpr uint8_t controller_start_velocity_max_mm_s = 10;
-constexpr uint8_t controller_stop_velocity_min_mm_s = 1;
+constexpr uint8_t controller_stop_velocity_min_mm_s = 10;
 constexpr uint8_t controller_stop_velocity_max_mm_s = 10;
 constexpr uint8_t controller_first_velocity_min_mm_s = 1;
 constexpr uint8_t controller_first_velocity_max_mm_s = 40;
@@ -579,6 +579,9 @@ ControllerParameters clamp_controller_parameters(
       clamp_u8(parameters.stop_velocity,
                controller_stop_velocity_min_mm_s,
                controller_stop_velocity_max_mm_s);
+  if (clamped.stop_velocity < clamped.start_velocity) {
+    clamped.stop_velocity = clamped.start_velocity;
+  }
   if (clamped.stop_velocity > clamped.max_velocity) {
     clamped.stop_velocity = clamped.max_velocity;
   }

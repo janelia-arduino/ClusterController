@@ -69,7 +69,9 @@ Notes:
   - home run current: `35..50%`
   - home StallGuard threshold: `-10..0`
   - normal run current: `40..75%`
-  - normal start/stop velocity: `1..10 mm/s`
+  - normal start velocity: `1..10 mm/s`
+  - normal stop velocity: `10 mm/s`; it is also constrained to be at least the
+    start velocity, following the TMC5130 ramp-generator recommendation
   - normal first velocity: `1..40 mm/s`, capped to `max_velocity`
   - normal max velocity: `10..40 mm/s`
   - normal first acceleration/deceleration: `20..120 mm/s/s`
