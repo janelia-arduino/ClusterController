@@ -248,6 +248,19 @@ To target a specific attached board:
 pixi run flash-artifact-rewrite -- --ser E6625CA5633BB039
 ```
 
+If a controller is already running firmware with the Ethernet bootloader
+command, put that cluster into BOOTSEL without physical access first:
+
+```sh
+pixi run maze reboot-bootloader-cluster 10
+pixi run flash-artifact-rewrite -- --ser E6625CA5633BB039
+```
+
+Older firmware may still require the RP2040 1200-baud CDC touch or physical
+BOOTSEL. On the full rig, the 1200-baud touch was not reliable until the USB
+device was reset at the hub, so prefer the Ethernet bootloader command after
+this firmware has been installed once.
+
 
 ### Serial Terminal Monitor
 

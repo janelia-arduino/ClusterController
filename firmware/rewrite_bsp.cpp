@@ -1,6 +1,7 @@
 #include "rewrite_bsp.hpp"
 
 #include <Arduino.h>
+#include <pico/bootrom.h>
 
 namespace rewrite_bsp
 {
@@ -65,6 +66,15 @@ bool cluster_power_enabled()
 void delay_ms(const uint32_t duration_ms)
 {
   delay(duration_ms);
+}
+
+void reboot_to_bootloader()
+{
+  delay(50);
+  reset_usb_boot(0, 0);
+  while (true) {
+    continue;
+  }
 }
 
 } // namespace rewrite_bsp

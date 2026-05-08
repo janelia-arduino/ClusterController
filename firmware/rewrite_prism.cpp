@@ -72,6 +72,7 @@ constexpr int16_t position_max_mm = 550;
 constexpr int16_t home_expected_travel_tolerance_mm = 10;
 constexpr int16_t home_stall_immediate_tolerance_mm = 2;
 constexpr int16_t home_stall_travel_tolerance_mm = 2;
+constexpr bool home_use_stallguard_stop = false;
 const auto converter_parameters =
     tmc51x0::ConverterParameters()
         .withClockFrequencyMHz(16)
@@ -141,6 +142,8 @@ int32_t home_target_position_raw[prism_count] = {};
 int16_t home_expected_start_position_mm[prism_count] = {};
 uint16_t home_travel_limit_mm[prism_count] = {};
 uint16_t home_target_travel_mm[prism_count] = {};
+bool home_immediate_stall_allowed[prism_count] = {};
+bool home_stallguard_enabled_state[prism_count] = {};
 bool home_stallguard_fallback_state[prism_count] = {};
 bool home_recovery_state[prism_count] = {};
 uint16_t last_home_travel_mm[prism_count] = {};
@@ -225,6 +228,8 @@ void clear_home_tracking(const size_t prism_address)
   home_expected_start_position_mm[prism_address] = 0;
   home_travel_limit_mm[prism_address] = 0;
   home_target_travel_mm[prism_address] = 0;
+  home_immediate_stall_allowed[prism_address] = false;
+  home_stallguard_enabled_state[prism_address] = false;
   home_stallguard_fallback_state[prism_address] = false;
   home_recovery_state[prism_address] = false;
 }
@@ -280,7 +285,7 @@ bool home_stall_travel_plausible(const size_t prism_address)
   const int16_t expected_start_position_mm =
       home_expected_start_position_mm[prism_address];
   if (expected_start_position_mm <= home_stall_immediate_tolerance_mm) {
-    return true;
+    return home_immediate_stall_allowed[prism_address];
   }
   return (static_cast<int32_t>(travel_mm) +
           home_stall_travel_tolerance_mm) >= expected_start_position_mm;
@@ -421,7 +426,8 @@ void complete_home_failure(const size_t prism_address,
   restore_runtime_configuration(prism_address);
   prism.controller.writeRampMode(tmc51x0::HoldMode);
   homed_state[prism_address] = false;
-  if (outcome == HomeOutcome::failed) {
+  if (outcome == HomeOutcome::failed ||
+      outcome == HomeOutcome::target_reached) {
     position_confident_state[prism_address] = false;
   }
   home_active_state[prism_address] = false;
@@ -643,6 +649,8 @@ void setup()
     home_expected_start_position_mm[prism_address] = 0;
     home_travel_limit_mm[prism_address] = 0;
     home_target_travel_mm[prism_address] = 0;
+    home_immediate_stall_allowed[prism_address] = false;
+    home_stallguard_enabled_state[prism_address] = false;
     home_stallguard_fallback_state[prism_address] = false;
     home_recovery_state[prism_address] = false;
     last_home_travel_mm[prism_address] = 0;
@@ -681,6 +689,8 @@ void shutdown()
     home_expected_start_position_mm[prism_address] = 0;
     home_travel_limit_mm[prism_address] = 0;
     home_target_travel_mm[prism_address] = 0;
+    home_immediate_stall_allowed[prism_address] = false;
+    home_stallguard_enabled_state[prism_address] = false;
     home_stallguard_fallback_state[prism_address] = false;
     home_recovery_state[prism_address] = false;
     last_home_travel_mm[prism_address] = 0;
@@ -727,7 +737,8 @@ void loop()
     }
 
     const auto ramp_status = read_ramp_status(prism_address);
-    if (!home_stallguard_fallback_state[prism_address] &&
+    if (home_stallguard_enabled_state[prism_address] &&
+        !home_stallguard_fallback_state[prism_address] &&
         home_motion_observed[prism_address] &&
         ramp_status.event_stop_sg()) {
       if (home_recovery_state[prism_address] &&
@@ -753,11 +764,7 @@ void loop()
 
     if (home_position_fallback_allowed[prism_address] &&
         ramp_status.position_reached()) {
-      if (home_target_reached_success_allowed(prism_address)) {
-        complete_home_success(prism_address, HomeOutcome::target_reached);
-      } else {
-        complete_home_failure(prism_address, HomeOutcome::target_reached);
-      }
+      complete_home_success(prism_address, HomeOutcome::target_reached);
       continue;
     }
 
@@ -782,8 +789,15 @@ void begin_home_impl(const uint8_t prism_address,
       prism.converter.positionChipToReal(previous_position_raw));
   const int16_t expected_start_position_mm =
       previous_position_mm > 0 ? previous_position_mm : 0;
+  const bool use_stallguard_stop = home_use_stallguard_stop;
+  const bool immediate_stall_allowed =
+      use_stallguard_stop &&
+      position_confident_state[prism_address] &&
+      expected_start_position_mm <= home_stall_immediate_tolerance_mm &&
+      home_outcome_state[prism_address] == HomeOutcome::confirmed;
   uint16_t target_travel_limit_mm = clamped_travel_limit_mm;
-  if (!recovery_home &&
+  if (use_stallguard_stop &&
+      !recovery_home &&
       position_confident_state[prism_address] &&
       expected_start_position_mm <=
           static_cast<int16_t>(clamped_travel_limit_mm +
@@ -827,7 +841,11 @@ void begin_home_impl(const uint8_t prism_address,
   prism.driver.writeCoolStepThreshold(stall_parameters_chip.cool_step_threshold);
   prism.driver.writeChopperMode(tmc51x0::SpreadCycleMode);
   prism.controller.writeStopMode(tmc51x0::HardMode);
-  prism.controller.enableStallStop();
+  if (use_stallguard_stop) {
+    prism.controller.enableStallStop();
+  } else {
+    prism.controller.disableStallStop();
+  }
   prism.controller.writeRampMode(tmc51x0::HoldMode);
   prism.controller.writeMaxVelocity(home_parameters_chip.velocity);
   prism.controller.writeMaxAcceleration(home_parameters_chip.acceleration);
@@ -844,6 +862,8 @@ void begin_home_impl(const uint8_t prism_address,
   home_expected_start_position_mm[prism_address] = expected_start_position_mm;
   home_travel_limit_mm[prism_address] = clamped_travel_limit_mm;
   home_target_travel_mm[prism_address] = target_travel_limit_mm;
+  home_immediate_stall_allowed[prism_address] = immediate_stall_allowed;
+  home_stallguard_enabled_state[prism_address] = use_stallguard_stop;
   home_stallguard_fallback_state[prism_address] = false;
   home_recovery_state[prism_address] = recovery_home;
   last_home_travel_mm[prism_address] = 0;

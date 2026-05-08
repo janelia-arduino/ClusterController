@@ -13,5 +13,6 @@ void beep(uint32_t duration_ms);
 void set_cluster_power(bool enabled);
 bool cluster_power_enabled();
 void delay_ms(uint32_t duration_ms);
+void reboot_to_bootloader();
 
 } // namespace rewrite_bsp

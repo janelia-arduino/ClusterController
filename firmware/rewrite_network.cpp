@@ -57,6 +57,7 @@ constexpr uint8_t recovery_home_prism_cmd = 0x1C;
 constexpr uint8_t recovery_home_cluster_cmd = 0x1D;
 constexpr uint8_t confirm_home_prism_cmd = 0x1E;
 constexpr uint8_t confirm_home_cluster_cmd = 0x1F;
+constexpr uint8_t reboot_bootloader_cluster_cmd = 0x20;
 constexpr uint32_t check_communication_response = 0x12345678;
 constexpr size_t command_buffer_size = 32;
 constexpr size_t response_buffer_size = 64;
@@ -85,6 +86,7 @@ WiFiClient active_client;
 bool initialized = false;
 bool server_started = false;
 bool prism_setup_pending = false;
+bool bootloader_reboot_pending = false;
 uint32_t prism_setup_start_ms = 0;
 uint8_t command_buffer[command_buffer_size];
 uint8_t response_buffer[response_buffer_size];
@@ -261,6 +263,13 @@ size_t process_command(const uint8_t *command, const size_t command_size)
       response_buffer[response_size++] = prism_address;
       break;
     }
+
+    case reboot_bootloader_cluster_cmd:
+      if (command_size != 3) {
+        return build_error_response();
+      }
+      bootloader_reboot_pending = true;
+      break;
 
     case write_target_prism_cmd:
     {
@@ -552,6 +561,10 @@ void loop()
   active_client.write(response_buffer, response_size);
   active_client.flush();
   active_client.stop();
+
+  if (bootloader_reboot_pending) {
+    rewrite_bsp::reboot_to_bootloader();
+  }
 }
 
 Status status()
